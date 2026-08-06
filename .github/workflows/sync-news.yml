@@ -1,0 +1,33 @@
+name: Sync patch-notes Discord
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # toutes les 10 minutes
+  workflow_dispatch:          # bouton "Run workflow" manuel sur GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Récupérer les patch-notes depuis Discord
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ vars.DISCORD_CHANNEL_ID }}
+        run: node discord-news-sync/sync.js
+
+      - name: Commit si le contenu a changé
+        run: |
+          git config user.name "anomia-news-bot"
+          git config user.email "actions@github.com"
+          git add news.json
+          git diff --cached --quiet || git commit -m "Sync patch-notes Discord [auto]"
+          git push

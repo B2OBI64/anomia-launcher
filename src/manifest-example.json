@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "files": [
+    {
+      "name": "fonts/Rajdhani-Bold.ttf",
+      "url": "https://REMPLACE_MOI/anomia-assets/fonts/Rajdhani-Bold.ttf",
+      "sha256": "REMPLACE_PAR_LE_HASH_SHA256_DU_FICHIER"
+    },
+    {
+      "name": "sounds/notification.ogg",
+      "url": "https://REMPLACE_MOI/anomia-assets/sounds/notification.ogg",
+      "sha256": "REMPLACE_PAR_LE_HASH_SHA256_DU_FICHIER"
+    }
+  ]
+}
