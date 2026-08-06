@@ -535,6 +535,44 @@ body::before {
 .news-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); float: right; }
 .news-card h3 { font-family: var(--font-display); font-weight: 700; margin: 0 0 6px; font-size: 16px; letter-spacing: .2px; }
 .news-card p { margin: 0; font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+.news-body { margin-top: 4px; }
+.news-body p { margin: 4px 0; }
+.news-heading {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--teal-dim);
+  margin: 12px 0 4px;
+}
+.news-heading:first-child { margin-top: 2px; }
+.news-subitem { margin: 8px 0; }
+.news-subitem strong {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.news-body ul { margin: 2px 0 6px; padding-left: 16px; list-style: none; }
+.news-body li {
+  position: relative;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 2px;
+  padding-left: 12px;
+}
+.news-body li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  background: var(--teal-dim);
+}
 
 /* ---------- Twitch ---------- */
 .twitch-wrap {

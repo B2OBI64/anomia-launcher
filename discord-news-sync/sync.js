@@ -4,12 +4,14 @@
 // Lit les derniers messages d'un salon Discord et génère un
 // fichier news.json dans le format attendu par le launcher.
 //
-// Convention d'écriture dans Discord (1er message = 1 note) :
-//
-//   [NOUVEAU] Titre de la note
-//   Le contenu de la note, sur une ou plusieurs lignes.
-//
-// Tags reconnus : [NOUVEAU] [MAJ] [FIX]  (optionnel, "MAJ" par défaut)
+// Aucune convention stricte requise : le premier message = une note.
+// La première ligne devient le titre, le reste le contenu.
+// Optionnel : commencer par [NOUVEAU], [MAJ] ou [FIX] pour forcer
+// l'étiquette de couleur (sinon "MAJ" par défaut). Les lignes qui se
+// terminent par ":" (ex: "Nouveautés :") deviennent des sous-titres,
+// les lignes qui commencent par "*" deviennent des listes à puces,
+// les lignes du type ".1 : Texte" deviennent des points numérotés —
+// exactement le format que tu utilises déjà pour tes patch-notes.
 //
 // Variables d'environnement requises :
 //   DISCORD_BOT_TOKEN   token du bot Discord (permissions: View Channel + Read Message History, sur CE salon uniquement)
@@ -29,6 +31,11 @@ if (!TOKEN || !CHANNEL_ID) {
   process.exit(1);
 }
 
+function stripMentions(text) {
+  // @everyone / @here / mentions @utilisateur / <@&role> n'ont aucun sens hors Discord
+  return text.replace(/@everyone|@here|<@[!&]?\d+>/g, "").trim();
+}
+
 function parseTag(firstLine) {
   const match = firstLine.match(/^\s*\[(\w+)\]\s*(.*)$/);
   if (match) {
@@ -38,7 +45,8 @@ function parseTag(firstLine) {
 }
 
 function messageToNewsItem(msg) {
-  const rawLines = msg.content.split("\n").filter((l) => l.trim() !== "");
+  const cleaned = stripMentions(msg.content);
+  const rawLines = cleaned.split("\n").filter((l) => l.trim() !== "");
   if (rawLines.length === 0) return null;
 
   const { tag, title } = parseTag(rawLines[0]);

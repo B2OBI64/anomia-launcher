@@ -86,14 +86,82 @@ function tagClass(tag) {
   return "maj";
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Transforme le texte brut d'un patch-note (retours à la ligne, "*" en puces,
+// ".1 : Texte" en points numérotés, "-Titre" ou "Titre :" en sous-titre,
+// lignes "---" ignorées) en HTML structuré, pour garder la mise en forme
+// que b2 utilise déjà dans Discord.
+function formatContent(raw) {
+  const lines = String(raw || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !/^-{2,}$/.test(l)); // ignore les lignes "---" (séparateurs)
+
+  let html = "";
+  let i = 0;
+
+  while (i < lines.length) {
+    // répare l'artefact occasionnel de copier-coller Discord où un ":" isolé
+    // se retrouve seul en début de ligne (ex: ": .1 : Tablette")
+    const line = lines[i].replace(/^:\s*/, "");
+    const subMatch = line.match(/^\.(\d+)\s*:\s*(.*)$/);
+
+    if (subMatch) {
+      html += `<div class="news-subitem"><strong>${escapeHtml(subMatch[2] || `Point ${subMatch[1]}`)}</strong>`;
+      i++;
+      const bullets = [];
+      while (i < lines.length && lines[i].startsWith("*")) {
+        bullets.push(lines[i].slice(1).trim());
+        i++;
+      }
+      if (bullets.length) {
+        html += `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
+      }
+      html += "</div>";
+      continue;
+    }
+
+    // sous-titre de section : commence par "-" (ex: "-Nouveautés") ou finit par ":" (ex: "Nouveautés :")
+    const isDashHeading = /^-[^-]/.test(line);
+    const isColonHeading = /:$/.test(line) && !line.startsWith("*");
+    if (isDashHeading || isColonHeading) {
+      const clean = line.replace(/^-+\s*/, "").replace(/:$/, "").trim();
+      html += `<div class="news-heading">${escapeHtml(clean)}</div>`;
+      i++;
+      continue;
+    }
+
+    if (line.startsWith("*")) {
+      const bullets = [];
+      while (i < lines.length && lines[i].startsWith("*")) {
+        bullets.push(lines[i].slice(1).trim());
+        i++;
+      }
+      html += `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
+      continue;
+    }
+
+    html += `<p>${escapeHtml(line)}</p>`;
+    i++;
+  }
+
+  return html;
+}
+
 function renderNewsCard(item) {
   const el = document.createElement("div");
   el.className = "news-card";
   el.innerHTML = `
-    <span class="news-date">${item.date || ""}</span>
-    <span class="news-tag ${tagClass(item.tag)}">${item.tag || "MAJ"}</span>
-    <h3>${item.title || ""}</h3>
-    <p>${item.content || ""}</p>
+    <span class="news-date">${escapeHtml(item.date || "")}</span>
+    <span class="news-tag ${tagClass(item.tag)}">${escapeHtml(item.tag || "MAJ")}</span>
+    <h3>${escapeHtml(item.title || "")}</h3>
+    <div class="news-body">${formatContent(item.content)}</div>
   `;
   return el;
 }
@@ -301,9 +369,9 @@ function renderEventCard(item) {
   const el = document.createElement("div");
   el.className = "news-card";
   el.innerHTML = `
-    <span class="news-tag maj">${formatEventDate(item.date)}</span>
-    <h3>${item.title || ""}</h3>
-    <p>${item.description || ""}</p>
+    <span class="news-tag maj">${escapeHtml(formatEventDate(item.date))}</span>
+    <h3>${escapeHtml(item.title || "")}</h3>
+    <p>${escapeHtml(item.description || "")}</p>
   `;
   return el;
 }
