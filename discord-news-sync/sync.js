@@ -23,7 +23,9 @@ const path = require("path");
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
-const LIMIT = parseInt(process.env.DISCORD_FETCH_LIMIT || "30", 10);
+// Nombre de notes conservées au final dans news.json (les plus récentes). L'historique
+// parcouru côté Discord va bien plus loin que ça, voir fetchAllMessages() ci-dessous.
+const MAX_ITEMS = parseInt(process.env.DISCORD_FETCH_LIMIT || "50", 10);
 const OUTPUT_PATH = process.env.OUTPUT_PATH || path.join(__dirname, "..", "news.json");
 
 if (!TOKEN || !CHANNEL_ID) {
@@ -60,27 +62,53 @@ function messageToNewsItem(msg) {
   };
 }
 
-async function main() {
-  const url = `https://discord.com/api/v10/channels/${CHANNEL_ID}/messages?limit=${LIMIT}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bot ${TOKEN}` }
-  });
+// Discord ne renvoie que 100 messages max par requête. On remonte donc l'historique
+// page par page (avec "before") jusqu'à avoir tout parcouru, avec une sécurité à
+// 1000 messages pour éviter une boucle infinie sur un très gros salon.
+async function fetchAllMessages() {
+  const perPage = 100;
+  const maxPages = 10;
+  let messages = [];
+  let before = null;
 
-  if (!res.ok) {
-    console.error(`Erreur API Discord: HTTP ${res.status} - ${await res.text()}`);
-    process.exit(1);
+  for (let page = 0; page < maxPages; page++) {
+    const url =
+      `https://discord.com/api/v10/channels/${CHANNEL_ID}/messages?limit=${perPage}` +
+      (before ? `&before=${before}` : "");
+
+    const res = await fetch(url, { headers: { Authorization: `Bot ${TOKEN}` } });
+
+    if (!res.ok) {
+      console.error(`Erreur API Discord: HTTP ${res.status} - ${await res.text()}`);
+      process.exit(1);
+    }
+
+    const batch = await res.json();
+    if (batch.length === 0) break;
+
+    messages = messages.concat(batch);
+    before = batch[batch.length - 1].id;
+
+    if (batch.length < perPage) break; // fin de l'historique du salon
+
+    await new Promise((r) => setTimeout(r, 300)); // ménage l'API Discord entre deux pages
   }
 
-  const messages = await res.json();
+  return messages;
+}
+
+async function main() {
+  const messages = await fetchAllMessages();
 
   const news = messages
     .filter((m) => m.content && m.content.trim() !== "")
     .map(messageToNewsItem)
     .filter(Boolean)
-    .sort((a, b) => (a.date < b.date ? 1 : -1)); // plus récent en premier
+    .sort((a, b) => (a.date < b.date ? 1 : -1)) // plus récent en premier
+    .slice(0, MAX_ITEMS);
 
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(news, null, 2), "utf-8");
-  console.log(`${news.length} note(s) écrite(s) dans ${OUTPUT_PATH}`);
+  console.log(`${news.length} note(s) écrite(s) dans ${OUTPUT_PATH} (${messages.length} messages parcourus dans l'historique)`);
 }
 
 main().catch((err) => {

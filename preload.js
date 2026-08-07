@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld("anomia", {
   getCacheInfo: () => ipcRenderer.invoke("cache:info"),
   clearCache: () => ipcRenderer.invoke("cache:clear"),
 
+  // Version de l'app (pour affichage, toujours juste)
+  getAppVersion: () => ipcRenderer.invoke("app:version"),
+
   // Events RP
   getEvents: () => ipcRenderer.invoke("events:get"),
 

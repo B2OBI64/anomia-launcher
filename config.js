@@ -42,7 +42,7 @@ module.exports = {
   // par l'URL brute GitHub une fois ton repo créé, exemple :
   // "https://raw.githubusercontent.com/TON_USER/anomia-launcher-news/main/news.json"
   news: {
-    remoteUrl: null,
+    remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/news.json",
     localFallback: "src/news.json"
   },
 

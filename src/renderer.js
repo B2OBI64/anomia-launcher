@@ -9,6 +9,11 @@ document.getElementById("btn-min").addEventListener("click", () => window.anomia
 document.getElementById("btn-max").addEventListener("click", () => window.anomia.maximize());
 document.getElementById("btn-close").addEventListener("click", () => window.anomia.close());
 
+// --- Version affichée ---
+window.anomia.getAppVersion().then((v) => {
+  document.getElementById("app-version").textContent = `v${v}`;
+});
+
 // --- Navigation entre vues ---
 const navItems = document.querySelectorAll(".nav-item");
 const views = document.querySelectorAll(".view");
@@ -422,7 +427,10 @@ async function checkFiveM() {
     document.getElementById("btn-download-fivem").textContent = "OK";
     document.getElementById("btn-download-fivem").addEventListener("click", () => banner.classList.add("hidden"));
   }
-  status.textContent = `FiveM détecté (dernière mise à jour il y a ${result.daysSinceUpdate} jour(s)).`;
+  status.textContent =
+    typeof result.daysSinceUpdate === "number"
+      ? `FiveM détecté (dernière mise à jour il y a ${result.daysSinceUpdate} jour(s)).`
+      : "FiveM détecté.";
 }
 checkFiveM();
 

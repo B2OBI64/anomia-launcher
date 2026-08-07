@@ -140,6 +140,11 @@ app.on("window-all-closed", () => {
 });
 
 // ============================================================
+// Version de l'app
+// ============================================================
+ipcMain.handle("app:version", () => app.getVersion());
+
+// ============================================================
 // Contrôles de fenêtre (frameless)
 // ============================================================
 ipcMain.on("window:minimize", () => mainWindow?.minimize());
@@ -568,22 +573,40 @@ ipcMain.handle("fivem:check", async () => {
   if (process.platform !== "win32") {
     return { supported: false };
   }
-  const exePath = path.join(process.env.LOCALAPPDATA, "FiveM", "FiveM.app", "FiveM.exe");
-  if (!fs.existsSync(exePath)) {
+
+  // On vérifie si Windows a bien enregistré le protocole fivem:// (clé de registre créée
+  // par l'installeur FiveM). C'est plus fiable qu'un chemin de fichier deviné à l'avance,
+  // qui varie selon les versions/emplacements d'installation.
+  const { execFile } = require("child_process");
+  const protocolRegistered = await new Promise((resolve) => {
+    execFile("reg", ["query", "HKCR\\fivem\\shell\\open\\command"], (err) => {
+      resolve(!err);
+    });
+  });
+
+  if (!protocolRegistered) {
     return { supported: true, installed: false, downloadUrl: config.fivem.downloadUrl };
   }
-  try {
-    const stat = fs.statSync(exePath);
-    const daysSinceUpdate = Math.floor((Date.now() - stat.mtimeMs) / 86400000);
-    return {
-      supported: true,
-      installed: true,
-      daysSinceUpdate,
-      possiblyStale: daysSinceUpdate > config.fivem.staleWarningDays
-    };
-  } catch (err) {
-    return { supported: true, installed: true, error: err.message };
+
+  // Bonus best-effort : si l'exe se trouve à l'emplacement standard, on peut estimer
+  // sa fraîcheur. Si on ne le trouve pas là, ce n'est pas grave, on ne bloque rien.
+  const exePath = path.join(process.env.LOCALAPPDATA, "FiveM", "FiveM.app", "FiveM.exe");
+  if (fs.existsSync(exePath)) {
+    try {
+      const stat = fs.statSync(exePath);
+      const daysSinceUpdate = Math.floor((Date.now() - stat.mtimeMs) / 86400000);
+      return {
+        supported: true,
+        installed: true,
+        daysSinceUpdate,
+        possiblyStale: daysSinceUpdate > config.fivem.staleWarningDays
+      };
+    } catch {
+      // pas grave, on retombe sur "installé" simple ci-dessous
+    }
   }
+
+  return { supported: true, installed: true };
 });
 
 // ============================================================
