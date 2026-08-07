@@ -30,8 +30,8 @@ contextBridge.exposeInMainWorld("anomia", {
   // Version de l'app (pour affichage, toujours juste)
   getAppVersion: () => ipcRenderer.invoke("app:version"),
 
-  // Events RP
-  getEvents: () => ipcRenderer.invoke("events:get"),
+  // Galerie média
+  getMedia: () => ipcRenderer.invoke("media:get"),
 
   // Diagnostic réseau
   diagnoseNetwork: () => ipcRenderer.invoke("network:diagnose"),
@@ -45,12 +45,21 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Auto-update
   installUpdate: () => ipcRenderer.send("update:install"),
+  retryUpdateCheck: () => ipcRenderer.invoke("update:retry"),
   onUpdateAvailable: (callback) => {
     ipcRenderer.removeAllListeners("update:available");
     ipcRenderer.on("update:available", (event, payload) => callback(payload));
   },
+  onUpdateProgress: (callback) => {
+    ipcRenderer.removeAllListeners("update:progress");
+    ipcRenderer.on("update:progress", (event, payload) => callback(payload));
+  },
   onUpdateDownloaded: (callback) => {
     ipcRenderer.removeAllListeners("update:downloaded");
     ipcRenderer.on("update:downloaded", (event, payload) => callback(payload));
+  },
+  onUpdateError: (callback) => {
+    ipcRenderer.removeAllListeners("update:error");
+    ipcRenderer.on("update:error", (event, payload) => callback(payload));
   }
 });

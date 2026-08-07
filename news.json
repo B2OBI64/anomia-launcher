@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [
   {
     "date": "2026-08-07",
@@ -150,3 +151,6 @@
     "content": "---\n✨ **Nouveautés** : \n- Ajout d'un shop moto (paleto)\n- Ajout d'un motel (sandy shore)\n-Plein de propriété on était ajouter a l'achat\n-  Ajout d'item pour la faim/soif\n- Ajouter de la commande PMMS pour les vidéo youtube sur les télé \n- Ajout d'une boombox \n- Ajout d'un sac de vêtements \n🛠️ **Réparé** :\n- Mapping du motel a paleto \n- Le car control (fonctionne avec F4 dans un véhicule \n- Le HUD après création d'un nouveau perso\n- Mapping des avocats\n📈 **reste a faire **\n- Ajouter le motel de paleto comme motel\n- Ajouter les clé véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- Ajouter des scripts pour la police est pour les EMS\n- La traduction des script\n- Retravailler le loading screen \n- Réparé le multi caractère \n<:fivem:1314272210948456479> les petit plus du serveur\n- nous avons enfin un nom pour le serveur ( Anomia )\n- Sur le discord nous avons un bot qui vous donnera toute les info sur le serveur ( serveur on/off , prochain redémarrage, ect ect) \n||||\nLe plus gros patch fait sur le serveur"
   }
 ]
+=======
+[]
+>>>>>>> 9bbb5a8 (Galerie media, fix FiveM, mise a jour obligatoire)

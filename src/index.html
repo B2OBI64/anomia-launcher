@@ -42,9 +42,9 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="1"/><path d="M8 21h8M12 17v4"/></svg>
         Twitch
       </button>
-      <button class="nav-item" data-view="events">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="1"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-        Events
+      <button class="nav-item" data-view="media">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Media
       </button>
       <button class="nav-item" data-view="assets">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/></svg>
@@ -68,12 +68,6 @@
       <div class="banner hidden" id="fivem-banner">
         <span id="fivem-banner-text">FiveM non détecté sur cette machine.</span>
         <button class="link-btn" id="btn-download-fivem">Télécharger FiveM →</button>
-      </div>
-
-      <!-- Bannière mise à jour disponible -->
-      <div class="banner banner-update hidden" id="update-banner">
-        <span id="update-banner-text">Une mise à jour est en cours de téléchargement…</span>
-        <button class="link-btn hidden" id="btn-install-update">Installer &amp; redémarrer →</button>
       </div>
 
 
@@ -188,11 +182,11 @@
         </div>
       </section>
 
-      <!-- VUE EVENTS -->
-      <section class="view hidden" id="view-events">
-        <span class="section-eyebrow">// AGENDA</span>
-        <h1 class="view-title">Events à venir</h1>
-        <div class="news-list" id="events-list">
+      <!-- VUE MEDIA -->
+      <section class="view hidden" id="view-media">
+        <span class="section-eyebrow">// GALERIE</span>
+        <h1 class="view-title">Media des joueurs</h1>
+        <div class="media-grid" id="media-grid">
           <!-- injecté par renderer.js -->
         </div>
       </section>
@@ -256,6 +250,23 @@
       <div class="modal-actions">
         <button class="btn-copy" id="admin-cancel">Annuler</button>
         <button class="btn-connect" id="admin-submit">Déverrouiller</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale mise à jour OBLIGATOIRE - pas de bouton fermer/annuler, bloque tout tant
+       que l'update n'est pas installée (z-index le plus haut, au-dessus des autres modales) -->
+  <div class="modal-overlay hidden" id="update-overlay" style="z-index:100;">
+    <div class="modal-box glass">
+      <h3>Mise à jour requise</h3>
+      <p id="update-message">Une nouvelle version du launcher est disponible. Le serveur nécessite la dernière version pour te connecter — téléchargement en cours…</p>
+      <div class="progress-track" id="update-progress-track">
+        <div class="progress-fill" id="update-progress-fill"></div>
+      </div>
+      <div class="progress-label" id="update-progress-label"></div>
+      <div class="modal-actions">
+        <button class="btn-connect hidden" id="update-install-btn">Installer &amp; redémarrer</button>
+        <button class="btn-connect hidden" id="update-retry-btn">Réessayer</button>
       </div>
     </div>
   </div>

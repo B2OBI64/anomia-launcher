@@ -54,12 +54,12 @@ module.exports = {
     localFolder: "assets-cache"
   },
 
-  // --- Calendrier des events RP ---
+  // --- Galerie média (screenshots partagés par les joueurs) ---
   // Même principe que les news : source locale de secours, remplaçable par une
-  // URL distante (peut être synchronisée depuis Discord, voir discord-news-sync/README.md).
-  events: {
-    remoteUrl: null,
-    localFallback: "src/events.json"
+  // URL distante synchronisée depuis un salon Discord (voir discord-news-sync/README.md).
+  media: {
+    remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/media.json",
+    localFallback: "src/media.json"
   },
 
   // --- Détection FiveM ---

@@ -84,3 +84,22 @@ DISCORD_BOT_TOKEN=xxxx DISCORD_CHANNEL_ID=xxxx node sync.js
 ```
 
 Ça génère `../news.json` que tu peux inspecter avant de pousser sur GitHub.
+
+## Galerie média (screenshots des joueurs)
+
+Même principe, avec `sync-media.js` et le workflow `sync-media.yml` : lit un
+salon Discord dédié aux screenshots et génère `media.json` (image + auteur +
+date) pour chaque pièce jointe image trouvée. Pas de convention d'écriture,
+n'importe quel message avec une image en pièce jointe est repris.
+
+Mise en place identique aux patch-notes, avec en plus :
+- Une variable de repo GitHub `DISCORD_MEDIA_CHANNEL_ID` (le bot Discord et le
+  secret `DISCORD_BOT_TOKEN` sont réutilisés, pas besoin d'un second bot)
+- `config.media.remoteUrl` dans le launcher, déjà réglé sur
+  `https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/media.json`
+
+Pour tester en local :
+```bash
+cd discord-news-sync
+DISCORD_BOT_TOKEN=xxxx DISCORD_MEDIA_CHANNEL_ID=xxxx node sync-media.js
+```

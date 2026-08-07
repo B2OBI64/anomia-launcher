@@ -103,24 +103,32 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 
-  // Vérifie les mises à jour au démarrage (silencieux si aucune config "publish" valide,
-  // ou si on est en dev via `npm start` plutôt qu'un build installé)
+  // Vérifie les mises à jour au démarrage, puis répète périodiquement pour couvrir
+  // les sessions longues (silencieux si aucune config "publish" valide, ou en dev)
   if (app.isPackaged) {
-    setTimeout(() => {
+    const checkNow = () => {
       autoUpdater.checkForUpdates().catch(() => {
         // pas de connexion / pas de repo configuré / pas de release publiée -> on ignore silencieusement
       });
-    }, 3000);
+    };
+    setTimeout(checkNow, 3000);
+    setInterval(checkNow, 15 * 60 * 1000);
   }
 });
 
 // ============================================================
 // Auto-update (electron-updater + GitHub Releases)
+// Obligatoire : dès qu'une mise à jour est détectée, le renderer affiche une
+// modale bloquante (voir renderer.js) tant que l'installation n'est pas faite.
 // ============================================================
 autoUpdater.autoDownload = true;
 
 autoUpdater.on("update-available", (info) => {
   mainWindow?.webContents.send("update:available", { version: info.version });
+});
+
+autoUpdater.on("download-progress", (progress) => {
+  mainWindow?.webContents.send("update:progress", { percent: progress.percent });
 });
 
 autoUpdater.on("update-downloaded", (info) => {
@@ -129,10 +137,20 @@ autoUpdater.on("update-downloaded", (info) => {
 
 autoUpdater.on("error", (err) => {
   console.error("[auto-update]", err.message);
+  mainWindow?.webContents.send("update:error", { message: err.message });
 });
 
 ipcMain.on("update:install", () => {
   autoUpdater.quitAndInstall();
+});
+
+ipcMain.handle("update:retry", async () => {
+  try {
+    await autoUpdater.checkForUpdates();
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 });
 
 app.on("window-all-closed", () => {
@@ -491,29 +509,25 @@ ipcMain.handle("cache:clear", async () => {
 // ============================================================
 // Calendrier des events RP
 // ============================================================
-ipcMain.handle("events:get", async () => {
-  let events = [];
-  if (config.events.remoteUrl) {
+ipcMain.handle("media:get", async () => {
+  let media = [];
+  if (config.media.remoteUrl) {
     try {
-      const remote = await fetchJson(config.events.remoteUrl);
-      if (Array.isArray(remote)) events = remote;
+      const remote = await fetchJson(config.media.remoteUrl);
+      if (Array.isArray(remote)) media = remote;
     } catch {
       // on retombe sur le fichier local ci-dessous
     }
   }
-  if (events.length === 0) {
+  if (media.length === 0) {
     try {
-      const raw = fs.readFileSync(path.join(__dirname, config.events.localFallback), "utf-8");
-      events = JSON.parse(raw);
+      const raw = fs.readFileSync(path.join(__dirname, config.media.localFallback), "utf-8");
+      media = JSON.parse(raw);
     } catch {
-      events = [];
+      media = [];
     }
   }
-  // On ne garde que les events à venir, triés du plus proche au plus lointain
-  const now = Date.now();
-  return events
-    .filter((e) => e.date && new Date(e.date).getTime() >= now)
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  return media;
 });
 
 // ============================================================
@@ -578,8 +592,9 @@ ipcMain.handle("fivem:check", async () => {
   // par l'installeur FiveM). C'est plus fiable qu'un chemin de fichier deviné à l'avance,
   // qui varie selon les versions/emplacements d'installation.
   const { execFile } = require("child_process");
+  const regExePath = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "reg.exe");
   const protocolRegistered = await new Promise((resolve) => {
-    execFile("reg", ["query", "HKCR\\fivem\\shell\\open\\command"], (err) => {
+    execFile(regExePath, ["query", "HKCR\\fivem\\shell\\open\\command"], (err) => {
       resolve(!err);
     });
   });

@@ -22,7 +22,7 @@ function goToView(name) {
   navItems.forEach((btn) => btn.classList.toggle("active", btn.dataset.view === name));
   views.forEach((v) => v.classList.toggle("hidden", v.id !== `view-${name}`));
   if (name === "twitch") loadTwitchEmbed();
-  if (name === "events") loadEvents();
+  if (name === "media") loadMedia();
   if (name === "admin") refreshAdminStats();
 }
 
@@ -364,35 +364,30 @@ document.getElementById("btn-diagnose").addEventListener("click", async (e) => {
   }
 });
 
-// --- Events RP ---
-function formatEventDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
-}
-
-function renderEventCard(item) {
+// --- Galerie média ---
+function renderMediaItem(item) {
   const el = document.createElement("div");
-  el.className = "news-card";
+  el.className = "media-item";
   el.innerHTML = `
-    <span class="news-tag maj">${escapeHtml(formatEventDate(item.date))}</span>
-    <h3>${escapeHtml(item.title || "")}</h3>
-    <p>${escapeHtml(item.description || "")}</p>
+    <img src="${escapeHtml(item.url)}" alt="" loading="lazy" />
+    <div class="media-item-author">${escapeHtml(item.author || "")}${item.date ? " · " + escapeHtml(item.date) : ""}</div>
   `;
+  el.addEventListener("click", () => window.anomia.openExternal(item.url));
   return el;
 }
 
-let eventsLoaded = false;
-async function loadEvents() {
-  if (eventsLoaded) return;
-  eventsLoaded = true;
-  const list = document.getElementById("events-list");
-  const events = await window.anomia.getEvents();
-  list.innerHTML = "";
-  if (!events.length) {
-    list.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Aucun event prévu pour le moment.</p>`;
+let mediaLoaded = false;
+async function loadMedia() {
+  if (mediaLoaded) return;
+  mediaLoaded = true;
+  const grid = document.getElementById("media-grid");
+  const media = await window.anomia.getMedia();
+  grid.innerHTML = "";
+  if (!media.length) {
+    grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Aucun media partagé pour le moment.</p>`;
     return;
   }
-  events.forEach((item) => list.appendChild(renderEventCard(item)));
+  media.forEach((item) => grid.appendChild(renderMediaItem(item)));
 }
 
 // --- Détection FiveM ---
@@ -434,20 +429,54 @@ async function checkFiveM() {
 }
 checkFiveM();
 
-// --- Auto-update ---
+// --- Auto-update (obligatoire) ---
+const updateOverlay = document.getElementById("update-overlay");
+const updateMessage = document.getElementById("update-message");
+const updateProgressTrack = document.getElementById("update-progress-track");
+const updateProgressFill = document.getElementById("update-progress-fill");
+const updateProgressLabel = document.getElementById("update-progress-label");
+const updateInstallBtn = document.getElementById("update-install-btn");
+const updateRetryBtn = document.getElementById("update-retry-btn");
+
 window.anomia.onUpdateAvailable(() => {
-  const banner = document.getElementById("update-banner");
-  document.getElementById("update-banner-text").textContent = "Une mise à jour est en cours de téléchargement…";
-  banner.classList.remove("hidden");
+  updateOverlay.classList.remove("hidden");
+  updateMessage.textContent = "Une nouvelle version du launcher est disponible. Le serveur nécessite la dernière version pour te connecter — téléchargement en cours…";
+  updateProgressTrack.classList.remove("hidden");
+  updateProgressFill.style.width = "0%";
+  updateInstallBtn.classList.add("hidden");
+  updateRetryBtn.classList.add("hidden");
+});
+
+window.anomia.onUpdateProgress(({ percent }) => {
+  updateOverlay.classList.remove("hidden"); // sécurité si l'event arrive avant "available"
+  updateProgressFill.style.width = `${Math.round(percent)}%`;
+  updateProgressLabel.textContent = `${Math.round(percent)}%`;
 });
 
 window.anomia.onUpdateDownloaded(({ version }) => {
-  const banner = document.getElementById("update-banner");
-  const installBtn = document.getElementById("btn-install-update");
-  document.getElementById("update-banner-text").textContent = `Mise à jour v${version} prête.`;
-  banner.classList.remove("hidden");
-  installBtn.classList.remove("hidden");
-  installBtn.addEventListener("click", () => window.anomia.installUpdate());
+  updateOverlay.classList.remove("hidden");
+  updateMessage.textContent = `Mise à jour v${version} prête. Installe-la pour pouvoir te connecter au serveur.`;
+  updateProgressTrack.classList.add("hidden");
+  updateProgressLabel.textContent = "";
+  updateInstallBtn.classList.remove("hidden");
+  updateRetryBtn.classList.add("hidden");
+});
+
+window.anomia.onUpdateError(({ message }) => {
+  // Seulement affiché si une mise à jour était déjà en cours (overlay visible) -
+  // une simple absence de connexion au démarrage ne doit jamais bloquer le launcher.
+  if (updateOverlay.classList.contains("hidden")) return;
+  updateMessage.textContent = `Erreur pendant la mise à jour : ${message}`;
+  updateProgressTrack.classList.add("hidden");
+  updateInstallBtn.classList.add("hidden");
+  updateRetryBtn.classList.remove("hidden");
+});
+
+updateInstallBtn.addEventListener("click", () => window.anomia.installUpdate());
+updateRetryBtn.addEventListener("click", async () => {
+  updateMessage.textContent = "Nouvelle tentative…";
+  updateRetryBtn.classList.add("hidden");
+  await window.anomia.retryUpdateCheck();
 });
 
 // --- Admin (lecture seule) ---
