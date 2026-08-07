@@ -13,6 +13,25 @@ let mainWindow;
 let localServerPort = null;
 
 // ============================================================
+// Verrou mono-instance. Sans ça, relancer le launcher (double-clic accidentel,
+// raccourci Discord, etc.) peut faire tourner plusieurs process en fond sans
+// fenêtre visible, ce qui bloque ensuite la désinstallation/mise à jour avec
+// un message "ferme d'abord l'application" alors qu'aucune fenêtre n'est ouverte.
+// ============================================================
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+// ============================================================
 // Petit serveur HTTP local qui sert src/ et assets/.
 // Nécessaire pour que l'embed Twitch fonctionne : Twitch exige un
 // paramètre "parent" qui corresponde au vrai domaine de la page.
@@ -421,13 +440,38 @@ ipcMain.handle("assets:check", async (event) => {
 
 // ============================================================
 // Nettoyage du cache FiveM (préserve le dossier game-storage)
+//
+// Structure d'installation FiveM : historiquement %localappdata%\FiveM\FiveM.app\,
+// mais les installs récents utilisent %localappdata%\FiveM\FiveM Application Data\
+// à la place, sans sous-dossier "FiveM.app". On teste les deux.
 // ============================================================
+const FIVEM_APP_FOLDER_CANDIDATES = ["FiveM.app", "FiveM Application Data"];
+
 function getFiveMCacheDir() {
-  if (process.platform === "win32") {
-    return path.join(process.env.LOCALAPPDATA, "FiveM", "FiveM.app", "data", "cache");
+  if (process.platform !== "win32") {
+    // Support best-effort si FiveM tourne via une autre plateforme
+    return path.join(app.getPath("home"), ".fivem", "data", "cache");
   }
-  // Support best-effort si FiveM tourne via une autre plateforme
-  return path.join(app.getPath("home"), ".fivem", "data", "cache");
+  for (const folder of FIVEM_APP_FOLDER_CANDIDATES) {
+    const candidate = path.join(process.env.LOCALAPPDATA, "FiveM", folder, "data", "cache");
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  // Aucun trouvé : on retourne le premier candidat quand même (le code appelant
+  // gère proprement le cas "dossier introuvable")
+  return path.join(process.env.LOCALAPPDATA, "FiveM", FIVEM_APP_FOLDER_CANDIDATES[0], "data", "cache");
+}
+
+// Cherche FiveM.exe soit directement dans %localappdata%\FiveM\ (installs récents),
+// soit dans %localappdata%\FiveM\FiveM.app\ (ancienne structure)
+function findFiveMExe() {
+  if (!process.env.LOCALAPPDATA) return null;
+  const candidates = [
+    path.join(process.env.LOCALAPPDATA, "FiveM", "FiveM.exe"),
+    ...FIVEM_APP_FOLDER_CANDIDATES.map((folder) =>
+      path.join(process.env.LOCALAPPDATA, "FiveM", folder, "FiveM.exe")
+    )
+  ];
+  return candidates.find((p) => fs.existsSync(p)) || null;
 }
 
 function getDirSize(dir) {
@@ -588,16 +632,28 @@ ipcMain.handle("fivem:check", async () => {
     return { supported: false };
   }
 
-  // On vérifie si Windows a bien enregistré le protocole fivem:// (clé de registre créée
-  // par l'installeur FiveM). C'est plus fiable qu'un chemin de fichier deviné à l'avance,
-  // qui varie selon les versions/emplacements d'installation.
+  // On vérifie si Windows a le protocole fivem:// enregistré. L'installeur FiveM
+  // (sans droits admin, cas le plus courant) écrit dans HKEY_CURRENT_USER, qui est
+  // censé être fusionné dans HKEY_CLASSES_ROOT — mais pour plus de robustesse on
+  // vérifie aussi HKCU directement, plus l'existence du fichier exe en dernier recours.
   const { execFile } = require("child_process");
   const regExePath = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "reg.exe");
-  const protocolRegistered = await new Promise((resolve) => {
-    execFile(regExePath, ["query", "HKCR\\fivem\\shell\\open\\command"], (err) => {
-      resolve(!err);
+
+  function regKeyExists(hivePath) {
+    return new Promise((resolve) => {
+      execFile(regExePath, ["query", hivePath], (err) => resolve(!err));
     });
-  });
+  }
+
+  const [viaHkcr, viaHkcu] = await Promise.all([
+    regKeyExists("HKCR\\fivem\\shell\\open\\command"),
+    regKeyExists("HKCU\\Software\\Classes\\fivem\\shell\\open\\command")
+  ]);
+
+  const exePath = findFiveMExe();
+  const exeExists = exePath !== null;
+
+  const protocolRegistered = viaHkcr || viaHkcu || exeExists;
 
   if (!protocolRegistered) {
     return { supported: true, installed: false, downloadUrl: config.fivem.downloadUrl };
@@ -605,8 +661,7 @@ ipcMain.handle("fivem:check", async () => {
 
   // Bonus best-effort : si l'exe se trouve à l'emplacement standard, on peut estimer
   // sa fraîcheur. Si on ne le trouve pas là, ce n'est pas grave, on ne bloque rien.
-  const exePath = path.join(process.env.LOCALAPPDATA, "FiveM", "FiveM.app", "FiveM.exe");
-  if (fs.existsSync(exePath)) {
+  if (exeExists) {
     try {
       const stat = fs.statSync(exePath);
       const daysSinceUpdate = Math.floor((Date.now() - stat.mtimeMs) / 86400000);
