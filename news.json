@@ -1,5 +1,11 @@
 [
   {
+    "date": "2026-08-07",
+    "tag": "MAJ",
+    "title": "test test",
+    "content": ""
+  },
+  {
     "date": "2026-08-06",
     "tag": "NOUVEAU",
     "title": "Test de synchronisation",
