@@ -51,6 +51,10 @@ contextBridge.exposeInMainWorld("anomia", {
     ipcRenderer.removeAllListeners("update:available");
     ipcRenderer.on("update:available", (event, payload) => callback(payload));
   },
+  onUpdateNotAvailable: (callback) => {
+    ipcRenderer.removeAllListeners("update:not-available");
+    ipcRenderer.on("update:not-available", (event, payload) => callback(payload));
+  },
   onUpdateProgress: (callback) => {
     ipcRenderer.removeAllListeners("update:progress");
     ipcRenderer.on("update:progress", (event, payload) => callback(payload));

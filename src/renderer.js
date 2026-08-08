@@ -438,6 +438,7 @@ const updateProgressLabel = document.getElementById("update-progress-label");
 const updateDownloadBtn = document.getElementById("update-download-btn");
 const updateInstallBtn = document.getElementById("update-install-btn");
 const updateRetryBtn = document.getElementById("update-retry-btn");
+const updateStatusLabel = document.getElementById("update-status");
 let pendingUpdateVersion = null;
 
 window.anomia.onUpdateAvailable(({ version }) => {
@@ -449,6 +450,13 @@ window.anomia.onUpdateAvailable(({ version }) => {
   updateDownloadBtn.classList.remove("hidden");
   updateInstallBtn.classList.add("hidden");
   updateRetryBtn.classList.add("hidden");
+  updateStatusLabel.textContent = "Mise à jour dispo";
+  updateStatusLabel.classList.remove("checking");
+});
+
+window.anomia.onUpdateNotAvailable(() => {
+  updateStatusLabel.textContent = "✓ À jour";
+  updateStatusLabel.classList.remove("checking");
 });
 
 window.anomia.onUpdateProgress(({ percent }) => {

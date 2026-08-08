@@ -202,6 +202,10 @@ autoUpdater.on("update-available", (info) => {
   mainWindow?.webContents.send("update:available", { version: info.version });
 });
 
+autoUpdater.on("update-not-available", (info) => {
+  mainWindow?.webContents.send("update:not-available", { version: info.version });
+});
+
 autoUpdater.on("download-progress", (progress) => {
   mainWindow?.webContents.send("update:progress", { percent: progress.percent });
 });

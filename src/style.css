@@ -247,6 +247,16 @@ body::before {
 }
 .ext-link:hover { border-color: var(--teal); color: var(--teal); }
 .version { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-align: center; letter-spacing: .5px; }
+.update-status {
+  display: block;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .4px;
+  margin-top: 3px;
+  color: var(--teal);
+}
+.update-status.checking { color: var(--text-faint); }
 
 /* ---------- Content ---------- */
 .content {
