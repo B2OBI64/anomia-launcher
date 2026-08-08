@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Serveur
   getServerStatus: () => ipcRenderer.invoke("server:status"),
+  getJobPopulation: () => ipcRenderer.invoke("server:jobPopulation"),
   connect: () => ipcRenderer.send("server:connect"),
 
   // News
@@ -32,6 +33,9 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Galerie média
   getMedia: () => ipcRenderer.invoke("media:get"),
+
+  // Devlog
+  getDevlog: () => ipcRenderer.invoke("devlog:get"),
 
   // Diagnostic réseau
   diagnoseNetwork: () => ipcRenderer.invoke("network:diagnose"),

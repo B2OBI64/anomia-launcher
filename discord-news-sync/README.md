@@ -103,3 +103,32 @@ Pour tester en local :
 cd discord-news-sync
 DISCORD_BOT_TOKEN=xxxx DISCORD_MEDIA_CHANNEL_ID=xxxx node sync-media.js
 ```
+
+## Devlog (progression des scripts en cours)
+
+Même principe, avec `sync-devlog.js` et le workflow `sync-devlog.yml`. Un
+message = une feature, avec une checklist :
+
+```
+Police 2.0
+[x] Système de garde à vue
+[x] Refonte MDT
+[ ] Système de mandats
+[ ] Interface radio améliorée
+```
+
+Le launcher calcule le % automatiquement (ici 2/4 = 50%). Pour valider une
+tâche : édite le message Discord, change `[ ]` en `[x]` — l'API Discord
+renvoie toujours le contenu actuel d'un message, donc la prochaine synchro
+récupère l'état à jour automatiquement, pas besoin de reposter.
+
+Mise en place identique aux patch-notes, avec en plus :
+- Une variable de repo GitHub `DISCORD_DEVLOG_CHANNEL_ID`
+- `config.devlog.remoteUrl` dans le launcher, déjà réglé sur
+  `https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/devlog.json`
+
+Pour tester en local :
+```bash
+cd discord-news-sync
+DISCORD_BOT_TOKEN=xxxx DISCORD_DEVLOG_CHANNEL_ID=xxxx node sync-devlog.js
+```

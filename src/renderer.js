@@ -23,6 +23,7 @@ function goToView(name) {
   views.forEach((v) => v.classList.toggle("hidden", v.id !== `view-${name}`));
   if (name === "twitch") loadTwitchEmbed();
   if (name === "media") loadMedia();
+  if (name === "devlog") loadDevlog();
   if (name === "admin") refreshAdminStats();
 }
 
@@ -364,6 +365,43 @@ document.getElementById("btn-diagnose").addEventListener("click", async (e) => {
   }
 });
 
+// --- Population par job ---
+document.getElementById("btn-job-population").addEventListener("click", async (e) => {
+  const btn = e.target;
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Chargement…";
+
+  try {
+    const result = await window.anomia.getJobPopulation();
+    if (!result.ok) {
+      await showInfo("Population par job", `<p>${escapeHtml(result.error)}</p>`);
+      return;
+    }
+    const entries = Object.entries(result.jobs);
+    if (entries.length === 0) {
+      await showInfo("Population par job", `<p style="color:var(--text-dim);">Aucun joueur en service actuellement.</p>`);
+      return;
+    }
+    entries.sort((a, b) => b[1] - a[1]); // du plus peuplé au moins peuplé
+    const rows = entries
+      .map(
+        ([label, count]) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:13px;">
+          <span style="color:var(--text-dim);">${escapeHtml(label)}</span>
+          <span style="color:var(--teal);font-weight:700;">${count}</span>
+        </div>`
+      )
+      .join("");
+    await showInfo("Population par job", `<div>${rows}</div>`);
+  } catch (err) {
+    await showInfo("Population par job", `<p>Erreur inattendue : ${err.message}</p>`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
+
 // --- Galerie média ---
 function renderMediaItem(item) {
   const el = document.createElement("div");
@@ -388,6 +426,45 @@ async function loadMedia() {
     return;
   }
   media.forEach((item) => grid.appendChild(renderMediaItem(item)));
+}
+
+// --- Devlog ---
+function renderDevlogCard(item) {
+  const el = document.createElement("div");
+  el.className = "devlog-card";
+  const tasksHtml = (item.tasks || [])
+    .map(
+      (t) => `
+      <li class="${t.done ? "done" : ""}">
+        <span class="devlog-check">${t.done ? "✓" : ""}</span>
+        <span>${escapeHtml(t.text)}</span>
+      </li>`
+    )
+    .join("");
+  el.innerHTML = `
+    <div class="devlog-header">
+      <h3>${escapeHtml(item.title || "")}</h3>
+      <span class="devlog-percent">${item.percent ?? 0}%</span>
+    </div>
+    ${item.description ? `<p class="devlog-desc">${escapeHtml(item.description)}</p>` : ""}
+    <div class="devlog-bar-track"><div class="devlog-bar-fill" style="width:${item.percent ?? 0}%;"></div></div>
+    <ul class="devlog-tasks">${tasksHtml}</ul>
+  `;
+  return el;
+}
+
+let devlogLoaded = false;
+async function loadDevlog() {
+  if (devlogLoaded) return;
+  devlogLoaded = true;
+  const list = document.getElementById("devlog-list");
+  const devlog = await window.anomia.getDevlog();
+  list.innerHTML = "";
+  if (!devlog.length) {
+    list.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Rien en cours pour le moment.</p>`;
+    return;
+  }
+  devlog.forEach((item) => list.appendChild(renderDevlogCard(item)));
 }
 
 // --- Détection FiveM ---

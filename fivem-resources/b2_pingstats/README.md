@@ -1,15 +1,35 @@
 # b2_pingstats
 
-Petite ressource FiveM qui expose le **ping moyen** des joueurs connectés,
-sans jamais exposer leurs pseudos ou identifiants — juste deux nombres :
+Petite ressource FiveM qui expose le **ping moyen** et la **population par job**
+des joueurs connectés, sans jamais exposer leurs pseudos ou identifiants —
+juste des nombres agrégés :
 
 ```json
-{ "avgPing": 42, "players": 12 }
+{ "avgPing": 42, "players": 12, "jobs": { "Police": 5, "EMS": 2, "Mécano": 3, "Civils": 41, "Gouvernement": 1, "Autres": 6 } }
 ```
 
-C'est ce que le launcher Anomia va lire pour afficher le "Ping moyen" dans
-le bandeau télémétrie de l'accueil, sans avoir besoin d'activer
-`sv_endpointprivacy false` (qui exposerait la liste complète des joueurs).
+C'est ce que le launcher Anomia va lire pour afficher le "Ping moyen" dans le
+bandeau télémétrie de l'accueil, et la population par job via le bouton dédié.
+Aucun besoin d'activer `sv_endpointprivacy false` (qui exposerait la liste
+complète des joueurs).
+
+## Personnaliser le regroupement des jobs
+
+Ouvre `server/main.lua`, table `JOB_CATEGORIES` en haut du fichier : chaque
+ligne associe un nom interne QBCore (celui de `qb-core/shared/jobs.lua`) à une
+catégorie affichée dans le launcher. Tout job non listé tombe automatiquement
+dans "Autres". Exemple pour détailler le taxi séparément :
+
+```lua
+local JOB_CATEGORIES = {
+    police = "Police",
+    ambulance = "EMS",
+    bennys = "Mécano",
+    unemployed = "Civils",
+    gouvernement = "Gouvernement",
+    taxi = "Taxi"
+}
+```
 
 ## Installation côté serveur
 
@@ -23,8 +43,9 @@ le bandeau télémétrie de l'accueil, sans avoir besoin d'activer
    la console/txAdmin
 4. Vérifie dans la console que tu vois le message :
    ```
-   [b2_pingstats] Endpoint prêt sur /b2_pingstats/ (ping moyen, sans données joueur individuelles)
+   [b2_pingstats] Endpoint prêt sur /b2_pingstats/ (ping moyen + population par job, sans données joueur individuelles)
    ```
+   Si tu vois un message d'erreur mentionnant `qb-core`, vérifie que `b2_pingstats` démarre bien APRÈS `qb-core` dans ton `server.cfg` (la ligne `dependency '/qb-core'` du manifest s'en occupe normalement automatiquement).
 
 ## Vérifier que ça marche
 
@@ -32,7 +53,7 @@ Ouvre dans un navigateur (ou `curl`) :
 ```
 http://185.44.80.32:30140/b2_pingstats/
 ```
-Tu dois voir un JSON du type `{"avgPing":38,"players":7}`.
+Tu dois voir un JSON du type `{"avgPing":38,"players":7,"jobs":{"Police":3,"Civils":4}}`.
 
 Si ça ne répond pas :
 - Vérifie que la ressource est bien démarrée (`ensure` dans le `server.cfg` + resmon/txAdmin)

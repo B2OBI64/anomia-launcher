@@ -1,0 +1,35 @@
+name: Sync devlog Discord
+
+on:
+  schedule:
+    - cron: "2,12,22,32,42,52 * * * *"   # décalé des deux autres workflows, évite les collisions git push
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Récupérer le devlog depuis Discord
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_DEVLOG_CHANNEL_ID: ${{ vars.DISCORD_DEVLOG_CHANNEL_ID }}
+        run: node discord-news-sync/sync-devlog.js
+
+      - name: Commit si le contenu a changé
+        run: |
+          git config user.name "anomia-news-bot"
+          git config user.email "actions@github.com"
+          git add devlog.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Sync devlog Discord [auto]"
+          git pull --rebase origin main
+          git push

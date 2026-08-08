@@ -2,16 +2,62 @@
 -- b2_pingstats
 --
 -- Expose UNIQUEMENT des statistiques agregees (ping moyen, nombre
--- de joueurs) via un endpoint HTTP custom, pense pour le launcher
--- Anomia. Ne renvoie JAMAIS de pseudo, d'identifiant, ni aucune
--- donnee individuelle de joueur - seulement des nombres agreges.
+-- de joueurs, population par job) via un endpoint HTTP custom, pense
+-- pour le launcher Anomia. Ne renvoie JAMAIS de pseudo, d'identifiant,
+-- ni aucune donnee individuelle de joueur - seulement des nombres agreges.
 --
 -- URL exposee (meme port que le jeu) :
 --   http://IP:PORT/b2_pingstats/
 --
 -- Reponse JSON :
---   { "avgPing": 42, "players": 12 }
+--   { "avgPing": 42, "players": 12, "jobs": { "Police": 5, "EMS": 2, "Civils": 41 } }
 -- ============================================================
+
+local QBCoreCache = nil
+local function getQBCore()
+    if not QBCoreCache then
+        local ok, core = pcall(function() return exports['qb-core']:GetCoreObject() end)
+        if ok then QBCoreCache = core end
+    end
+    return QBCoreCache
+end
+
+-- Association job QBCore (nom interne, voir qb-core/shared/jobs.lua) -> catégorie
+-- affichée dans le launcher. Modifie cette table pour ajuster le regroupement -
+-- tout job non listé ici tombe automatiquement dans "Autres".
+local JOB_CATEGORIES = {
+    police = "Police",
+    ambulance = "EMS",
+    bennys = "Mécano",
+    unemployed = "Civils",
+    gouvernement = "Gouvernement"
+}
+local DEFAULT_CATEGORY = "Autres"
+
+local function computeJobCounts()
+    local counts = {}
+    local QBCore = getQBCore()
+    if not QBCore then return counts end
+
+    local ok, players = pcall(function() return QBCore.Functions.GetPlayers() end)
+    if not ok then return counts end
+
+    for _, playerId in ipairs(players) do
+        local Player = QBCore.Functions.GetPlayer(playerId)
+        if Player and Player.PlayerData and Player.PlayerData.job then
+            local job = Player.PlayerData.job
+            -- On ne compte que les joueurs "en service" pour les jobs qui ont un
+            -- vrai statut de service (police/EMS/mecano/...). Les jobs sans ce
+            -- concept (ex: unemployed) ont onduty=true par défaut, donc comptés.
+            if job.onduty ~= false then
+                local category = JOB_CATEGORIES[job.name] or DEFAULT_CATEGORY
+                counts[category] = (counts[category] or 0) + 1
+            end
+        end
+    end
+
+    return counts
+end
 
 local function computeStats()
     local players = GetPlayers()
@@ -28,7 +74,8 @@ local function computeStats()
 
     return {
         avgPing = count > 0 and math.floor(total / count) or 0,
-        players = #players
+        players = #players,
+        jobs = computeJobCounts()
     }
 end
 
@@ -43,4 +90,4 @@ SetHttpHandler(function(req, res)
     res.send(json.encode(stats))
 end)
 
-print('[b2_pingstats] Endpoint pret sur /b2_pingstats/ (ping moyen, sans donnees joueur individuelles)')
+print('[b2_pingstats] Endpoint pret sur /b2_pingstats/ (ping moyen + population par job, sans donnees joueur individuelles)')

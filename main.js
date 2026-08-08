@@ -392,6 +392,18 @@ ipcMain.handle("server:status", async () => {
 });
 
 // ============================================================
+// Population par job (via la ressource b2_pingstats, comptage agrégé uniquement)
+// ============================================================
+ipcMain.handle("server:jobPopulation", async () => {
+  try {
+    const stats = await fetchJson(config.server.pingStatsUrl, 5000);
+    return { ok: true, jobs: stats.jobs || {} };
+  } catch (err) {
+    return { ok: false, error: "La ressource b2_pingstats ne répond pas (pas encore installée ou serveur hors ligne)." };
+  }
+});
+
+// ============================================================
 // Connexion au serveur
 // ============================================================
 ipcMain.on("server:connect", () => {
@@ -638,6 +650,27 @@ ipcMain.handle("media:get", async () => {
     }
   }
   return media;
+});
+
+ipcMain.handle("devlog:get", async () => {
+  let devlog = [];
+  if (config.devlog.remoteUrl) {
+    try {
+      const remote = await fetchJson(config.devlog.remoteUrl);
+      if (Array.isArray(remote) && remote.length > 0) devlog = remote;
+    } catch {
+      // on retombe sur le fichier local ci-dessous
+    }
+  }
+  if (devlog.length === 0) {
+    try {
+      const raw = fs.readFileSync(path.join(__dirname, config.devlog.localFallback), "utf-8");
+      devlog = JSON.parse(raw);
+    } catch {
+      devlog = [];
+    }
+  }
+  return devlog;
 });
 
 // ============================================================
