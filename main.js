@@ -10,7 +10,11 @@ const { autoUpdater } = require("electron-updater");
 const config = require("./config");
 
 let mainWindow;
+let splashWindow;
 let localServerPort = null;
+
+const MIN_SPLASH_MS = 6000; // durée minimum d'affichage du splash, façon Discord
+const MAX_UPDATE_WAIT_MS = 10000; // sécurité : jamais plus de 10s à attendre le check
 
 // ============================================================
 // Verrou mono-instance. Sans ça, relancer le launcher (double-clic accidentel,
@@ -84,6 +88,20 @@ function startLocalServer() {
   });
 }
 
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 300,
+    height: 340,
+    frame: false,
+    resizable: false,
+    backgroundColor: "#05090a",
+    show: false,
+    webPreferences: { sandbox: false }
+  });
+  splashWindow.loadURL(`http://localhost:${localServerPort}/src/splash.html`);
+  splashWindow.once("ready-to-show", () => splashWindow.show());
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1180,
@@ -103,16 +121,29 @@ function createWindow() {
 
   mainWindow.loadURL(`http://localhost:${localServerPort}/src/index.html`);
 
-  // On ne montre la fenêtre qu'une fois le contenu prêt ET la vérification de
-  // mise à jour terminée (comme Discord : on checke avant d'afficher quoi que
-  // ce soit). Sécurité : timeout pour ne jamais bloquer indéfiniment si le
-  // check traîne (pas de connexion, GitHub lent, etc.)
+  // On ne montre la fenêtre principale qu'une fois le contenu prêt ET la
+  // vérification de mise à jour terminée, avec un splash animé affiché au moins
+  // MIN_SPLASH_MS (façon Discord). Sécurité : jamais plus de MAX_UPDATE_WAIT_MS
+  // à attendre le check si la connexion est lente/coupée.
   let contentReady = false;
   let updateCheckSettled = !app.isPackaged; // en dev (npm start), pas de check -> pas d'attente
+  const startTime = Date.now();
+
+  const swapToMainWindow = () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
+    if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+  };
 
   const tryShowWindow = () => {
-    if (contentReady && updateCheckSettled && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.show();
+    if (!contentReady || !updateCheckSettled) return;
+    if (!app.isPackaged) return swapToMainWindow();
+
+    const elapsed = Date.now() - startTime;
+    const remaining = MIN_SPLASH_MS - elapsed;
+    if (remaining > 0) {
+      setTimeout(swapToMainWindow, remaining);
+    } else {
+      swapToMainWindow();
     }
   };
 
@@ -131,7 +162,7 @@ function createWindow() {
       .checkForUpdates()
       .catch(() => {}) // pas de connexion / pas de release publiée -> on ignore silencieusement
       .finally(settleUpdateCheck);
-    setTimeout(settleUpdateCheck, 6000); // filet de sécurité, jamais plus de 6s d'attente
+    setTimeout(settleUpdateCheck, MAX_UPDATE_WAIT_MS);
   }
 
   // Toutes les tentatives d'ouverture de nouvelle fenêtre (liens externes) passent par le navigateur système
@@ -143,6 +174,7 @@ function createWindow() {
 
 app.whenReady().then(async () => {
   localServerPort = await startLocalServer();
+  if (app.isPackaged) createSplashWindow();
   createWindow();
 
   app.on("activate", () => {
