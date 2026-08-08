@@ -107,6 +107,25 @@ async function main() {
     .sort((a, b) => (a.date < b.date ? 1 : -1)) // plus récent en premier
     .slice(0, MAX_ITEMS);
 
+  // Protection : on ne laisse JAMAIS un résultat vide écraser un fichier qui avait
+  // déjà du contenu. Un raté ponctuel de l'API Discord (timing, permission qui
+  // n'a pas eu le temps de se propager, etc.) ne doit jamais effacer les vraies
+  // données déjà synchronisées.
+  if (news.length === 0) {
+    let existing = [];
+    try {
+      existing = JSON.parse(fs.readFileSync(OUTPUT_PATH, "utf-8"));
+    } catch {
+      // pas de fichier existant ou illisible, tant pis, on continue normalement
+    }
+    if (Array.isArray(existing) && existing.length > 0) {
+      console.log(
+        `Résultat vide (0 note trouvée sur ${messages.length} messages parcourus) alors que le fichier existant en contient ${existing.length} -> on ne touche à rien, probable raté ponctuel de l'API Discord.`
+      );
+      return;
+    }
+  }
+
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(news, null, 2), "utf-8");
   console.log(`${news.length} note(s) écrite(s) dans ${OUTPUT_PATH} (${messages.length} messages parcourus dans l'historique)`);
 }

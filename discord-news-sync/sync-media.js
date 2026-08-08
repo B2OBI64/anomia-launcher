@@ -82,6 +82,23 @@ async function main() {
     .sort((a, b) => (a.date < b.date ? 1 : -1)) // plus récent en premier
     .slice(0, MAX_ITEMS);
 
+  // Même protection que sync.js : un résultat vide n'écrase jamais un fichier
+  // qui avait déjà du contenu.
+  if (media.length === 0) {
+    let existing = [];
+    try {
+      existing = JSON.parse(fs.readFileSync(OUTPUT_PATH, "utf-8"));
+    } catch {
+      // pas grave, on continue normalement
+    }
+    if (Array.isArray(existing) && existing.length > 0) {
+      console.log(
+        `Résultat vide (0 image trouvée sur ${messages.length} messages parcourus) alors que le fichier existant en contient ${existing.length} -> on ne touche à rien.`
+      );
+      return;
+    }
+  }
+
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(media, null, 2), "utf-8");
   console.log(`${media.length} image(s) écrite(s) dans ${OUTPUT_PATH} (${messages.length} messages parcourus)`);
 }
