@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Auto-update
   installUpdate: () => ipcRenderer.send("update:install"),
+  downloadUpdate: () => ipcRenderer.send("update:download"),
   retryUpdateCheck: () => ipcRenderer.invoke("update:retry"),
   onUpdateAvailable: (callback) => {
     ipcRenderer.removeAllListeners("update:available");

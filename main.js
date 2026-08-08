@@ -103,9 +103,36 @@ function createWindow() {
 
   mainWindow.loadURL(`http://localhost:${localServerPort}/src/index.html`);
 
+  // On ne montre la fenêtre qu'une fois le contenu prêt ET la vérification de
+  // mise à jour terminée (comme Discord : on checke avant d'afficher quoi que
+  // ce soit). Sécurité : timeout pour ne jamais bloquer indéfiniment si le
+  // check traîne (pas de connexion, GitHub lent, etc.)
+  let contentReady = false;
+  let updateCheckSettled = !app.isPackaged; // en dev (npm start), pas de check -> pas d'attente
+
+  const tryShowWindow = () => {
+    if (contentReady && updateCheckSettled && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+    }
+  };
+
   mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
+    contentReady = true;
+    tryShowWindow();
   });
+
+  if (app.isPackaged) {
+    const settleUpdateCheck = () => {
+      if (updateCheckSettled) return;
+      updateCheckSettled = true;
+      tryShowWindow();
+    };
+    autoUpdater
+      .checkForUpdates()
+      .catch(() => {}) // pas de connexion / pas de release publiée -> on ignore silencieusement
+      .finally(settleUpdateCheck);
+    setTimeout(settleUpdateCheck, 6000); // filet de sécurité, jamais plus de 6s d'attente
+  }
 
   // Toutes les tentatives d'ouverture de nouvelle fenêtre (liens externes) passent par le navigateur système
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -122,25 +149,22 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 
-  // Vérifie les mises à jour au démarrage, puis répète périodiquement pour couvrir
-  // les sessions longues (silencieux si aucune config "publish" valide, ou en dev)
+  // Re-vérifie périodiquement pendant les sessions longues, en plus du check au lancement
   if (app.isPackaged) {
-    const checkNow = () => {
-      autoUpdater.checkForUpdates().catch(() => {
-        // pas de connexion / pas de repo configuré / pas de release publiée -> on ignore silencieusement
-      });
-    };
-    setTimeout(checkNow, 3000);
-    setInterval(checkNow, 15 * 60 * 1000);
+    setInterval(() => {
+      autoUpdater.checkForUpdates().catch(() => {});
+    }, 15 * 60 * 1000);
   }
 });
 
 // ============================================================
 // Auto-update (electron-updater + GitHub Releases)
-// Obligatoire : dès qu'une mise à jour est détectée, le renderer affiche une
-// modale bloquante (voir renderer.js) tant que l'installation n'est pas faite.
+// Obligatoire pour se connecter, mais PAS automatique : dès qu'une mise à jour
+// est détectée, le renderer affiche une modale bloquante avec un bouton pour
+// lancer le téléchargement manuellement (voir renderer.js). Rien ne se
+// télécharge tant que le joueur n'a pas cliqué lui-même.
 // ============================================================
-autoUpdater.autoDownload = true;
+autoUpdater.autoDownload = false;
 
 autoUpdater.on("update-available", (info) => {
   mainWindow?.webContents.send("update:available", { version: info.version });
@@ -161,6 +185,12 @@ autoUpdater.on("error", (err) => {
 
 ipcMain.on("update:install", () => {
   autoUpdater.quitAndInstall();
+});
+
+ipcMain.on("update:download", () => {
+  autoUpdater.downloadUpdate().catch((err) => {
+    mainWindow?.webContents.send("update:error", { message: err.message });
+  });
 });
 
 ipcMain.handle("update:retry", async () => {

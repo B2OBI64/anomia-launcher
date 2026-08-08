@@ -429,26 +429,31 @@ async function checkFiveM() {
 }
 checkFiveM();
 
-// --- Auto-update (obligatoire) ---
+// --- Auto-update (obligatoire, mais téléchargement déclenché manuellement) ---
 const updateOverlay = document.getElementById("update-overlay");
 const updateMessage = document.getElementById("update-message");
 const updateProgressTrack = document.getElementById("update-progress-track");
 const updateProgressFill = document.getElementById("update-progress-fill");
 const updateProgressLabel = document.getElementById("update-progress-label");
+const updateDownloadBtn = document.getElementById("update-download-btn");
 const updateInstallBtn = document.getElementById("update-install-btn");
 const updateRetryBtn = document.getElementById("update-retry-btn");
+let pendingUpdateVersion = null;
 
-window.anomia.onUpdateAvailable(() => {
+window.anomia.onUpdateAvailable(({ version }) => {
+  pendingUpdateVersion = version;
   updateOverlay.classList.remove("hidden");
-  updateMessage.textContent = "Une nouvelle version du launcher est disponible. Le serveur nécessite la dernière version pour te connecter — téléchargement en cours…";
-  updateProgressTrack.classList.remove("hidden");
-  updateProgressFill.style.width = "0%";
+  updateMessage.textContent = `Une nouvelle version (v${version}) est disponible. Le serveur nécessite la dernière version pour te connecter.`;
+  updateProgressTrack.classList.add("hidden");
+  updateProgressLabel.textContent = "";
+  updateDownloadBtn.classList.remove("hidden");
   updateInstallBtn.classList.add("hidden");
   updateRetryBtn.classList.add("hidden");
 });
 
 window.anomia.onUpdateProgress(({ percent }) => {
   updateOverlay.classList.remove("hidden"); // sécurité si l'event arrive avant "available"
+  updateProgressTrack.classList.remove("hidden");
   updateProgressFill.style.width = `${Math.round(percent)}%`;
   updateProgressLabel.textContent = `${Math.round(percent)}%`;
 });
@@ -458,6 +463,7 @@ window.anomia.onUpdateDownloaded(({ version }) => {
   updateMessage.textContent = `Mise à jour v${version} prête. Installe-la pour pouvoir te connecter au serveur.`;
   updateProgressTrack.classList.add("hidden");
   updateProgressLabel.textContent = "";
+  updateDownloadBtn.classList.add("hidden");
   updateInstallBtn.classList.remove("hidden");
   updateRetryBtn.classList.add("hidden");
 });
@@ -468,10 +474,18 @@ window.anomia.onUpdateError(({ message }) => {
   if (updateOverlay.classList.contains("hidden")) return;
   updateMessage.textContent = `Erreur pendant la mise à jour : ${message}`;
   updateProgressTrack.classList.add("hidden");
+  updateDownloadBtn.classList.add("hidden");
   updateInstallBtn.classList.add("hidden");
   updateRetryBtn.classList.remove("hidden");
 });
 
+updateDownloadBtn.addEventListener("click", () => {
+  updateDownloadBtn.classList.add("hidden");
+  updateMessage.textContent = `Téléchargement de la v${pendingUpdateVersion} en cours…`;
+  updateProgressTrack.classList.remove("hidden");
+  updateProgressFill.style.width = "0%";
+  window.anomia.downloadUpdate();
+});
 updateInstallBtn.addEventListener("click", () => window.anomia.installUpdate());
 updateRetryBtn.addEventListener("click", async () => {
   updateMessage.textContent = "Nouvelle tentative…";

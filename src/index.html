@@ -259,12 +259,13 @@
   <div class="modal-overlay hidden" id="update-overlay" style="z-index:100;">
     <div class="modal-box glass">
       <h3>Mise à jour requise</h3>
-      <p id="update-message">Une nouvelle version du launcher est disponible. Le serveur nécessite la dernière version pour te connecter — téléchargement en cours…</p>
-      <div class="progress-track" id="update-progress-track">
+      <p id="update-message">Une nouvelle version du launcher est disponible. Le serveur nécessite la dernière version pour te connecter.</p>
+      <div class="progress-track hidden" id="update-progress-track">
         <div class="progress-fill" id="update-progress-fill"></div>
       </div>
       <div class="progress-label" id="update-progress-label"></div>
       <div class="modal-actions">
+        <button class="btn-connect hidden" id="update-download-btn">Télécharger la mise à jour</button>
         <button class="btn-connect hidden" id="update-install-btn">Installer &amp; redémarrer</button>
         <button class="btn-connect hidden" id="update-retry-btn">Réessayer</button>
       </div>
