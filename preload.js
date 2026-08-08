@@ -34,9 +34,6 @@ contextBridge.exposeInMainWorld("anomia", {
   // Galerie média
   getMedia: () => ipcRenderer.invoke("media:get"),
 
-  // Devlog
-  getDevlog: () => ipcRenderer.invoke("devlog:get"),
-
   // Diagnostic réseau
   diagnoseNetwork: () => ipcRenderer.invoke("network:diagnose"),
 

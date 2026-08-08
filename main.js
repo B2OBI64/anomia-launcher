@@ -652,27 +652,6 @@ ipcMain.handle("media:get", async () => {
   return media;
 });
 
-ipcMain.handle("devlog:get", async () => {
-  let devlog = [];
-  if (config.devlog.remoteUrl) {
-    try {
-      const remote = await fetchJson(config.devlog.remoteUrl);
-      if (Array.isArray(remote) && remote.length > 0) devlog = remote;
-    } catch {
-      // on retombe sur le fichier local ci-dessous
-    }
-  }
-  if (devlog.length === 0) {
-    try {
-      const raw = fs.readFileSync(path.join(__dirname, config.devlog.localFallback), "utf-8");
-      devlog = JSON.parse(raw);
-    } catch {
-      devlog = [];
-    }
-  }
-  return devlog;
-});
-
 // ============================================================
 // Diagnostic réseau (remplace l'ancien bouton "copier l'IP", peu utile)
 // ============================================================

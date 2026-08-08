@@ -17,17 +17,17 @@ complète des joueurs).
 
 Ouvre `server/main.lua`, table `JOB_CATEGORIES` en haut du fichier : chaque
 ligne associe un nom interne QBCore (celui de `qb-core/shared/jobs.lua`) à une
-catégorie affichée dans le launcher. Tout job non listé tombe automatiquement
-dans "Autres". Exemple pour détailler le taxi séparément :
+catégorie affichée dans le launcher. Elle contient déjà tous tes jobs actuels.
+Si tu ajoutes un nouveau job côté serveur plus tard, il tombera automatiquement
+dans "Autres" tant que tu ne l'ajoutes pas ici :
 
 ```lua
 local JOB_CATEGORIES = {
+    unemployed = "Civils",
     police = "Police",
     ambulance = "EMS",
     bennys = "Mécano",
-    unemployed = "Civils",
-    gouvernement = "Gouvernement",
-    taxi = "Taxi"
+    -- ... etc, ajoute ta nouvelle ligne ici
 }
 ```
 

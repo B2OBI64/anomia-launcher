@@ -62,14 +62,6 @@ module.exports = {
     localFallback: "src/media.json"
   },
 
-  // --- Devlog (progression des scripts en cours) ---
-  // Même principe que les news : source locale de secours, remplaçable par une
-  // URL distante synchronisée depuis Discord (voir discord-news-sync/README.md).
-  devlog: {
-    remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/devlog.json",
-    localFallback: "src/devlog.json"
-  },
-
   // --- Détection FiveM ---
   fivem: {
     // Au-delà de ce nombre de jours sans mise à jour de FiveM.exe, on affiche un avertissement

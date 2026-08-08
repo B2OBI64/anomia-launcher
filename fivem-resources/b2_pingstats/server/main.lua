@@ -26,12 +26,24 @@ end
 -- affichée dans le launcher. Modifie cette table pour ajuster le regroupement -
 -- tout job non listé ici tombe automatiquement dans "Autres".
 local JOB_CATEGORIES = {
+    unemployed = "Civils",
     police = "Police",
     ambulance = "EMS",
     bennys = "Mécano",
-    unemployed = "Civils",
-    gouvernement = "Gouvernement"
+    maisonnette10 = "Maisonnette 10",
+    bahamas = "Bahamas",
+    henhouse = "Hen House",
+    newsjob = "Journaliste",
+    taxi = "Taxi",
+    gouvernement = "Gouvernement",
+    prisonier = "Prisonnier",
+    tatoueur = "Tatoueur",
+    garbage = "Éboueur",
+    mineur = "Mineur",
+    electrician = "Électricien"
 }
+-- Filet de sécurité : tout job pas encore listé ci-dessus (nouveau job ajouté
+-- au serveur, custom, etc.) tombe ici plutôt que d'être compté sous un nom brut.
 local DEFAULT_CATEGORY = "Autres"
 
 local function computeJobCounts()

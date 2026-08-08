@@ -23,7 +23,6 @@ function goToView(name) {
   views.forEach((v) => v.classList.toggle("hidden", v.id !== `view-${name}`));
   if (name === "twitch") loadTwitchEmbed();
   if (name === "media") loadMedia();
-  if (name === "devlog") loadDevlog();
   if (name === "admin") refreshAdminStats();
 }
 
@@ -426,45 +425,6 @@ async function loadMedia() {
     return;
   }
   media.forEach((item) => grid.appendChild(renderMediaItem(item)));
-}
-
-// --- Devlog ---
-function renderDevlogCard(item) {
-  const el = document.createElement("div");
-  el.className = "devlog-card";
-  const tasksHtml = (item.tasks || [])
-    .map(
-      (t) => `
-      <li class="${t.done ? "done" : ""}">
-        <span class="devlog-check">${t.done ? "✓" : ""}</span>
-        <span>${escapeHtml(t.text)}</span>
-      </li>`
-    )
-    .join("");
-  el.innerHTML = `
-    <div class="devlog-header">
-      <h3>${escapeHtml(item.title || "")}</h3>
-      <span class="devlog-percent">${item.percent ?? 0}%</span>
-    </div>
-    ${item.description ? `<p class="devlog-desc">${escapeHtml(item.description)}</p>` : ""}
-    <div class="devlog-bar-track"><div class="devlog-bar-fill" style="width:${item.percent ?? 0}%;"></div></div>
-    <ul class="devlog-tasks">${tasksHtml}</ul>
-  `;
-  return el;
-}
-
-let devlogLoaded = false;
-async function loadDevlog() {
-  if (devlogLoaded) return;
-  devlogLoaded = true;
-  const list = document.getElementById("devlog-list");
-  const devlog = await window.anomia.getDevlog();
-  list.innerHTML = "";
-  if (!devlog.length) {
-    list.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Rien en cours pour le moment.</p>`;
-    return;
-  }
-  devlog.forEach((item) => list.appendChild(renderDevlogCard(item)));
 }
 
 // --- Détection FiveM ---
