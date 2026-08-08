@@ -522,17 +522,19 @@ ipcMain.handle("assets:check", async (event) => {
 const FIVEM_APP_FOLDER_CANDIDATES = ["FiveM.app", "FiveM Application Data"];
 
 function getFiveMCacheDir() {
+  // On cible le dossier "data" tout entier (pas juste "data/cache") : le nettoyage
+  // vide tout ce qu'il contient SAUF "game-storage", voir cache:clear plus bas.
   if (process.platform !== "win32") {
     // Support best-effort si FiveM tourne via une autre plateforme
-    return path.join(app.getPath("home"), ".fivem", "data", "cache");
+    return path.join(app.getPath("home"), ".fivem", "data");
   }
   for (const folder of FIVEM_APP_FOLDER_CANDIDATES) {
-    const candidate = path.join(process.env.LOCALAPPDATA, "FiveM", folder, "data", "cache");
+    const candidate = path.join(process.env.LOCALAPPDATA, "FiveM", folder, "data");
     if (fs.existsSync(candidate)) return candidate;
   }
   // Aucun trouvé : on retourne le premier candidat quand même (le code appelant
   // gère proprement le cas "dossier introuvable")
-  return path.join(process.env.LOCALAPPDATA, "FiveM", FIVEM_APP_FOLDER_CANDIDATES[0], "data", "cache");
+  return path.join(process.env.LOCALAPPDATA, "FiveM", FIVEM_APP_FOLDER_CANDIDATES[0], "data");
 }
 
 // Cherche FiveM.exe soit directement dans %localappdata%\FiveM\ (installs récents),

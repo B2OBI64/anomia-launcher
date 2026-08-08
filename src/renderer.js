@@ -48,7 +48,18 @@ document.getElementById("btn-discord").addEventListener("click", () => {
 });
 
 // --- Connexion serveur ---
-document.getElementById("btn-connect").addEventListener("click", () => {
+document.getElementById("btn-connect").addEventListener("click", (e) => {
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const dot = document.createElement("span");
+  dot.className = "ripple-dot";
+  dot.style.width = dot.style.height = `${size}px`;
+  dot.style.left = `${e.clientX - rect.left - size / 2}px`;
+  dot.style.top = `${e.clientY - rect.top - size / 2}px`;
+  btn.appendChild(dot);
+  setTimeout(() => dot.remove(), 550);
+
   window.anomia.connect();
 });
 

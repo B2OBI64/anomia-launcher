@@ -225,7 +225,11 @@ body::before {
   transition: opacity .15s, transform .15s;
 }
 .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
-.nav-item:active { transform: scale(0.97); transition: transform .06s ease; }
+@keyframes navGlowPulse {
+  0% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.55); }
+  100% { box-shadow: 0 0 0 18px rgba(45, 212, 191, 0); }
+}
+.nav-item:active { animation: navGlowPulse .5s ease-out; }
 .nav-item.active { background: rgba(45, 212, 191, 0.08); color: var(--teal); }
 .nav-item.active::before { opacity: 1; transform: scaleY(1); }
 .nav-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: .85; transition: transform .15s ease; }
@@ -455,6 +459,17 @@ body::before {
   background: linear-gradient(115deg, transparent, rgba(255,255,255,0.55), transparent);
   transform: skewX(-20deg);
   transition: left .55s ease;
+}
+@keyframes rippleExpand {
+  to { transform: scale(3); opacity: 0; }
+}
+.btn-connect .ripple-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(4, 32, 29, 0.35);
+  transform: scale(0);
+  animation: rippleExpand .55s ease-out;
+  pointer-events: none;
 }
 .btn-connect:hover::after { left: 130%; }
 .btn-connect:hover { transform: translateY(-1px) scale(1.01); box-shadow: 0 6px 24px var(--teal-glow); }
