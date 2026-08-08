@@ -36,7 +36,10 @@ local JOB_CATEGORIES = {
 
 1. Copie le dossier `b2_pingstats` dans ton dossier `resources/` (ex:
    `resources/[b2]/b2_pingstats/`, selon ta convention habituelle)
-2. Dans ton `server.cfg`, ajoute :
+2. Dans ton `server.cfg`, ajoute (après `ensure qb-core`, pour que la population
+   par job fonctionne dès le démarrage — sinon elle finira par s'activer toute
+   seule au premier appel une fois qb-core prêt, pas de casse si l'ordre n'est
+   pas respecté) :
    ```
    ensure b2_pingstats
    ```

@@ -20,7 +20,16 @@ const views = document.querySelectorAll(".view");
 
 function goToView(name) {
   navItems.forEach((btn) => btn.classList.toggle("active", btn.dataset.view === name));
-  views.forEach((v) => v.classList.toggle("hidden", v.id !== `view-${name}`));
+  views.forEach((v) => {
+    const shouldShow = v.id === `view-${name}`;
+    v.classList.toggle("hidden", !shouldShow);
+    if (shouldShow) {
+      // Rejoue l'animation d'entrée même si on revient sur une vue déjà visitée
+      v.classList.remove("view-entering");
+      void v.offsetWidth; // force le navigateur à repartir de zéro avant de rajouter la classe
+      v.classList.add("view-entering");
+    }
+  });
   if (name === "twitch") loadTwitchEmbed();
   if (name === "media") loadMedia();
   if (name === "admin") refreshAdminStats();
