@@ -38,7 +38,8 @@
     "publish": {
       "provider": "github",
       "owner": "B2OBI64",
-      "repo": "anomia-launcher"
+      "repo": "anomia-launcher",
+      "releaseType": "release"
     },
     "win": {
       "target": "nsis",
