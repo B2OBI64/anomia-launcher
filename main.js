@@ -334,11 +334,15 @@ function sha256File(filePath) {
 // Statut serveur (API officielle CFX via le code cfx.re/join/xxxxx)
 // ============================================================
 ipcMain.handle("server:status", async () => {
-  // Ping moyen via la ressource b2_pingstats (privacy-safe, prioritaire dès qu'elle répond)
+  // Ping moyen + état maintenance + population par job via b2_pingstats (prioritaire dès qu'elle répond)
   let avgPing = null;
+  let maintenance = false;
+  let jobs = {};
   try {
     const pingStats = await fetchJson(config.server.pingStatsUrl, 4000);
     if (typeof pingStats.avgPing === "number") avgPing = pingStats.avgPing;
+    if (typeof pingStats.maintenance === "boolean") maintenance = pingStats.maintenance;
+    if (pingStats.jobs && typeof pingStats.jobs === "object") jobs = pingStats.jobs;
   } catch {
     // Ressource pas (encore) installée côté serveur, pas bloquant
   }
@@ -369,7 +373,9 @@ ipcMain.handle("server:status", async () => {
       clients: dynamic.clients ?? players.length ?? 0,
       maxClients: dynamic.sv_maxclients ?? 0,
       players,
-      avgPing
+      avgPing,
+      maintenance,
+      jobs
     };
   } catch (directErr) {
     // 2) Repli sur l'API CFX (peut être bloquée par Cloudflare selon les cas)
@@ -383,23 +389,13 @@ ipcMain.handle("server:status", async () => {
         clients: d.clients ?? 0,
         maxClients: d.sv_maxclients ?? d.svMaxclients ?? 0,
         players: (d.players || []).map((p) => ({ name: p.name, ping: p.ping })),
-        avgPing
+        avgPing,
+        maintenance,
+        jobs
       };
     } catch (fallbackErr) {
       return { online: false, error: `${directErr.message} / ${fallbackErr.message}` };
     }
-  }
-});
-
-// ============================================================
-// Population par job (via la ressource b2_pingstats, comptage agrégé uniquement)
-// ============================================================
-ipcMain.handle("server:jobPopulation", async () => {
-  try {
-    const stats = await fetchJson(config.server.pingStatsUrl, 5000);
-    return { ok: true, jobs: stats.jobs || {} };
-  } catch (err) {
-    return { ok: false, error: "La ressource b2_pingstats ne répond pas (pas encore installée ou serveur hors ligne)." };
   }
 });
 

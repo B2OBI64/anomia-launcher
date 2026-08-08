@@ -10,8 +10,10 @@
 --   http://IP:PORT/b2_pingstats/
 --
 -- Reponse JSON :
---   { "avgPing": 42, "players": 12, "jobs": { "Police": 5, "EMS": 2, "Civils": 41 } }
+--   { "avgPing": 42, "players": 12, "jobs": { "Police": 5, "EMS": 2, "Civils": 41 }, "maintenance": false }
 -- ============================================================
+
+local MAINTENANCE_CONVAR = "anomia_maintenance" -- même convar que b2_maintenance
 
 local QBCoreCache = nil
 local function getQBCore()
@@ -47,6 +49,9 @@ local JOB_CATEGORIES = {
 local DEFAULT_CATEGORY = "Autres"
 
 local function computeJobCounts()
+    -- Pour chaque catégorie : combien sont EN SERVICE, et combien sont connectés
+    -- avec ce job en ce moment (peu importe le statut de service). Le launcher
+    -- affiche ça sous la forme "2/10" (en service / employés connectés).
     local counts = {}
     local QBCore = getQBCore()
     if not QBCore then return counts end
@@ -58,12 +63,15 @@ local function computeJobCounts()
         local Player = QBCore.Functions.GetPlayer(playerId)
         if Player and Player.PlayerData and Player.PlayerData.job then
             local job = Player.PlayerData.job
-            -- On ne compte que les joueurs "en service" pour les jobs qui ont un
-            -- vrai statut de service (police/EMS/mecano/...). Les jobs sans ce
-            -- concept (ex: unemployed) ont onduty=true par défaut, donc comptés.
+            local category = JOB_CATEGORIES[job.name] or DEFAULT_CATEGORY
+
+            counts[category] = counts[category] or { onDuty = 0, total = 0 }
+            counts[category].total = counts[category].total + 1
+
+            -- Les jobs sans concept de service (ex: unemployed) ont onduty=true
+            -- par défaut, donc comptés comme "en service" naturellement.
             if job.onduty ~= false then
-                local category = JOB_CATEGORIES[job.name] or DEFAULT_CATEGORY
-                counts[category] = (counts[category] or 0) + 1
+                counts[category].onDuty = counts[category].onDuty + 1
             end
         end
     end
@@ -87,7 +95,8 @@ local function computeStats()
     return {
         avgPing = count > 0 and math.floor(total / count) or 0,
         players = #players,
-        jobs = computeJobCounts()
+        jobs = computeJobCounts(),
+        maintenance = GetConvar(MAINTENANCE_CONVAR, "false") == "true"
     }
 end
 
@@ -102,4 +111,4 @@ SetHttpHandler(function(req, res)
     res.send(json.encode(stats))
 end)
 
-print('[b2_pingstats] Endpoint pret sur /b2_pingstats/ (ping moyen + population par job, sans donnees joueur individuelles)')
+print('[b2_pingstats] Endpoint pret sur /b2_pingstats/ (ping moyen + population par job + etat maintenance, sans donnees joueur individuelles)')

@@ -295,6 +295,11 @@ body::before {
   border-color: var(--border-strong);
   color: var(--teal);
 }
+.banner-maintenance {
+  background: rgba(239, 91, 91, 0.10);
+  border-color: rgba(239, 91, 91, 0.4);
+  color: var(--danger);
+}
 .banner .link-btn { color: inherit; text-decoration: underline; white-space: nowrap; }
 
 /* ---------- Input (modale code admin) ---------- */
@@ -371,6 +376,7 @@ body::before {
 }
 .status-dot.online { background: var(--teal); box-shadow: 0 0 8px var(--teal-glow); animation: pulse-dot 2s ease-in-out infinite; }
 .status-dot.offline { background: var(--danger); }
+.status-dot.maintenance { background: var(--amber); box-shadow: 0 0 8px rgba(242,184,75,0.4); }
 @keyframes pulse-dot {
   0%, 100% { box-shadow: 0 0 6px var(--teal-glow); }
   50% { box-shadow: 0 0 14px var(--teal-glow); }
@@ -486,6 +492,15 @@ body::before {
   letter-spacing: .3px;
 }
 .telemetry-value.dim { color: var(--text-dim); font-weight: 400; }
+.telemetry-value.violet { color: var(--violet); text-shadow: 0 0 10px var(--violet-glow); }
+.telemetry-item-clickable {
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.telemetry-item-clickable:hover {
+  background: rgba(139, 124, 246, 0.06);
+}
+.telemetry-value.maintenance-active { color: var(--amber); }
 
 /* ---------- Section header ---------- */
 .section-header {

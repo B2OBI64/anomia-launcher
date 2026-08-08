@@ -65,6 +65,11 @@
     <!-- Contenu principal -->
     <main class="content">
 
+      <!-- Bannière maintenance serveur -->
+      <div class="banner banner-maintenance hidden" id="maintenance-banner">
+        <span>🛠️ Le serveur est actuellement en maintenance — seul le staff peut se connecter.</span>
+      </div>
+
       <!-- Bannière FiveM non détecté -->
       <div class="banner hidden" id="fivem-banner">
         <span id="fivem-banner-text">FiveM non détecté sur cette machine.</span>
@@ -93,7 +98,6 @@
             <div class="hero-right">
               <button class="btn-connect" id="btn-connect">Se connecter</button>
               <button class="btn-copy" id="btn-diagnose">Tester la connexion</button>
-              <button class="btn-copy" id="btn-job-population">Population par job</button>
             </div>
           </div>
         </div>
@@ -110,6 +114,10 @@
           <div class="telemetry-item">
             <span class="telemetry-label">Ping moyen</span>
             <span class="telemetry-value dim" id="tm-ping">—</span>
+          </div>
+          <div class="telemetry-item telemetry-item-clickable" id="tm-jobs-item">
+            <span class="telemetry-label">Entreprises ouvertes</span>
+            <span class="telemetry-value violet" id="tm-jobs">—</span>
           </div>
         </div>
 

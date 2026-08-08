@@ -44,6 +44,8 @@ document.getElementById("btn-connect").addEventListener("click", () => {
 });
 
 // --- Statut serveur (polling) ---
+let lastJobStats = {};
+
 async function refreshStatus() {
   const dot = document.getElementById("status-dot");
   const text = document.getElementById("status-text");
@@ -51,16 +53,29 @@ async function refreshStatus() {
   const tmStatus = document.getElementById("tm-status");
   const tmPlayers = document.getElementById("tm-players");
   const tmPing = document.getElementById("tm-ping");
+  const tmJobs = document.getElementById("tm-jobs");
+  const maintenanceBanner = document.getElementById("maintenance-banner");
 
   const status = await window.anomia.getServerStatus();
 
   if (status.online) {
-    dot.className = "status-dot online";
-    text.textContent = "En ligne";
     count.textContent = `${status.clients} / ${status.maxClients}`;
-    tmStatus.textContent = "ONLINE";
-    tmStatus.classList.remove("dim");
     tmPlayers.textContent = `${status.clients}/${status.maxClients}`;
+
+    if (status.maintenance) {
+      dot.className = "status-dot maintenance";
+      text.textContent = "En maintenance";
+      tmStatus.textContent = "MAINTENANCE";
+      tmStatus.classList.remove("dim");
+      tmStatus.classList.add("maintenance-active");
+      maintenanceBanner.classList.remove("hidden");
+    } else {
+      dot.className = "status-dot online";
+      text.textContent = "En ligne";
+      tmStatus.textContent = "ONLINE";
+      tmStatus.classList.remove("dim", "maintenance-active");
+      maintenanceBanner.classList.add("hidden");
+    }
 
     if (typeof status.avgPing === "number") {
       tmPing.textContent = `${status.avgPing} ms`;
@@ -70,14 +85,22 @@ async function refreshStatus() {
         ? `${Math.round(pings.reduce((a, b) => a + b, 0) / pings.length)} ms`
         : "Indisponible";
     }
+
+    lastJobStats = status.jobs || {};
+    const jobCategories = Object.keys(lastJobStats).length;
+    tmJobs.textContent = jobCategories > 0 ? String(jobCategories) : "—";
   } else {
     dot.className = "status-dot offline";
     text.textContent = "Hors ligne / injoignable";
     count.textContent = "–";
     tmStatus.textContent = "OFFLINE";
     tmStatus.classList.add("dim");
+    tmStatus.classList.remove("maintenance-active");
     tmPlayers.textContent = "—";
     tmPing.textContent = "—";
+    tmJobs.textContent = "—";
+    lastJobStats = {};
+    maintenanceBanner.classList.add("hidden");
   }
 }
 refreshStatus();
@@ -364,41 +387,24 @@ document.getElementById("btn-diagnose").addEventListener("click", async (e) => {
   }
 });
 
-// --- Population par job ---
-document.getElementById("btn-job-population").addEventListener("click", async (e) => {
-  const btn = e.target;
-  const original = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "Chargement…";
-
-  try {
-    const result = await window.anomia.getJobPopulation();
-    if (!result.ok) {
-      await showInfo("Population par job", `<p>${escapeHtml(result.error)}</p>`);
-      return;
-    }
-    const entries = Object.entries(result.jobs);
-    if (entries.length === 0) {
-      await showInfo("Population par job", `<p style="color:var(--text-dim);">Aucun joueur en service actuellement.</p>`);
-      return;
-    }
-    entries.sort((a, b) => b[1] - a[1]); // du plus peuplé au moins peuplé
-    const rows = entries
-      .map(
-        ([label, count]) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:13px;">
-          <span style="color:var(--text-dim);">${escapeHtml(label)}</span>
-          <span style="color:var(--teal);font-weight:700;">${count}</span>
-        </div>`
-      )
-      .join("");
-    await showInfo("Population par job", `<div>${rows}</div>`);
-  } catch (err) {
-    await showInfo("Population par job", `<p>Erreur inattendue : ${err.message}</p>`);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = original;
+// --- Population par job (clic sur la carte télémétrie "Entreprises ouvertes") ---
+document.getElementById("tm-jobs-item").addEventListener("click", async () => {
+  const entries = Object.entries(lastJobStats);
+  if (entries.length === 0) {
+    await showInfo("Entreprises ouvertes", `<p style="color:var(--text-dim);">Aucune donnée disponible pour le moment (serveur hors ligne, ou ressource b2_pingstats pas installée).</p>`);
+    return;
   }
+  entries.sort((a, b) => b[1].onDuty - a[1].onDuty); // du plus actif au moins actif
+  const rows = entries
+    .map(
+      ([label, counts]) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:13px;">
+        <span style="color:var(--text-dim);">${escapeHtml(label)}</span>
+        <span style="color:var(--violet);font-weight:700;">${counts.onDuty}/${counts.total}</span>
+      </div>`
+    )
+    .join("");
+  await showInfo("Entreprises ouvertes", `<div>${rows}</div><p style="color:var(--text-faint);font-size:11px;margin-top:10px;">En service / connectés avec ce métier</p>`);
 });
 
 // --- Galerie média ---

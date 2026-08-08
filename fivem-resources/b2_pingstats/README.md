@@ -5,13 +5,14 @@ des joueurs connectés, sans jamais exposer leurs pseudos ou identifiants —
 juste des nombres agrégés :
 
 ```json
-{ "avgPing": 42, "players": 12, "jobs": { "Police": 5, "EMS": 2, "Mécano": 3, "Civils": 41, "Gouvernement": 1, "Autres": 6 } }
+{ "avgPing": 42, "players": 12, "jobs": { "Police": {"onDuty":2,"total":10}, "Mécano": {"onDuty":1,"total":5} }, "maintenance": false }
 ```
 
 C'est ce que le launcher Anomia va lire pour afficher le "Ping moyen" dans le
-bandeau télémétrie de l'accueil, et la population par job via le bouton dédié.
-Aucun besoin d'activer `sv_endpointprivacy false` (qui exposerait la liste
-complète des joueurs).
+bandeau télémétrie de l'accueil, la population par job via le bouton dédié,
+et un bandeau "Serveur en maintenance" (voir `fivem-resources/b2_maintenance/`)
+avant même que le joueur clique "Se connecter". Aucun besoin d'activer
+`sv_endpointprivacy false` (qui exposerait la liste complète des joueurs).
 
 ## Personnaliser le regroupement des jobs
 
@@ -53,7 +54,7 @@ Ouvre dans un navigateur (ou `curl`) :
 ```
 http://185.44.80.32:30140/b2_pingstats/
 ```
-Tu dois voir un JSON du type `{"avgPing":38,"players":7,"jobs":{"Police":3,"Civils":4}}`.
+Tu dois voir un JSON du type `{"avgPing":38,"players":7,"jobs":{"Police":{"onDuty":2,"total":3},"Civils":{"onDuty":4,"total":4}}}`.
 
 Si ça ne répond pas :
 - Vérifie que la ressource est bien démarrée (`ensure` dans le `server.cfg` + resmon/txAdmin)
