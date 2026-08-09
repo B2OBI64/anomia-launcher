@@ -197,6 +197,48 @@ body::before {
   object-fit: contain;
   filter: drop-shadow(0 0 16px var(--teal-glow));
 }
+.discord-auth-slot {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.discord-connect-btn {
+  font-size: 11px;
+  padding: 7px 10px;
+  text-align: center;
+}
+.discord-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  width: 100%;
+  box-sizing: border-box;
+}
+.discord-profile img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.discord-profile-name {
+  font-size: 11px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.discord-profile-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.discord-profile-dot.allowed { background: var(--teal); }
+.discord-profile-dot.denied { background: var(--danger); }
 .nav-item {
   position: relative;
   display: flex;

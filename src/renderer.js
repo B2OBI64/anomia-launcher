@@ -44,11 +44,19 @@ document.querySelectorAll("[data-goto]").forEach((btn) => {
 
 // --- Discord ---
 document.getElementById("btn-discord").addEventListener("click", () => {
-  window.anomia.openExternal("https://discord.gg/REMPLACE_MOI");
+  window.anomia.openExternal("https://discord.gg/ECBhuTMw7n");
 });
 
 // --- Connexion serveur ---
-document.getElementById("btn-connect").addEventListener("click", (e) => {
+document.getElementById("btn-connect").addEventListener("click", async (e) => {
+  if (discordProfile && discordProfile.allowed === false) {
+    await showInfo(
+      "Accès refusé",
+      `<p>Tu dois avoir le rôle whitelist sur le Discord d'Anomia pour te connecter. Rejoins-nous et refais une demande d'accès.</p>`
+    );
+    return;
+  }
+
   const btn = e.currentTarget;
   const rect = btn.getBoundingClientRect();
   const size = Math.max(rect.width, rect.height);
@@ -612,3 +620,55 @@ async function refreshAdminStats() {
     txBtn.onclick = () => window.anomia.openExternal(stats.txAdminUrl);
   }
 }
+
+// --- Connexion Discord (pré-vérification avant de se connecter) ---
+let discordProfile = null;
+
+function renderDiscordSlot() {
+  const slot = document.getElementById("discord-auth-slot");
+
+  if (!discordProfile) {
+    slot.innerHTML = `<button class="ext-link discord-connect-btn" id="btn-discord-auth">Se connecter avec Discord</button>`;
+    document.getElementById("btn-discord-auth").addEventListener("click", () => {
+      window.anomia.startDiscordAuth();
+    });
+    return;
+  }
+
+  const dotClass = discordProfile.allowed === false ? "denied" : "allowed";
+  const avatarSrc = discordProfile.avatar || "../assets/logo.png";
+  slot.innerHTML = `
+    <div class="discord-profile" title="${discordProfile.allowed === false ? "Rôle whitelist manquant" : "Connecté"}">
+      <img src="${avatarSrc}" alt="" />
+      <span class="discord-profile-name">${escapeHtml(discordProfile.username || "Joueur")}</span>
+      <span class="discord-profile-dot ${dotClass}"></span>
+    </div>
+  `;
+}
+
+async function initDiscordAuth() {
+  const configured = await window.anomia.isDiscordConfigured();
+  if (!configured) {
+    document.getElementById("discord-auth-slot").style.display = "none";
+    return;
+  }
+
+  discordProfile = await window.anomia.getDiscordProfile();
+  renderDiscordSlot();
+
+  window.anomia.onDiscordConnected((profile) => {
+    discordProfile = profile;
+    renderDiscordSlot();
+    if (profile.allowed === false) {
+      showInfo(
+        "Rôle whitelist manquant",
+        `<p>Ton compte Discord est bien lié, mais tu n'as pas encore le rôle whitelist requis. Tu ne pourras pas te connecter au serveur tant que ce n'est pas fait.</p>`
+      );
+    }
+  });
+
+  window.anomia.onDiscordError(({ message }) => {
+    showInfo("Connexion Discord", `<p>Erreur : ${escapeHtml(message)}</p>`);
+  });
+}
+initDiscordAuth();

@@ -19,8 +19,26 @@ module.exports = {
     // Endpoint custom (ressource b2_pingstats, voir fivem-resources/b2_pingstats/README.md)
     // qui donne le ping moyen sans exposer la liste des joueurs. Prioritaire sur players.json.
     pingStatsUrl: "http://185.44.80.32:30140/b2_pingstats/",
+    // Endpoint custom (ressource b2_discordcheck) qui vérifie si un joueur a le
+    // rôle whitelist Discord requis, avant même de tenter de lancer FiveM.
+    discordCheckUrl: "http://185.44.80.32:30140/b2_discordcheck/",
     // Repli si les endpoints directs sont injoignables (pare-feu, endpoint privacy, etc.)
     fallbackStatusApiUrl: "https://servers-frontend.fivem.net/api/servers/single/8pqgm4"
+  },
+
+  // --- Connexion Discord (pré-vérification avant de lancer FiveM) ---
+  // Reste totalement inactif tant que clientId n'est pas rempli - aucun joueur
+  // n'est bloqué en attendant.
+  //
+  // Pour l'activer :
+  // 1. Va sur discord.com/developers/applications -> ton appli "Anomia News Bot"
+  // 2. Onglet OAuth2 -> copie le "Client ID" (visible aussi sur la page General Information)
+  // 3. Toujours dans OAuth2 -> Redirects -> ajoute EXACTEMENT :
+  //      http://localhost:47823/oauth-callback.html
+  //    (le port doit correspondre pile à discordAuth.redirectPort ci-dessous)
+  discordAuth: {
+    clientId: "REMPLACE_MOI",
+    redirectPort: 47823
   },
 
   // --- Twitch ---
@@ -30,7 +48,7 @@ module.exports = {
 
   // --- Discord ---
   discord: {
-    inviteUrl: "https://discord.gg/REMPLACE_MOI"
+    inviteUrl: "https://discord.gg/ECBhuTMw7n"
   },
 
   // --- News / Changelog ---

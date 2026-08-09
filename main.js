@@ -60,7 +60,17 @@ const MIME_TYPES = {
 function startLocalServer() {
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
-      let urlPath = decodeURIComponent(req.url.split("?")[0]);
+      const urlObj = new URL(req.url, "http://localhost");
+
+      // Route spéciale : réception du token OAuth Discord (voir oauth-callback.html)
+      if (urlObj.pathname === "/oauth-receive") {
+        const token = urlObj.searchParams.get("token");
+        handleDiscordToken(token);
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        return res.end("ok");
+      }
+
+      let urlPath = urlObj.pathname;
       if (urlPath === "/") urlPath = "/src/index.html";
 
       // Sécurité basique : on reste cantonné au dossier du projet
@@ -81,10 +91,17 @@ function startLocalServer() {
       });
     });
 
-    server.listen(0, "127.0.0.1", () => {
+    // Port fixe requis pour l'OAuth Discord (l'URI de redirection doit être
+    // enregistrée à l'identique sur Discord, donc pas de port aléatoire ici).
+    // Si le port est déjà pris (rare), on retombe sur un port aléatoire - dans
+    // ce cas précis la connexion Discord ne fonctionnera pas ce lancement-ci,
+    // mais le reste du launcher continue de fonctionner normalement.
+    server.listen(config.discordAuth.redirectPort, "127.0.0.1", () => {
       resolve(server.address().port);
     });
-    server.on("error", reject);
+    server.on("error", () => {
+      server.listen(0, "127.0.0.1", () => resolve(server.address().port));
+    });
   });
 }
 
@@ -287,6 +304,118 @@ function fetchJson(url, timeoutMs = 8000) {
     req.on("error", reject);
   });
 }
+
+// ============================================================
+// Connexion Discord (pré-vérification avant de lancer FiveM)
+// ============================================================
+const discordProfilePath = () => path.join(app.getPath("userData"), "discord-profile.json");
+
+function loadDiscordProfile() {
+  try {
+    return JSON.parse(fs.readFileSync(discordProfilePath(), "utf-8"));
+  } catch {
+    return null;
+  }
+}
+
+function saveDiscordProfile(profile) {
+  try {
+    fs.writeFileSync(discordProfilePath(), JSON.stringify(profile, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[discord] impossible d'enregistrer le profil :", err.message);
+  }
+}
+
+function clearDiscordProfile() {
+  try {
+    fs.unlinkSync(discordProfilePath());
+  } catch {
+    // pas grave si le fichier n'existait pas
+  }
+}
+
+async function checkDiscordRole(discordId) {
+  try {
+    const result = await fetchJson(`${config.server.discordCheckUrl}?discordId=${discordId}`, 6000);
+    return result.allowed === true;
+  } catch {
+    // Ressource pas installée / serveur hors ligne -> on ne bloque pas artificiellement
+    return true;
+  }
+}
+
+async function handleDiscordToken(token) {
+  if (!token) return;
+  try {
+    // fetchJson() ne permet pas d'ajouter l'en-tête Authorization, on fait donc
+    // un appel dédié ici pour interroger l'API Discord avec le token du joueur.
+    const profile = await new Promise((resolve, reject) => {
+      const req = https.get(
+        "https://discord.com/api/users/@me",
+        { headers: { Authorization: `Bearer ${token}` } },
+        (res) => {
+          let data = "";
+          res.on("data", (c) => (data += c));
+          res.on("end", () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }
+      );
+      req.on("error", reject);
+    });
+
+    if (!profile || !profile.id) return;
+
+    const allowed = await checkDiscordRole(profile.id);
+    const savedProfile = {
+      id: profile.id,
+      username: profile.username,
+      avatar: profile.avatar
+        ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png?size=64`
+        : null,
+      allowed
+    };
+    saveDiscordProfile(savedProfile);
+    mainWindow?.webContents.send("discord:connected", savedProfile);
+  } catch (err) {
+    console.error("[discord] échec de la connexion :", err.message);
+    mainWindow?.webContents.send("discord:error", { message: err.message });
+  }
+}
+
+ipcMain.on("discord:startAuth", () => {
+  const params = new URLSearchParams({
+    client_id: config.discordAuth.clientId,
+    redirect_uri: `http://localhost:${config.discordAuth.redirectPort}/oauth-callback.html`,
+    response_type: "token",
+    scope: "identify"
+  });
+  shell.openExternal(`https://discord.com/api/oauth2/authorize?${params.toString()}`);
+});
+
+ipcMain.handle("discord:getProfile", async () => {
+  const profile = loadDiscordProfile();
+  if (!profile) return null;
+  // Revérifie le rôle à chaque lancement (les rôles peuvent changer entre deux sessions)
+  const allowed = await checkDiscordRole(profile.id);
+  if (allowed !== profile.allowed) {
+    profile.allowed = allowed;
+    saveDiscordProfile(profile);
+  }
+  return profile;
+});
+
+ipcMain.on("discord:logout", () => {
+  clearDiscordProfile();
+});
+
+ipcMain.handle("discord:isConfigured", () => {
+  return Boolean(config.discordAuth.clientId && !config.discordAuth.clientId.includes("REMPLACE_MOI"));
+});
 
 function downloadFile(url, destPath, onProgress) {
   return new Promise((resolve, reject) => {

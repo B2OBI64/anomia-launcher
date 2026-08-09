@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Anomia — Connexion Discord</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #05090a;
+    color: #eaf5f4;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    text-align: center;
+  }
+  p { font-size: 15px; }
+</style>
+</head>
+<body>
+  <p id="msg">Connexion en cours…</p>
+  <script>
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const token = params.get("access_token");
+
+    if (token) {
+      fetch("/oauth-receive?token=" + encodeURIComponent(token))
+        .then(() => {
+          document.getElementById("msg").textContent = "Connecté ! Tu peux fermer cet onglet et retourner sur le launcher.";
+        })
+        .catch(() => {
+          document.getElementById("msg").textContent = "Erreur de connexion. Retourne sur le launcher et réessaie.";
+        });
+    } else {
+      document.getElementById("msg").textContent = "Connexion annulée ou refusée. Tu peux fermer cet onglet.";
+    }
+  </script>
+</body>
+</html>

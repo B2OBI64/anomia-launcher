@@ -43,6 +43,20 @@ contextBridge.exposeInMainWorld("anomia", {
   unlockAdmin: (passphrase) => ipcRenderer.invoke("admin:unlock", passphrase),
   getAdminStats: () => ipcRenderer.invoke("admin:stats"),
 
+  // Connexion Discord
+  startDiscordAuth: () => ipcRenderer.send("discord:startAuth"),
+  getDiscordProfile: () => ipcRenderer.invoke("discord:getProfile"),
+  logoutDiscord: () => ipcRenderer.send("discord:logout"),
+  isDiscordConfigured: () => ipcRenderer.invoke("discord:isConfigured"),
+  onDiscordConnected: (callback) => {
+    ipcRenderer.removeAllListeners("discord:connected");
+    ipcRenderer.on("discord:connected", (event, payload) => callback(payload));
+  },
+  onDiscordError: (callback) => {
+    ipcRenderer.removeAllListeners("discord:error");
+    ipcRenderer.on("discord:error", (event, payload) => callback(payload));
+  },
+
   // Auto-update
   installUpdate: () => ipcRenderer.send("update:install"),
   downloadUpdate: () => ipcRenderer.send("update:download"),
