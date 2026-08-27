@@ -490,9 +490,18 @@ body::before {
   padding: 14px 32px;
   cursor: pointer;
   box-shadow: 0 4px 18px var(--teal-glow);
-  transition: transform .12s, box-shadow .12s;
+  transition: transform .12s, box-shadow .12s, background .15s, opacity .15s;
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
 }
+.btn-connect:disabled {
+  background: rgba(232, 244, 243, 0.08);
+  color: var(--text-faint);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.75;
+}
+.btn-connect:disabled:hover { transform: none; }
+.btn-connect:disabled::after { display: none; }
 .btn-connect::after {
   content: "";
   position: absolute;
@@ -732,14 +741,83 @@ body::before {
 }
 .media-item:hover .media-item-author { opacity: 1; }
 
-/* ---------- Twitch ---------- */
-.twitch-wrap {
-  display: flex;
-  height: 460px;
-  overflow: hidden;
+/* ---------- Streamers Twitch ---------- */
+.streamer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
 }
-#twitch-player { flex: 1; }
-#twitch-chat { width: 300px; border-left: 1px solid var(--border); }
+.streamer-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color .15s ease, transform .12s ease;
+}
+.streamer-card:hover {
+  border-color: var(--teal);
+  transform: translateY(-2px);
+}
+.streamer-card:active {
+  transform: translateY(0) scale(0.97);
+  transition: transform .08s ease;
+}
+.streamer-card.live {
+  border-color: rgba(45, 212, 191, 0.4);
+  box-shadow: 0 0 24px rgba(45, 212, 191, 0.12);
+}
+.streamer-avatar-wrap {
+  position: relative;
+  width: 76px;
+  height: 76px;
+}
+.streamer-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+.streamer-card.live .streamer-avatar {
+  border-color: var(--teal);
+}
+.streamer-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+.streamer-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.streamer-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  flex-shrink: 0;
+}
+.streamer-status-dot.live {
+  background: var(--teal);
+  box-shadow: 0 0 8px var(--teal-glow);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.streamer-viewers {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--teal);
+}
 
 /* ---------- Assets ---------- */
 .assets-card { padding: 26px 30px; }

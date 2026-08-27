@@ -2,7 +2,7 @@
 // ANOMIA LAUNCHER — renderer
 // ============================================================
 
-const TWITCH_CHANNEL = "b2obi64";
+let isAdminUnlocked = false;
 
 // --- Contrôles fenêtre ---
 document.getElementById("btn-min").addEventListener("click", () => window.anomia.minimize());
@@ -30,7 +30,7 @@ function goToView(name) {
       v.classList.add("view-entering");
     }
   });
-  if (name === "twitch") loadTwitchEmbed();
+  if (name === "twitch") loadStreamers();
   if (name === "media") loadMedia();
   if (name === "admin") refreshAdminStats();
 }
@@ -73,6 +73,24 @@ document.getElementById("btn-connect").addEventListener("click", async (e) => {
 
 // --- Statut serveur (polling) ---
 let lastJobStats = {};
+let lastServerOnline = false;
+let lastServerMaintenance = false;
+
+function updateConnectButtonState() {
+  const btn = document.getElementById("btn-connect");
+  // Le bouton reste utilisable si : le serveur est en ligne ET (pas en
+  // maintenance OU l'admin s'est identifié avec le code d'accès staff).
+  const canConnect = lastServerOnline && (!lastServerMaintenance || isAdminUnlocked);
+  btn.disabled = !canConnect;
+
+  if (!lastServerOnline) {
+    btn.textContent = "Serveur hors ligne";
+  } else if (lastServerMaintenance && !isAdminUnlocked) {
+    btn.textContent = "Serveur en maintenance";
+  } else {
+    btn.textContent = "Se connecter";
+  }
+}
 
 async function refreshStatus() {
   const dot = document.getElementById("status-dot");
@@ -85,6 +103,8 @@ async function refreshStatus() {
   const maintenanceBanner = document.getElementById("maintenance-banner");
 
   const status = await window.anomia.getServerStatus();
+  lastServerOnline = Boolean(status.online);
+  lastServerMaintenance = Boolean(status.maintenance);
 
   if (status.online) {
     count.textContent = `${status.clients} / ${status.maxClients}`;
@@ -130,6 +150,8 @@ async function refreshStatus() {
     lastJobStats = {};
     maintenanceBanner.classList.add("hidden");
   }
+
+  updateConnectButtonState();
 }
 refreshStatus();
 setInterval(refreshStatus, 30000);
@@ -239,22 +261,51 @@ async function loadNews() {
 }
 loadNews();
 
-// --- Twitch ---
-let twitchLoaded = false;
-function loadTwitchEmbed() {
-  if (twitchLoaded) return;
-  twitchLoaded = true;
-  // "parent" doit correspondre au domaine hôte. En Electron il n'y a pas de vrai domaine,
-  // donc on déclare localhost — si Twitch refuse l'affichage, utilise le bouton
-  // "Ouvrir sur twitch.tv" en dessous comme repli.
-  document.getElementById("twitch-player").src =
-    `https://player.twitch.tv/?channel=${TWITCH_CHANNEL}&parent=localhost&muted=false`;
-  document.getElementById("twitch-chat").src =
-    `https://www.twitch.tv/embed/${TWITCH_CHANNEL}/chat?parent=localhost&darkpopout`;
+// --- Streamers Twitch ---
+function renderStreamerCard(streamer) {
+  const el = document.createElement("div");
+  el.className = `streamer-card ${streamer.live ? "live" : ""}`;
+  const avatar = streamer.avatarUrl || "../assets/logo.png";
+  el.innerHTML = `
+    <div class="streamer-avatar-wrap">
+      <img src="${avatar}" alt="" class="streamer-avatar" />
+    </div>
+    <span class="streamer-name">${escapeHtml(streamer.displayName || streamer.channel)}</span>
+    <span class="streamer-status">
+      <span class="streamer-status-dot ${streamer.live ? "live" : ""}"></span>
+      ${streamer.live ? "En live" : "Hors ligne"}
+    </span>
+    ${streamer.live ? `<span class="streamer-viewers">${streamer.viewers} viewer${streamer.viewers > 1 ? "s" : ""}</span>` : ""}
+  `;
+  el.addEventListener("click", () => {
+    window.anomia.openExternal(`https://twitch.tv/${streamer.channel}`);
+  });
+  return el;
 }
-document.getElementById("btn-open-twitch").addEventListener("click", () => {
-  window.anomia.openExternal(`https://twitch.tv/${TWITCH_CHANNEL}`);
-});
+
+let streamersLoaded = false;
+async function loadStreamers() {
+  if (streamersLoaded) return;
+  streamersLoaded = true;
+  const grid = document.getElementById("streamer-grid");
+  const result = await window.anomia.getTwitchStatus();
+
+  if (!result.ok) {
+    grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Statut Twitch indisponible pour le moment.</p>`;
+    streamersLoaded = false; // permet de réessayer au prochain passage sur l'onglet
+    return;
+  }
+
+  grid.innerHTML = "";
+  if (!result.streamers.length) {
+    grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Aucun streamer configuré.</p>`;
+    return;
+  }
+
+  // Les lives en premier
+  const sorted = [...result.streamers].sort((a, b) => (b.live ? 1 : 0) - (a.live ? 1 : 0));
+  sorted.forEach((s) => grid.appendChild(renderStreamerCard(s)));
+}
 
 // --- Assets ---
 const assetsStatus = document.getElementById("assets-status");
@@ -592,7 +643,9 @@ async function tryUnlockAdmin() {
   document.getElementById("admin-overlay").classList.add("hidden");
 
   if (result.ok) {
+    isAdminUnlocked = true;
     document.getElementById("nav-admin").classList.remove("hidden");
+    updateConnectButtonState();
     goToView("admin");
   } else if (result.error) {
     await showInfo("Accès staff", `<p>${result.error}</p>`);

@@ -7,7 +7,7 @@ Launcher desktop (Electron) pour le serveur RP Anomia.
 - **Connexion directe** au serveur via `cfx.re/join/8pqgm4` (repli automatique sur `fivem://connect/IP:PORT`)
 - **Statut serveur en direct** (joueurs connectés/max, ping moyen) via les endpoints natifs FiveM, avec repli sur l'API CFX. Le ping moyen utilise en priorité la ressource `b2_pingstats` (voir `fivem-resources/b2_pingstats/README.md`) qui l'expose sans jamais divulguer la liste des joueurs
 - **Actualités/changelog** — liste locale (`src/news.json`) en secours, ou lues automatiquement depuis un salon Discord (voir `discord-news-sync/README.md`)
-- **Twitch intégré** — lecteur + chat, avec bouton de repli vers twitch.tv
+- **Streamers Twitch** — cartes avec avatar, statut live/hors ligne et nombre de viewers pour chaque streamer configuré (via `b2_twitchstatus`), clic pour ouvrir la chaîne dans le navigateur
 - **Vérification/téléchargement des assets custom** — compare les fichiers locaux à un manifest distant (hash SHA-256) et télécharge ce qui manque ou a changé
 
 ## Installation
@@ -48,6 +48,6 @@ Les fichiers sortent dans `dist/`.
 
 ## Notes techniques
 
-- Le twitch embed utilise `parent=localhost` (contrainte du player Twitch qui exige un paramètre `parent`). Si Twitch refuse l'affichage sur ta machine, le bouton "Ouvrir sur twitch.tv" sert de repli — teste et ajuste si besoin (certaines configs Electron nécessitent de fixer un vrai nom d'hôte custom via `session` + fichier `hosts` local, dis-moi si tu veux que je pousse cette option).
+- Les streamers affichés dans l'onglet Twitch (avatar, live/hors ligne, viewers) sont gérés côté serveur via la ressource `b2_twitchstatus` — voir `fivem-resources/b2_twitchstatus/README.md` pour la mise en place (clé API Twitch) et pour ajouter/retirer un streamer.
 - Le statut serveur passe par l'API officielle `servers-frontend.fivem.net` plutôt que par une requête directe à l'IP, pour rester fiable même si le pare-feu OxygenServ bloque les requêtes HTTP directes sur le port de jeu.
 - Aucune donnée sensible (mot de passe, token) n'est stockée par le launcher.

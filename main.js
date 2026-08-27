@@ -928,3 +928,16 @@ ipcMain.handle("admin:stats", async () => {
 
   return stats;
 });
+
+// ============================================================
+// Statut Twitch des streamers Anomia (via b2_twitchstatus)
+// ============================================================
+ipcMain.handle("twitch:getStatus", async () => {
+  try {
+    const result = await fetchJson(config.server.twitchStatusUrl, 6000);
+    if (Array.isArray(result)) return { ok: true, streamers: result };
+    return { ok: false, error: result.error || "unknown_error" };
+  } catch (err) {
+    return { ok: false, error: "La ressource b2_twitchstatus ne répond pas (pas encore installée, ou serveur hors ligne)." };
+  }
+});

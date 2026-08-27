@@ -43,6 +43,9 @@ contextBridge.exposeInMainWorld("anomia", {
   unlockAdmin: (passphrase) => ipcRenderer.invoke("admin:unlock", passphrase),
   getAdminStats: () => ipcRenderer.invoke("admin:stats"),
 
+  // Twitch
+  getTwitchStatus: () => ipcRenderer.invoke("twitch:getStatus"),
+
   // Connexion Discord
   startDiscordAuth: () => ipcRenderer.send("discord:startAuth"),
   getDiscordProfile: () => ipcRenderer.invoke("discord:getProfile"),

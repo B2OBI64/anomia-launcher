@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data:; frame-src https://player.twitch.tv https://www.twitch.tv;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data:;">
 <title>Anomia Launcher</title>
 <link rel="stylesheet" href="style.css" />
 </head>
@@ -149,21 +149,10 @@
       <!-- VUE TWITCH -->
       <section class="view hidden" id="view-twitch">
         <span class="section-eyebrow">// LIVE</span>
-        <h1 class="view-title">En direct sur Twitch</h1>
-        <div class="twitch-wrap glass">
-          <iframe
-            id="twitch-player"
-            src=""
-            frameborder="0"
-            allowfullscreen="true">
-          </iframe>
-          <iframe
-            id="twitch-chat"
-            src=""
-            frameborder="0">
-          </iframe>
+        <h1 class="view-title">Streamers Anomia</h1>
+        <div class="streamer-grid" id="streamer-grid">
+          <!-- injecté par renderer.js -->
         </div>
-        <button class="link-btn" id="btn-open-twitch">Ouvrir sur twitch.tv →</button>
       </section>
 
       <!-- VUE ASSETS -->

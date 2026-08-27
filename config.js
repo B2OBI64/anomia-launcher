@@ -22,6 +22,8 @@ module.exports = {
     // Endpoint custom (ressource b2_discordcheck) qui vérifie si un joueur a le
     // rôle whitelist Discord requis, avant même de tenter de lancer FiveM.
     discordCheckUrl: "http://185.44.80.32:30140/b2_discordcheck/",
+    // Endpoint custom (ressource b2_twitchstatus) qui donne le statut live des streamers Anomia
+    twitchStatusUrl: "http://185.44.80.32:30140/b2_twitchstatus/",
     // Repli si les endpoints directs sont injoignables (pare-feu, endpoint privacy, etc.)
     fallbackStatusApiUrl: "https://servers-frontend.fivem.net/api/servers/single/8pqgm4"
   },
@@ -39,11 +41,6 @@ module.exports = {
   discordAuth: {
     clientId: "REMPLACE_MOI",
     redirectPort: 47823
-  },
-
-  // --- Twitch ---
-  twitch: {
-    channel: "b2obi64"
   },
 
   // --- Discord ---
