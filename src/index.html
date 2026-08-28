@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data:;">
+<title>Anomia Launcher</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Barre de titre custom (fenêtre frameless) -->
+  <header class="titlebar" id="titlebar">
+    <div class="titlebar-brand">
+      <img src="../assets/logo.png" alt="Anomia" class="titlebar-logo" />
+      <span class="brand-mark">ANOMIA</span>
+      <span class="brand-sub">LAUNCHER</span>
+    </div>
+    <div class="titlebar-controls">
+      <button id="btn-min" class="win-btn" aria-label="Réduire">&#8211;</button>
+      <button id="btn-max" class="win-btn" aria-label="Agrandir">&#9633;</button>
+      <button id="btn-close" class="win-btn win-btn-close" aria-label="Fermer">&#10005;</button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+
+    <!-- Navigation latérale -->
+    <nav class="sidebar">
+      <div class="avatar-slot" aria-hidden="true">
+        <img src="../assets/logo.png" alt="Anomia" class="avatar-logo" />
+      </div>
+
+      <div class="discord-auth-slot" id="discord-auth-slot">
+        <button class="ext-link discord-connect-btn" id="btn-discord-auth">Se connecter avec Discord</button>
+      </div>
+
+      <button class="nav-item active" data-view="home">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+        Accueil
+      </button>
+      <button class="nav-item" data-view="news">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+        Actualités
+      </button>
+      <button class="nav-item" data-view="twitch">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="1"/><path d="M8 21h8M12 17v4"/></svg>
+        Twitch
+      </button>
+      <button class="nav-item" data-view="media">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Media
+      </button>
+      <button class="nav-item" data-view="assets">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/></svg>
+        Fichiers
+      </button>
+      <button class="nav-item hidden" data-view="admin" id="nav-admin">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"/></svg>
+        Admin
+      </button>
+
+      <div class="sidebar-footer">
+        <button class="ext-link" id="btn-discord">Discord</button>
+        <span class="version" id="app-version">v…</span>
+        <span class="update-status" id="update-status"></span>
+      </div>
+    </nav>
+
+    <!-- Contenu principal -->
+    <main class="content">
+
+      <!-- Bannière maintenance serveur -->
+      <div class="banner banner-maintenance hidden" id="maintenance-banner">
+        <span>🛠️ Le serveur est actuellement en maintenance — seul le staff peut se connecter.</span>
+      </div>
+
+      <!-- Bannière FiveM non détecté -->
+      <div class="banner hidden" id="fivem-banner">
+        <span id="fivem-banner-text">FiveM non détecté sur cette machine.</span>
+        <button class="link-btn" id="btn-download-fivem">Télécharger FiveM →</button>
+      </div>
+
+
+      <!-- VUE ACCUEIL -->
+      <section class="view" id="view-home">
+        <div class="home-hero">
+          <img src="../assets/hero-bg.jpg" alt="" class="home-hero-bg" />
+          <div class="home-hero-shade"></div>
+          <div class="home-hero-content">
+            <div class="hero-left">
+              <div class="status-row">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Vérification du statut…</span>
+              </div>
+              <h1 class="server-name">Anomia RP</h1>
+              <p class="server-desc">Serveur roleplay QBCore — communauté francophone</p>
+              <div class="players-row">
+                <span class="players-count" id="players-count">–</span>
+                <span class="players-label">joueurs connectés</span>
+              </div>
+            </div>
+            <div class="hero-right">
+              <button class="btn-connect" id="btn-connect">Se connecter</button>
+              <button class="btn-copy" id="btn-diagnose">Tester la connexion</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="telemetry-strip">
+          <div class="telemetry-item">
+            <span class="telemetry-label">Statut</span>
+            <span class="telemetry-value" id="tm-status">—</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Joueurs</span>
+            <span class="telemetry-value" id="tm-players">—</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Ping moyen</span>
+            <span class="telemetry-value dim" id="tm-ping">—</span>
+          </div>
+          <div class="telemetry-item telemetry-item-clickable" id="tm-jobs-item">
+            <span class="telemetry-label">Entreprises ouvertes</span>
+            <span class="telemetry-value violet" id="tm-jobs">—</span>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div>
+            <span class="section-eyebrow">// LOG</span>
+            <h2>Dernières actus</h2>
+          </div>
+          <button class="link-btn" data-goto="news">Tout voir →</button>
+        </div>
+        <div class="news-preview" id="news-preview">
+          <!-- injecté par renderer.js -->
+        </div>
+      </section>
+
+      <!-- VUE NEWS -->
+      <section class="view hidden" id="view-news">
+        <span class="section-eyebrow">// LOG</span>
+        <h1 class="view-title">Actualités</h1>
+        <div class="news-list" id="news-list">
+          <!-- injecté par renderer.js -->
+        </div>
+      </section>
+
+      <!-- VUE TWITCH -->
+      <section class="view hidden" id="view-twitch">
+        <span class="section-eyebrow">// LIVE</span>
+        <h1 class="view-title">Streamers Anomia</h1>
+        <div class="streamer-grid" id="streamer-grid">
+          <!-- injecté par renderer.js -->
+        </div>
+      </section>
+
+      <!-- VUE ASSETS -->
+      <section class="view hidden" id="view-assets">
+        <span class="section-eyebrow">// SYS</span>
+        <h1 class="view-title">Fichiers custom</h1>
+        <div class="assets-card glass">
+          <p id="assets-status">Clique pour vérifier les fichiers custom requis (textures, sons, polices) avant de te connecter.</p>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="progress-label" id="progress-label"></div>
+          <button class="btn-connect" id="btn-check-assets">Vérifier les fichiers</button>
+        </div>
+
+        <div class="section-header" style="margin-top:26px;">
+          <h2>Nettoyage cache FiveM</h2>
+        </div>
+        <div class="assets-card glass">
+          <p id="cache-status">Vide les fichiers temporaires FiveM (textures/streaming téléchargés) sans toucher à tes paramètres locaux (dossier game-storage préservé). Utile en cas de bug graphique ou de cache corrompu.</p>
+          <button class="btn-copy" id="btn-clear-cache">Vider le cache FiveM</button>
+        </div>
+
+        <div class="section-header" style="margin-top:26px;">
+          <h2>Client FiveM</h2>
+        </div>
+        <div class="assets-card glass">
+          <p id="fivem-status">Vérification…</p>
+          <button class="btn-copy hidden" id="btn-fivem-download">Télécharger FiveM</button>
+        </div>
+      </section>
+
+      <!-- VUE MEDIA -->
+      <section class="view hidden" id="view-media">
+        <span class="section-eyebrow">// GALERIE</span>
+        <h1 class="view-title">Media des joueurs</h1>
+        <div class="media-grid" id="media-grid">
+          <!-- injecté par renderer.js -->
+        </div>
+      </section>
+
+      <!-- VUE ADMIN (lecture seule, cachée par défaut) -->
+      <section class="view hidden" id="view-admin">
+        <span class="section-eyebrow">// STAFF</span>
+        <h1 class="view-title">Tableau de bord</h1>
+        <div class="telemetry-strip" style="margin-bottom:20px;">
+          <div class="telemetry-item">
+            <span class="telemetry-label">Joueurs</span>
+            <span class="telemetry-value" id="admin-players">—</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Ping moyen</span>
+            <span class="telemetry-value" id="admin-ping">—</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Ressources</span>
+            <span class="telemetry-value dim" id="admin-resources">—</span>
+          </div>
+        </div>
+        <div class="assets-card glass">
+          <p>Pour redémarrer le serveur ou consulter les logs en direct, utilise txAdmin — le launcher ne duplique pas volontairement ces actions sensibles pour ne pas exposer de accès destructeur dans une appli distribuée à tout le monde.</p>
+          <button class="btn-copy hidden" id="btn-open-txadmin">Ouvrir txAdmin →</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modale de confirmation custom -->
+  <div class="modal-overlay hidden" id="confirm-overlay">
+    <div class="modal-box glass">
+      <h3 id="confirm-title">Confirmer</h3>
+      <p id="confirm-message"></p>
+      <div class="modal-actions">
+        <button class="btn-copy" id="confirm-cancel">Annuler</button>
+        <button class="btn-connect" id="confirm-ok">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale d'information (diagnostic réseau, etc.) -->
+  <div class="modal-overlay hidden" id="info-overlay">
+    <div class="modal-box glass">
+      <h3 id="info-title">Info</h3>
+      <div id="info-message"></div>
+      <div class="modal-actions">
+        <button class="btn-connect" id="info-ok">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale code d'accès admin -->
+  <div class="modal-overlay hidden" id="admin-overlay">
+    <div class="modal-box glass">
+      <h3>Accès staff</h3>
+      <p>Entre le code d'accès pour déverrouiller le tableau de bord.</p>
+      <input type="password" id="admin-passphrase" class="admin-input" placeholder="Code d'accès" />
+      <div class="modal-actions">
+        <button class="btn-copy" id="admin-cancel">Annuler</button>
+        <button class="btn-connect" id="admin-submit">Déverrouiller</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale aperçu streamer -->
+  <div class="modal-overlay hidden" id="streamer-overlay">
+    <div class="modal-box glass streamer-modal">
+      <button class="modal-close" id="streamer-close" aria-label="Fermer">&#10005;</button>
+      <img id="streamer-modal-thumbnail" class="streamer-modal-thumbnail hidden" src="" alt="" />
+      <div class="streamer-modal-header">
+        <img id="streamer-modal-avatar" class="streamer-modal-avatar" src="" alt="" />
+        <div>
+          <h3 id="streamer-modal-name">—</h3>
+          <span class="streamer-modal-status" id="streamer-modal-status">—</span>
+        </div>
+      </div>
+      <p id="streamer-modal-title" class="streamer-modal-title hidden"></p>
+      <p id="streamer-modal-bio" class="streamer-modal-bio"></p>
+      <div class="modal-actions">
+        <button class="btn-connect" id="streamer-modal-open">Voir le stream</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale mise à jour OBLIGATOIRE - pas de bouton fermer/annuler, bloque tout tant
+       que l'update n'est pas installée (z-index le plus haut, au-dessus des autres modales) -->
+  <div class="modal-overlay hidden" id="update-overlay" style="z-index:100;">
+    <div class="modal-box glass update-modal">
+      <h3>Mise à jour requise</h3>
+      <p id="update-message">Une nouvelle version du launcher est disponible. Le serveur nécessite la dernière version pour te connecter.</p>
+      <div class="update-changelog hidden" id="update-changelog">
+        <span class="update-changelog-label">// Quoi de neuf</span>
+        <div id="update-changelog-text"></div>
+      </div>
+      <div class="progress-track hidden" id="update-progress-track">
+        <div class="progress-fill" id="update-progress-fill"></div>
+      </div>
+      <div class="progress-label" id="update-progress-label"></div>
+      <div class="modal-actions">
+        <button class="btn-connect hidden" id="update-download-btn">Télécharger et installer</button>
+        <button class="btn-connect hidden" id="update-retry-btn">Réessayer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

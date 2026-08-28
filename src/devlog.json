@@ -1,0 +1,14 @@
+[
+  {
+    "date": "2026-08-08",
+    "title": "Police 2.0",
+    "description": "",
+    "tasks": [
+      { "text": "Système de garde à vue", "done": true },
+      { "text": "Refonte MDT", "done": true },
+      { "text": "Système de mandats", "done": false },
+      { "text": "Interface radio améliorée", "done": false }
+    ],
+    "percent": 50
+  }
+]

@@ -1,0 +1,152 @@
+[
+  {
+    "date": "2026-08-07",
+    "tag": "MAJ",
+    "title": "test test",
+    "content": ""
+  },
+  {
+    "date": "2026-08-06",
+    "tag": "NOUVEAU",
+    "title": "Test de synchronisation",
+    "content": "Ceci est un test pour vérifier que le launcher récupère bien mes patch-notes."
+  },
+  {
+    "date": "2026-07-12",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [07/07/2026] 🚀",
+    "content": "---\nVersion 0.2.1\n✨ **Nouveautés** : \n**.1 : Tablette  **\n- pour les service public actuellement \n**.2 : garage entreprise **\n- Retrait des garage qui donne les véhicule ( patron passer par le concessionnaire pour l'achat de véhicules entreprise )\n**.3 :  ajout de boite à clé**\n- En vente au youtool\n- boîte avec code\n**.4 : Concessionnaire **\n- Possibilité de reprendre l'entreprise ( pour l'instant sa reste automatique)\n**.5 : Écran de chargement ** \n- Ajout d'une musique pendant le chargement ( viens pas de moi mais de vito )\n🛠️ **Réparé** :\n**.1 : Facturation ** \n- Système revue toute ce gère dans le menu facture ( payer / crée/ émises )\n- configuration de la touche dans les parametre ( natif F7) \n**.2 : Concessionnaire**\n- Refonte du menu concessionnaire \n**.3 : Essence**\n-  Modification de l'interface pour payer\n- Ajout de la possibilité de payer avec la carte bancaire \n- Changement du système pour le pistolet ( ce place peu importe la position du véhicule ) \n**.6 : Multicaracter**\n- Refonte de l'interface \n- Ajout D'une Petite Musique \n📈 **reste à faire **\n- L'économie ( en cours )\n- traduction partiel des menu en jeux merci de remonter les manque ou oublis\n<:fivem:1314272210948456479> les petit plus du serveur\n- bientôt je vous passerai un petit logiciel pour vidé le cache de fiveM \n||||"
+  },
+  {
+    "date": "2026-07-07",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [07/07/2026] 🚀",
+    "content": "---\nVersion 0.2.0\n**Je vous souhaite unne bonne lecture**\n✨ **Nouveautés** : \n**.1 : Trousseau de cle ajouter a l'epicerie **\n- Uniquement pour les cle vehicule \n**.2 : systeme de vente de coffre/meuble/électroménager**\n- au youtool chaque PNJ a un fonction de vente \n**.3 : Rissing Sun Custom **\n- appel automatique PNJ toute les ( 30-60min)\n- Ajouter d’un casier a vetement mécano \n** .4 : appel automatique pour les EMS **\n- appel automatique toute les (20min) avec 60% de recevoir l'appel\n- vous avez 15min pour finir la mission\n**.5 : Ammunation/Police**\n- Ajout d'un stand de tir \n**.6 : Livreur de Pizza**\n- Nouveau Job Libre \n**.7 : Peche **\n-nouveau script pour la pèche \n🛠️ **Réparé** :\n**.1 : Facturation ** \n- Ajout des motif dans le coffre entreprise \n- configuration de la touche pour le menu facture ( natif F7) a changer dans le menu facture\n**.2 : Taxi**\n- Ajout Des Cle Vehicule \n**.3 : Essence**\n-  Modification consommation x2 et prix essence 3$ a la place de 5$ le litre\n**.4 : Retrait du sac a vêtement**\n**.5 : Admin **\n- Ajout de petit fonctionnalité\n-Refonte/Reorganisation Du Menu Admin\n**.6 : Multicaracter**\n- Refonte de l'interface \n- Ajout D'une Petite Musique \n📈 **reste à faire **\n- L'économie ( en cours )\n- La traduction des script ( en cours ) \n- traduction partiel des menu en jeux merci de remonter les manque ou oublis\n- travaille du loading screen\n<:fivem:1314272210948456479> les petit plus du serveur\n- Un Livre Le patch-note \n||||"
+  },
+  {
+    "date": "2026-06-30",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [30/06/2026] 🚀",
+    "content": "---\nVersion 0.1.9\n✨ **Nouveautés** : \n.1: Nouvelle application sur le téléphone ( rendez vous ) a testé si tout fonctionne bien \n🛠️ **Réparé** :\n.1 : Correction des coffre bancaire des entreprises ( impossible d'ouvrir )  \n.2 : Correction des facture l'argent et bien retiré du joueur \n.3 : Correction pour déposer/retirer d'argent du coffre bancaire ( entreprise ) \n📈 **reste à faire **\n.1 : L'économie ( en cours )\n.2 : La traduction des script ( en cours ) \n.3 :Verrouillé quelques bâtiments ( EMS ) \n.4 : Ajouter la fonction pour ouvrir le menu facture avec 1 touche \n<:fivem:1314272210948456479> **les petit plus du serveur**\n.1 : Ce patch-note sort suite a quelque changements fait cette apres-midi\n<:anomia:1521183970757185566>  Bonne aventure <:anomia:1521183970757185566> \n||||"
+  },
+  {
+    "date": "2026-06-29",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [29/06/2026] 🚀",
+    "content": "---\nVersion 0.1.8\n✨ **Nouveautés** : \n.1: Nouveau système de facturation \navec de nouvelle commande en jeux\n- /CreerFacture ( Permet de créer une facture ) uniquement les entreprise gérer par les joueur \n- /Factures ( Permet de consulter les facture et payer )\n-  /FacturesEmises ( Permet de voir les facture que vous avez mise ) disparais quand ses payé\n- Chaque entreprise dispose d'un coffre ou l'on peu déposer et retirer l'argent de l'entreprise \nL'argent par direct sur le coffre de l'entreprise \nles salaire son retirer automatiquement du coffre entreprise ( Normalement ) \n.2:  Rising Sun Custom\n- Nouveaux Magasin \n- La radio a était ajouter à votre magasin\n- Décalage De Votre Garage pour la dépanneuse \n🛠️ **Réparé** :\n.1 : Correction de la touche qui coupe le moteur ( pour les joueur manette )\n.2 : Correction d'une erreur quand on  testé un véhicule dans le conces ( erreur dans le F8 corrigé )  \n.3 : Ajout des coffre bancaire dans chaque entreprise ( accessible uniquement par les patron )\n.4 : Refonte des salaire entreprise privée \n.5 : Refonte Du script B2Admin \n📈 **reste à faire **\n.1 : L'économie ( en cours )\n.2 : La traduction des script ( en cours ) \n.3 :Verrouillé quelques bâtiments ( EMS ) \n.4 : Ajouter la fonction pour ouvrir le menu facture avec 1 touche \n<:fivem:1314272210948456479> **les petit plus du serveur**\n.1 : Merci pour vos retour sa aide grandement a avance dans le projet  \n.2 : Pour la facturation ses un tout nouveau script donc des erreur peu subvenir merci de me le dire dans vos ticket si quelque chose ne va pas \n.3 : Petit emote <:anomia:1521183970757185566> qui debarque sur discord\n<:anomia:1521183970757185566>  Bonne aventure <:anomia:1521183970757185566> \n||||"
+  },
+  {
+    "date": "2026-06-26",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [26/06/2026] 🚀",
+    "content": "---\nVersion 0.1.7\n✨ **Nouveautés** : \n- EMS \n.1 : Le prix des item dans  votre magasin est gratuit maintenant\n.2 : La radio a était ajouter à votre magasin\n.3 : Le kit de soin fonctionne maintenant \n- LSPD \n.1 : Nouvelle dépanneuse ( pour la mise en fourrière )\n.2 : Garage terminé \n🛠️ **Réparé** :\n- Script pour les custom ( rising sun custom )\n- Traduction partiel du script de facturation  \n- Verrouillage du bureau patron ( rising sun custom ) \n- Refonte des salaire entreprise privée \n📈 **reste à faire **\n- L'économie ( en cours )\n- La traduction des script ( en cours ) \n- Verrouillé quelques bâtiments ( EMS ) \n<:fivem:1314272210948456479> les petit plus du serveur\n- Pas de maintenance pendant ce week-end ( sauf cas majeure ).\nLes <#1434344974203228341> reviendront Lundi\nBon week-end à tous est bonne aventure \n||||"
+  },
+  {
+    "date": "2026-06-25",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [23/06/2026] 🚀",
+    "content": "---\nVersion 0.1.6\n✨ **Nouveautés** : \n- Police ( script pour détecter si le véhicule que vous contrôle est volé ou non ) touche a paramètres \n- 2 Nouveau Alcool arrive en ville ( tequilla , tequilla sinsivito ) \n🛠️ **Réparé** :\n- Économie entreprise ( rising sun custom ) \n📈 **reste à faire **\n- L'économie ( en cours )\n- La traduction des script ( en cours ) \n- Verrouillé quelques bâtiments ( EMS ) \n<:fivem:1314272210948456479> les petit plus du serveur\n- Faite très attention si vous roulé en véhicule, quand  le serveur doit redémarrer  votre véhicule va automatiquement repartir au dernier point où il était vide ( sans conducteur ni passager) .\nSolution : quand il reste 1minute avant le redémarrage du serveur vous vous arrêtez sur le côté vous descendez de votre véhicule puis vous remonter dedans sans bouger.\nNormalement après le redémarrage votre véhicule sera à côté de vous.\nBonne aventure a tous \n||||"
+  },
+  {
+    "date": "2026-06-24",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [23/06/2026] 🚀",
+    "content": "---\nVersion 0.1.5\n✨ **Nouveautés** : \n- Le caviste ( shop pour les bar )\n- Nouveau ( /tutoriel) pour vous présenter le serveur\n🛠️ **Réparé** :\n- Retrait du script pour les sirènes ( ambulance / police ) retour au système classique de GTA( touche E en jeu )\n📈 **reste à faire **\n- L'économie ( en cours )\n- La traduction des script ( en cours ) \n- verrouillé quelques bâtiments ( EMS ) \n<:fivem:1314272210948456479> les petit plus du serveur\n- Si vous avez des idées ou des chose a améliorer le salon <#1473162854420189374>  Reste ouvert pour vos idées \n||||"
+  },
+  {
+    "date": "2026-06-23",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [23/06/2026] 🚀",
+    "content": "---\nVersion 0.1.4\n✨ **Nouveautés** : \n- Porte de l'église fermée ( peuvent être ouvertes uniquement par le Prêtre  )\n- Le casque automatique quand on monte sur une  moto ses fini \n- Script Pour Le Rising sun custom ( possibilité de remorquer un vehicule avec le flatbed ) \n- Ajout D'un Garage Entreprise ( Rising Sun Custom )\n🛠️ **Réparé** :\n- Retrait du script pour les persistence des perso \n- Traduction Script ( rising sun custom \n- Script mineur ( Réparer ) \n-  Véhicule Police ( Couleur / Modif ) déjà prête a partir sur la route \n📈 **reste à faire **\n- L'économie ( en cours )\n- La traduction des script ( en cours ) \n- verrouillé quelques bâtiments ( EMS ) \n<:fivem:1314272210948456479> les petit plus du serveur\n- Beta-Test Enfin Ouvert\n||||"
+  },
+  {
+    "date": "2026-06-18",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [18/06/2026] 🚀",
+    "content": "---\nVersion 0.1.3\n✨ **Nouveautés** : \n- Porte du commissariat fermée ( peuvent être ouvertes uniquement par la police )\n- Liste véhicule pour le commissariat \n- Nouveau mapping Église \n- Nouveau script pour l'illégal (  fonctionnelle ) \n- Nouveau script pour le contrôle véhicule ( pour les porte, fenetre, place dans le véhicule, ect ect )\n- Ajout d'un héliport ( EMS )\n- Ajout d'un héliport ( Police )\n🛠️ **Réparé** :\n- Script contrôle véhicule ( changer pour pouvoir travailler librement dessus ) + ( rendu compatible avec le système de clé ) \n- Script pour les vêtements ( Réparer fini les duplication de personnage entre joueur normalement ) \n- Tout les objets du serveur  ( traduit reste les descriptions à faire ) \n📈 **reste à faire **\n- L'économie ( en cours )\n- La traduction des script ( en cours ) \n- verrouillé quelques bâtiments ( EMS/Église ) \n<:fivem:1314272210948456479> les petit plus du serveur\n- Suite à l'annonce sur mon stream\n( l'ouverture de la seconde bêta-test se passera du 22juin jusqu'au 23/09 pendant la période de l'été \nJe vous posterai une <#1434314095502561440> directement pour l'heure d'ouverture )\n- L'ile de cayo perico vous sera interdit d'accès ( cayo perico sera utiliser pour des test accès uniquement au membre du staff )\n||||"
+  },
+  {
+    "date": "2026-06-11",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [11/06/2026] 🚀",
+    "content": "---\nVersion 0.1.2\n✨ **Nouveautés** : \n- Ajout de la fonction pour porter quelqu'un ( /carry )  en jeux \n- Ajout d'une persistance pour les personnages ( avec la possibilité de porter un joueur hors-ligne ) \n- Nouveau mapping pour le concessionnaire \n- Nouveau script pour l'illégal ( a configurer encore )\n- Ajout de quelque maison à l'achat\n- Ajout de L'agence intérim \n- Pour les Carte d'identité / Permis / Licence ) tout ce passe directement en mairie avec le gouvernement ( admin / modo )\n🛠️ **Réparé** :\n- Retour sur l'ancien script concessionnaire ( je doit encore retirée le test des véhicules incompatible avec le script parking )\n- Script électricien ( traduit est réparé )\n- Script pour les vêtements ( traduit ) \n- Script Éboueur ( traduit et réparé ) \n- Script essence ( traduit )\n- La plupart des Blips sont en place \n📈 **reste à faire **\n- L'économie ( en cours )\n- La traduction des script ( en cours ) \n- verrouillé quelque bâtiment ( LSPD / EMS ) est les lié au Job\n<:fivem:1314272210948456479> les petit plus du serveur\n- Suite à l'annonce sur mon stream\n( l'ouverture de la seconde bêta-test se passera du 21 juin jusqu'au 03/09 pendant la période de l'été \nJe vous posterai une <#1434314095502561440> directement pour l'heure d'ouverture )\n- Le casino restera fermé pendant un certain temps de cette bêta-test ( je doit travailler l'économie dessus )\n- le serveur peut avoir des petites maintenance ( la matinée / journée / soirée )  vous serais mise au courant en jeux et discord \n||||"
+  },
+  {
+    "date": "2026-05-31",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [31/05/2026] 🚀",
+    "content": "---\nVersion 0.1.1\n✨ **Nouveautés** : \n- Refonte de l'ATH des taxi\n- Menu pour les taxi \n- Mise à jour du script maison\n- Mise à jour du script hôtel\n- Nouvelle  hotel \n🛠️ **Réparé** :\n- Suppression d'un hôtel \n- Retrait de beaucoup de mapping qui causé des crash a certain lieux de la map encore \n- Suppression du script dispatch ( les annonces vocales ) \n- Société ajouter au téléphone ( manque plus que les image ) \n📈 **reste à faire **\n- Refaire tout les blips sur la carte ( en cours )\n- L'économie ( en cours )\n- La traduction des script ( en cours ) \n<:fivem:1314272210948456479> les petit plus du serveur\n- Ce soir à partir de 23h40-23h45 annonce sur ma chaîne twitch (  twitch.tv/b2obi64 ) au sujet du serveur \n||||"
+  },
+  {
+    "date": "2026-04-30",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [30/04/2026] 🚀",
+    "content": "---\nVersion 0.1.0\n✨ **Nouveautés** : \n- Retour sur l'ancien système de garage \n- Retour sur l'ancien système de parking\n- Nouveau système de report \nAvec la commande en jeux ( /report )\n🛠️ **Réparé** :\n- Tout les véhicules restent en dehors du garage  au redémarrage du serveur \n( Même les véhicule entreprise logiquement )\n- Le casino ne fait plus crash logiquement \n- Nettoyage de la BDD de certains vehicule\n- Les crash aléatoire du a l'ancien système de persistance \n- Retrait de beaucoup de mapping qui causé des crash a certain lieux de la map \n📈 **reste à faire **\n- Refaire tout les blips sur la carte \n- Travailler le téléphone ( ajout des entreprises joueur )\n- Retravailler quelque mapping\n- L'économie\n- La traduction des script \n<:fivem:1314272210948456479> les petit plus du serveur\n- Nous sommes passer à la version 0.1.0 du serveur \n- Si vous rencontrez un problème merci de crée un Ticket dans le salon <#1409499094988099594> \n( 1 seul ticket avec tout les problème rencontré avec le rapport de crash si possibles) \n- J-5 avant la fermeture de la bêta-test si on atteint 7joueur en simultané ce week-end je repousse la fermeture 1 semaine \n||||"
+  },
+  {
+    "date": "2026-04-26",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [26/04/2026] 🚀",
+    "content": "---\n✨ **Nouveautés** : \n-  Script mineur retravailler \n-  script pour les véhicule EMS / POLICE \n- Nouveau job libre \" électricien \"\n- Nouveau job libre \" nettoyer les piscine \"\n- Mise en Place des toute première activité illégal \n🛠️ **Réparé** :\n- Retrait d'un script admin qui fonctionné pas vraiment \n- Le job mineur a était totalement refais \n- les clé véhicule dans les job ( EMS / POLICE / MINEUR / ÉBOUEUR / ÉLECTRICIEN)\n- Le commissariat ( mise en place des points d'intérêt pour la police )\n- Mapping de l'hôpital retrait des escaliers suite à des crash dans le mapping \n- Mise en place d'ascenseur dans l'hopital\n📈 **reste à faire **\n- Refaire tout les blips sur la carte \n- Travailler le téléphone ( ajout des entreprises joueur )\n- Retravailler quelque mapping\n- L'économie\n- La traduction des script \n- Retravailler le script casino \n<:fivem:1314272210948456479> les petit plus du serveur\n- Un grand merci a vous pour l'aide que vous m'apportez sur le serveur ses grâce à vous que des erreurs son corrigées \n<:Warning:1343656099739603097>  les véhicule entreprise ne reste pas après un redémarrage serveur ni les véhicule donner à l'aéroport <:Warning:1343656099739603097> \n||||"
+  },
+  {
+    "date": "2026-04-16",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [16/04/2026] 🚀",
+    "content": "---\n<a:6472_WeeWoo:649399329760739358>  Un des plus gros patch-note fait sur le serveur <a:6472_WeeWoo:649399329760739358> \n✨ **Nouveautés** : \n-  Script mécano est tuning \najouter pour le rising sun custom\n- Les clé véhicule son en item \n<:Warning:1343656099739603097>  le véhicule qui vous et donner a l'aéroport ne reste pas en dehors des garage après un redémarrage donc faite attention <:Warning:1343656099739603097> \n- PNJ au concessionnaire \nAprès achat d'un véhicule parler au PNJ avec le target pour récupérer les clé de votre véhicule ou faire un doublons (500$)\n- PNJ a l'aéroport qui vous donne un véhicule avec 1cle \n- système de dispatch pour la police \nDispatch vocal qui annonce certain événement criminelle  en ville \n🛠️ **Réparé** :\n- loadingscreen \nRetrait de quelque fonction qui amène des crash en jeu\n- système de clé véhicule \nObligation d'avoir les clé pour démarrer/fermer ouvrire le véhicule \n- On repasse a la V1 du script ambulance la V2 et pas stable encore \n- On repasse a un ancien système pour les vêtements sa évitera que l'on ce retrouve avec un skin PNJ \n- Le casino reste actuellement fermée pour des problème de crash a l'intérieur \n📈 **reste à faire **\n- Refaire tout les blips sur la carte \n- Travailler le téléphone ( ajout des entreprises joueur )\n- Retravailler quelque mapping\n- L'économie\n- La traduction des script \n- Retravailler le script casino \n- Le commissariat ( mise en place des points d'intérêt pour la police )\n<:fivem:1314272210948456479> les petit plus du serveur\n- Je vous annoncé que nous avons atteint le subgoal pour ouvrire le serveur jusqu'au 05/05 \n- Faite un personnage fictif car on peu venir a supprimer des éléments dans la base de données dont votre personnage aussi \n-merci de vide votre cache fiveM si vous crashé souvent \n<:Warning:1343656099739603097> des crash ou problème en jeux peu encore arriver merci de faire 1seul ticket sur le discord avec le motif du crash / screen ou capture de jeux <:Warning:1343656099739603097> \n||||"
+  },
+  {
+    "date": "2026-03-01",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [01/03/2026] 🚀",
+    "content": "---\n✨ **Nouveautés** : \n-  Script casino installer ( reste quelque truc a régler)\n- Nouveaux systèmes pour les bar \n( Vous avez un coffre ( stock ) au lieu de la boutique )\n- Presque tout les magasins sont ouverts dans  le centre- commercial \n- Refonte de la boutique EMS\n- Système automatique pour l'agence immobilière \n🛠️ **Réparé** :\n- Retrait du mapping skatepark \n- Retrait des 2batiment place des cubes ( il rentrer en conflit avec le mapping de l'hôpital)\n📈 **reste à faire **\n- Refaire tout les blips sur la carte \n- Ajouter les clés véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- La traduction des script \n- Ajouter un script pour les mecano \n- Retravailler le script casino \n<:fivem:1314272210948456479> les petit plus du serveur\n- Je vous annoncé que l'ouverture du discord a était lancée sur le live \n- Plein de belle chose vont arriver avec le temps \n||||"
+  },
+  {
+    "date": "2026-02-13",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [13/02/2026] 🚀",
+    "content": "---\n✨ **Nouveautés** : \n-  Nouveau mapping pour le ( benny's ) qui deviens ( rising sun custom ) bye bye le benny's\n- Ajout d'un nouveau mapping pour le casino \n- Nouveau loading screen ( réaliser par  )\n- Nouveau script pour les garage ( réaliser par  )\n- Petit retour en arrière pour le multicaracter \n- Ajout de tout les véhicule des DLC GTA online au concessionnaire \n🛠️ **Réparé** :\n- le script garage a était retravailler \n- les item drop enfin à la création de personnage ( le problème viens du multicaracter)\n📈 **reste à faire **\n- Refaire tout les blips sur la carte \n- Ajouter les clés véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- La traduction des script \n- Ajouter des points d'intérêt dans le centre commerciale \n- Ajouter un script pour les mecano \n<:fivem:1314272210948456479> les petit plus du serveur\n- nous avons une nouvelle personne dans l'équipe  qui rejoind l'équipe des DEV pour m'aider a avancer sur le projet\n||||"
+  },
+  {
+    "date": "2026-01-30",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [30/01/2026] 🚀",
+    "content": "---\n✨ **Nouveautés** : \n-  Nouveau script pour les vêtements ( création de perso / boutique / tatoo / barber et garde-robe ) \n- Ajout d'un nouveau mapping concessionnaire voiture \n🛠️ **Réparé** :\n- Problème avec le mapping hôpital ( retrait du digital den côté de missionrow ) \n- Script vêtement rendu compatible avec les maison ( garde-robe )\n📈 **reste à faire **\n- Refaire tout les blips sur la carte \n- Ajouter les clés véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- La traduction des script \n- Ajouter des points d'intérêt dans le centre commercial\n-  liste de véhicules ( ajouter les véhicules de la mise à jour au concessionnaire)\n- 2-3 chose pour le nouveau concessionnaire \n- Ajouter un script pour les mecano \n<:fivem:1314272210948456479> les petit plus du serveur\n- Je reviens plus déterminés pour Dev il reste plein de chose à faire avant d'ouvrir en beta-test  \n||||"
+  },
+  {
+    "date": "2026-01-25",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [25/01/2026] 🚀",
+    "content": "---\nBonjour a tous \nJe vous poste le pach-note après 2mois sans trop touché au dev du serveur avec les fêtes, le boulot, ect ect j'ai pas pus toucher au dev \nVoici les \n✨ **Nouveautés** : \n-  nous sommes passer sur la toute dernière version de GTA ( celle avec les manoir )\n- ajout d'un script pour des jeux de ticket a gratter \n- ajout d'un script pour des grillage devant certain magasin\n- changement de script pour le multi-caracter \n🛠️ **Réparé** :\n- pas grand chose étant donner que je touché pas trop au dev\n📈 **reste à faire **\n- Refaire tout les blips sur la carte \n- Ajouter les clés véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- La traduction des script\n- Retravailler le loading screen \n- Ajouter des points d'intérêt dans le centre commercial\n-  liste de véhicules ( ajouter les véhicules de la mise à jour au concessionnaire)\n<:fivem:1314272210948456479> les petit plus du serveur\n- un grand merci à @n1ph0ny qui gère le discord \n||||"
+  },
+  {
+    "date": "2025-12-02",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [02/12/2025] 🚀",
+    "content": "---\n✨ **Nouveautés** : \n-  Nouveau mapping pour l'hôpital\n- Script pour les EMS\n- Script pour les fauteuils roulants/ béquille\n-  Script pour la LSPD \n-  Ajout d'un nouveau système d'inventaire \n- Ajout d'un véhicule (AW109) hélicoptère EMS\n🛠️ **Réparé** :\n- Tout le script pour les EMS son configuré au nouveau mapping \n📈 **reste à faire **\n- Refaire tout les blips sur la carte \n- Ajouter les clés véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- La traduction des script\n- Retravailler le loading screen \n- Réparé le multi caractère \n- Ajouter des points d'intérêt dans le centre commercial\n- Configuré le script LSPD \n<:fivem:1314272210948456479> les petit plus du serveur\n- Un Grand merci a @creaio de m'aider sur l'avancement du serveur <:honor8:1343969628136669327> \n||||"
+  },
+  {
+    "date": "2025-11-24",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [24/11/2025] 🚀",
+    "content": "---\n✨ **Nouveautés** : \n- Changement de la page de connection\n- Ajout d'un motel ( en ville )\n- Mapping de vendeur de bateaux \n-  Ajout d'un script location de vehicule\n- Ajout d'un vehicule (vors) \n- ajout d'un centre commercial\n🛠️ **Réparé** :\n- correction Du script garage + parking\n-changement du multi-caractère \n📈 **reste a faire **\n- refaire tout les blips sur la carte \n- Ajouter les clé véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- Ajouter des scripts pour la police est pour les EMS\n- La traduction des script\n- Retravailler le loading screen \n- Réparé le multi caractère \n- ajouter des point d'interet dans le centre commercial\n<:fivem:1314272210948456479> les petit plus du serveur\n- je suis en contacte avec le dev du script ( multi-caractère ) pour réparer  le multi caractère \n||||"
+  },
+  {
+    "date": "2025-11-17",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [17/11/2025] 🚀",
+    "content": "---\n✨ **Nouveautés** : \n- Ajout d'un script radio ( talkie-walkie )\n- Ajout d'un motel (paleto)\n- Ajout d'un systeme d'alcool ( effet, animation )\n-  Ajout d'un script dragy \n- Ajout  d'un script pêche\n- Ajout d'un vehicule (vors)\n- Ajout d'un script pour ce caché dans certaine poubelle \n<:Warning:1343656099739603097> ** supprimer**\n- retrait du jobs brasseur ( gros probleme de mapping )\n🛠️ **Réparé** :\n- Mapping du motel a paleto \n- La Radio fonctionne uniquement avec l'item dans l'inventaire \n- Suppression des model prêt fait  pendant  la création d'un perso\n- refonte de la map / mini map ajout de numéro sur chaque batiment + cayo perico\n📈 **reste a faire **\n- refaire tout les blips sur la carte \n- Ajouter les clé véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- Ajouter des scripts pour la police est pour les EMS\n- La traduction des script\n- Retravailler le loading screen \n- Réparé le multi caractère \n<:fivem:1314272210948456479> les petit plus du serveur\n- Amelioration du bot discord\n||||"
+  },
+  {
+    "date": "2025-11-05",
+    "tag": "MAJ",
+    "title": "Sinon je les déjà en forme le patch note regarde",
+    "content": ""
+  },
+  {
+    "date": "2025-11-05",
+    "tag": "MAJ",
+    "title": "🚀 Patch Note - [13/11/2025] 🚀",
+    "content": "---\n✨ **Nouveautés** : \n- Ajout d'un shop moto (paleto)\n- Ajout d'un motel (sandy shore)\n-Plein de propriété on était ajouter a l'achat\n-  Ajout d'item pour la faim/soif\n- Ajouter de la commande PMMS pour les vidéo youtube sur les télé \n- Ajout d'une boombox \n- Ajout d'un sac de vêtements \n🛠️ **Réparé** :\n- Mapping du motel a paleto \n- Le car control (fonctionne avec F4 dans un véhicule \n- Le HUD après création d'un nouveau perso\n- Mapping des avocats\n📈 **reste a faire **\n- Ajouter le motel de paleto comme motel\n- Ajouter les clé véhicule comme item\n- Retravailler quelque mapping\n- L'économie\n- Ajouter des scripts pour la police est pour les EMS\n- La traduction des script\n- Retravailler le loading screen \n- Réparé le multi caractère \n<:fivem:1314272210948456479> les petit plus du serveur\n- nous avons enfin un nom pour le serveur ( Anomia )\n- Sur le discord nous avons un bot qui vous donnera toute les info sur le serveur ( serveur on/off , prochain redémarrage, ect ect) \n||||\nLe plus gros patch fait sur le serveur"
+  }
+]

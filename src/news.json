@@ -1,0 +1,20 @@
+[
+  {
+    "date": "2026-08-01",
+    "tag": "MAJ",
+    "title": "Refonte du système de garde-robe",
+    "content": "Les vêtements achetés sont désormais livrés en objet physique dans l'inventaire, à ranger dans une penderie via qs-housing."
+  },
+  {
+    "date": "2026-07-20",
+    "tag": "FIX",
+    "title": "Stabilité serveur",
+    "content": "Correction des crashs au démarrage liés à des ressources corrompues. Le serveur redémarre désormais proprement."
+  },
+  {
+    "date": "2026-07-10",
+    "tag": "NOUVEAU",
+    "title": "b2_mecano disponible",
+    "content": "Nouveau système mécanicien complet : réparation, peinture, tuning et nitro deux paliers."
+  }
+]

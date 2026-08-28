@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Anomia Launcher</title>
+<style>
+  @font-face {
+    font-family: "Display";
+    src: url("../assets/fonts/BigShoulders-Bold.ttf") format("truetype");
+    font-weight: 700;
+  }
+  @font-face {
+    font-family: "Mono";
+    src: url("../assets/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+    font-weight: 400;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05090a;
+    color: #eaf5f4;
+    overflow: hidden;
+    user-select: none;
+    -webkit-app-region: drag;
+  }
+
+  .splash {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+  }
+
+  .logo-wrap {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(45, 212, 191, 0.15);
+    border-top-color: #2dd4bf;
+    animation: spin 1.1s linear infinite;
+  }
+
+  .logo-img {
+    width: 62px;
+    height: 62px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 14px rgba(45, 212, 191, 0.45));
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.06); opacity: 0.85; }
+  }
+
+  .brand {
+    font-family: "Display", sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 3px;
+  }
+  .brand .accent { color: #2dd4bf; }
+
+  .status {
+    font-family: "Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #7fa19d;
+  }
+
+  .progress-track {
+    width: 160px;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden;
+    border-radius: 2px;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 40%;
+    background: linear-gradient(90deg, #1c8f83, #2dd4bf);
+    animation: slide 1.3s ease-in-out infinite;
+  }
+  @keyframes slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(250%); }
+  }
+</style>
+</head>
+<body>
+  <div class="splash">
+    <div class="logo-wrap">
+      <div class="logo-ring"></div>
+      <img src="../assets/logo.png" alt="" class="logo-img" />
+    </div>
+    <div class="brand">AN<span class="accent">O</span>MIA</div>
+    <div class="status">Vérification des mises à jour…</div>
+    <div class="progress-track"><div class="progress-fill"></div></div>
+  </div>
+</body>
+</html>
