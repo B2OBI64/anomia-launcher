@@ -83,5 +83,25 @@ contextBridge.exposeInMainWorld("anomia", {
   onUpdateError: (callback) => {
     ipcRenderer.removeAllListeners("update:error");
     ipcRenderer.on("update:error", (event, payload) => callback(payload));
+  },
+
+  // Réglages (thème, tour guidé)
+  getSettings: () => ipcRenderer.invoke("settings:get"),
+  setSettings: (patch) => ipcRenderer.invoke("settings:set", patch),
+
+  // Temps de jeu hebdomadaire
+  getPlaytime: () => ipcRenderer.invoke("playtime:get"),
+
+  // Staff
+  getStaff: () => ipcRenderer.invoke("staff:get"),
+
+  // Prochain redémarrage programmé
+  getNextRestart: () => ipcRenderer.invoke("server:nextRestart"),
+
+  // Rapports de crash
+  sendCrashReport: (crashPath) => ipcRenderer.invoke("crash:send", crashPath),
+  onCrashDetected: (callback) => {
+    ipcRenderer.removeAllListeners("crash:detected");
+    ipcRenderer.on("crash:detected", (event, payload) => callback(payload));
   }
 });

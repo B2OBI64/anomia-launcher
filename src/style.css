@@ -66,6 +66,38 @@
   --font-mono: "Mono", "Consolas", monospace;
 }
 
+/* ---------- Variantes de thème ---------- */
+[data-theme="violet"] {
+  --teal: #8b7cf6;
+  --teal-dim: #6558c9;
+  --teal-glow: rgba(139, 124, 246, 0.35);
+  --border: rgba(139, 124, 246, 0.16);
+  --border-strong: rgba(139, 124, 246, 0.32);
+}
+
+[data-theme="light"] {
+  --bg: #eef3f2;
+  --bg-elevated: #ffffff;
+  --panel: rgba(255, 255, 255, 0.92);
+  --panel-solid: #ffffff;
+  --border: rgba(28, 143, 131, 0.22);
+  --border-strong: rgba(28, 143, 131, 0.4);
+  --teal: #1c8f83;
+  --teal-dim: #157167;
+  --teal-glow: rgba(28, 143, 131, 0.25);
+  --violet: #6a5acd;
+  --violet-glow: rgba(106, 90, 205, 0.25);
+  --text: #0c1618;
+  --text-dim: #3d5451;
+  --text-faint: #7c928f;
+}
+[data-theme="light"] body::before { display: none; } /* le ciel étoilé ne fonctionne pas sur fond clair */
+[data-theme="light"] .home-hero-shade {
+  background:
+    linear-gradient(180deg, rgba(20,30,30,0.10) 0%, rgba(20,30,30,0.30) 45%, rgba(20,30,30,0.92) 100%),
+    linear-gradient(90deg, rgba(20,30,30,0.5) 0%, rgba(20,30,30,0.05) 55%);
+}
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -355,6 +387,11 @@ body::before {
   background: rgba(239, 91, 91, 0.10);
   border-color: rgba(239, 91, 91, 0.4);
   color: var(--danger);
+}
+.banner-restart {
+  background: rgba(242, 184, 75, 0.10);
+  border-color: rgba(242, 184, 75, 0.4);
+  color: var(--amber);
 }
 .banner .link-btn { color: inherit; text-decoration: underline; white-space: nowrap; }
 
@@ -819,6 +856,50 @@ body::before {
   color: var(--teal);
 }
 
+/* ---------- Staff ---------- */
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+.staff-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+.staff-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-strong);
+}
+.staff-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+.staff-role {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .3px;
+  color: var(--teal);
+  text-transform: uppercase;
+}
+.staff-bio {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
 /* ---------- Assets ---------- */
 .assets-card { padding: 26px 30px; }
 #assets-status, #cache-status { font-size: 13.5px; color: var(--text-dim); margin: 0 0 18px; }
@@ -871,6 +952,91 @@ body::before {
   gap: 10px;
 }
 
+<<<<<<< HEAD
+=======
+/* ---------- Modale réglages ---------- */
+.settings-modal { width: 380px; }
+.settings-section { margin-bottom: 20px; }
+.settings-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+.theme-options { display: flex; gap: 8px; }
+.theme-option {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 10px 6px;
+  font-size: 11px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: border-color .15s ease, color .15s ease;
+}
+.theme-option:hover { border-color: var(--teal); }
+.theme-option.active { border-color: var(--teal); color: var(--text); }
+.theme-swatch { width: 20px; height: 20px; border-radius: 50%; display: block; }
+.settings-playtime {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--teal);
+  margin: 0;
+}
+
+/* ---------- Tour guidé ---------- */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(2, 8, 9, 0.72);
+}
+.onboarding-overlay.hidden { display: none; }
+.onboarding-highlight {
+  position: fixed;
+  border: 2px solid var(--teal);
+  box-shadow: 0 0 0 4000px rgba(2, 8, 9, 0.72), 0 0 20px var(--teal-glow);
+  border-radius: 10px;
+  transition: top .3s ease, left .3s ease, width .3s ease, height .3s ease;
+  pointer-events: none;
+}
+.onboarding-tooltip {
+  position: fixed;
+  width: 300px;
+  background: var(--panel-solid);
+  border: 1px solid var(--border-strong);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  padding: 16px 18px;
+  transition: top .3s ease, left .3s ease;
+}
+.onboarding-tooltip p {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+.onboarding-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.onboarding-progress {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.onboarding-actions { display: flex; gap: 8px; }
+
+>>>>>>> bd6af93 (Ajout De Fonctionnalité)
 /* ---------- Modale aperçu streamer ---------- */
 .streamer-modal {
   width: 420px;

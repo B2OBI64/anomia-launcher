@@ -964,3 +964,232 @@ ipcMain.handle("twitch:getStatus", async () => {
     return { ok: false, error: "La ressource b2_twitchstatus ne répond pas (pas encore installée, ou serveur hors ligne)." };
   }
 });
+
+// ============================================================
+// Réglages locaux (thème, tour guidé déjà vu) - persistés indépendamment
+// de la version du launcher, donc jamais réinitialisés par une mise à jour.
+// ============================================================
+const settingsPath = () => path.join(app.getPath("userData"), "settings.json");
+
+function loadSettings() {
+  try {
+    return JSON.parse(fs.readFileSync(settingsPath(), "utf-8"));
+  } catch {
+    return {};
+  }
+}
+
+function saveSettings(patch) {
+  const current = loadSettings();
+  const updated = { ...current, ...patch };
+  try {
+    fs.writeFileSync(settingsPath(), JSON.stringify(updated, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[settings] impossible d'enregistrer :", err.message);
+  }
+  return updated;
+}
+
+ipcMain.handle("settings:get", () => loadSettings());
+ipcMain.handle("settings:set", (event, patch) => saveSettings(patch));
+
+// ============================================================
+// Temps de jeu hebdomadaire (observé localement, jamais transmis à un
+// serveur - c'est purement pour l'affichage personnel du joueur).
+// On considère que le joueur "joue" quand FiveM.exe tourne en même temps
+// que le launcher est ouvert. Remis à zéro chaque nouvelle semaine ISO.
+// ============================================================
+function getIsoWeekKey(date = new Date()) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${weekNo}`;
+}
+
+function isFiveMRunning() {
+  return new Promise((resolve) => {
+    if (process.platform !== "win32") return resolve(false);
+    const { exec } = require("child_process");
+    exec('tasklist /FI "IMAGENAME eq FiveM.exe" /NH', (err, stdout) => {
+      if (err) return resolve(false);
+      resolve(stdout.toLowerCase().includes("fivem.exe"));
+    });
+  });
+}
+
+const PLAYTIME_POLL_MS = 60000; // vérifie toutes les minutes
+
+async function pollPlaytime() {
+  const running = await isFiveMRunning();
+  if (!running) return;
+
+  const weekKey = getIsoWeekKey();
+  const settings = loadSettings();
+  const playtime = settings.playtime && settings.playtime.week === weekKey
+    ? settings.playtime
+    : { week: weekKey, seconds: 0 };
+
+  playtime.seconds += PLAYTIME_POLL_MS / 1000;
+  saveSettings({ playtime });
+}
+
+setInterval(pollPlaytime, PLAYTIME_POLL_MS);
+
+ipcMain.handle("playtime:get", () => {
+  const settings = loadSettings();
+  const weekKey = getIsoWeekKey();
+  if (settings.playtime && settings.playtime.week === weekKey) {
+    return { seconds: settings.playtime.seconds };
+  }
+  return { seconds: 0 };
+});
+
+// ============================================================
+// Staff de l'équipe (page publique, contenu géré via un fichier distant -
+// même principe que news.json/media.json)
+// ============================================================
+ipcMain.handle("staff:get", async () => {
+  let staff = [];
+  if (config.staff.remoteUrl) {
+    try {
+      const remote = await fetchJson(config.staff.remoteUrl);
+      if (Array.isArray(remote) && remote.length > 0) staff = remote;
+    } catch {
+      // on retombe sur le fichier local ci-dessous
+    }
+  }
+  if (staff.length === 0) {
+    try {
+      const raw = fs.readFileSync(path.join(__dirname, config.staff.localFallback), "utf-8");
+      staff = JSON.parse(raw);
+    } catch {
+      staff = [];
+    }
+  }
+  return staff;
+});
+
+// ============================================================
+// Compte à rebours du prochain redémarrage programmé (via b2_pingstats)
+// ============================================================
+ipcMain.handle("server:nextRestart", async () => {
+  try {
+    const stats = await fetchJson(config.server.pingStatsUrl, 4000);
+    return stats.nextRestartAt || null;
+  } catch {
+    return null;
+  }
+});
+
+// ============================================================
+// Envoi automatique des rapports de crash FiveM vers Discord
+// Détecte les nouveaux fichiers CfxCrashDump_*.zip dans les emplacements
+// habituels, demande le consentement du joueur, puis n'envoie QUE le texte
+// du log (pas le fichier binaire) via une ressource serveur qui relaie vers
+// un webhook Discord - le webhook ne quitte jamais le serveur.
+// ============================================================
+const AdmZip = (() => {
+  try {
+    return require("adm-zip");
+  } catch {
+    return null; // dépendance pas installée -> fonctionnalité désactivée proprement
+  }
+})();
+
+function getCrashWatchDirs() {
+  const dirs = [];
+  if (process.env.USERPROFILE) {
+    dirs.push(path.join(process.env.USERPROFILE, "Desktop"));
+    dirs.push(path.join(process.env.USERPROFILE, "Downloads"));
+  }
+  return dirs.filter((d) => {
+    try {
+      return fs.existsSync(d);
+    } catch {
+      return false;
+    }
+  });
+}
+
+function extractCrashLogText(zipPath) {
+  if (!AdmZip) return null;
+  try {
+    const zip = new AdmZip(zipPath);
+    const entries = zip.getEntries();
+    const logEntry = entries.find((e) => /CitizenFX_log.*\.log$/i.test(e.entryName));
+    if (!logEntry) return null;
+    const fullText = zip.readAsText(logEntry);
+    // On ne garde que la toute fin du log (là où se trouve la vraie erreur), pour
+    // rester léger et lisible dans un message Discord.
+    return fullText.slice(-2500);
+  } catch (err) {
+    console.error("[crash-report] impossible de lire le zip :", err.message);
+    return null;
+  }
+}
+
+function watchForCrashDumps() {
+  if (process.platform !== "win32" || !AdmZip) return;
+
+  const seen = new Set();
+  for (const dir of getCrashWatchDirs()) {
+    try {
+      fs.watch(dir, (eventType, filename) => {
+        if (!filename || !/^CfxCrashDump_.*\.zip$/i.test(filename)) return;
+        const fullPath = path.join(dir, filename);
+        if (seen.has(fullPath)) return;
+        seen.add(fullPath);
+
+        // Petit délai pour laisser le temps au fichier d'être complètement écrit sur disque
+        setTimeout(() => {
+          mainWindow?.webContents.send("crash:detected", { path: fullPath, filename });
+        }, 2000);
+      });
+    } catch (err) {
+      console.error(`[crash-report] impossible de surveiller ${dir} :`, err.message);
+    }
+  }
+}
+
+ipcMain.handle("crash:send", async (event, crashPath) => {
+  const logText = extractCrashLogText(crashPath);
+  if (!logText) {
+    return { ok: false, error: "Impossible de lire le contenu du rapport de crash." };
+  }
+
+  try {
+    const payload = JSON.stringify({
+      player: process.env.USERNAME || "Joueur inconnu",
+      log: logText
+    });
+
+    await new Promise((resolve, reject) => {
+      const url = new URL(config.server.crashReportUrl);
+      const lib = url.protocol === "https:" ? https : http;
+      const req = lib.request(
+        url,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) }
+        },
+        (res) => {
+          res.on("data", () => {});
+          res.on("end", () => (res.statusCode < 300 ? resolve() : reject(new Error(`HTTP ${res.statusCode}`))));
+        }
+      );
+      req.on("error", reject);
+      req.write(payload);
+      req.end();
+    });
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+if (app.isPackaged) {
+  app.whenReady().then(watchForCrashDumps);
+}

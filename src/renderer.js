@@ -4,6 +4,15 @@
 
 let isAdminUnlocked = false;
 
+// --- Thème (appliqué le plus tôt possible pour éviter un flash) ---
+window.anomia.getSettings().then((settings) => {
+  const theme = settings.theme || "teal";
+  if (theme !== "teal") document.documentElement.setAttribute("data-theme", theme);
+  document.querySelectorAll(".theme-option").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.theme === theme);
+  });
+});
+
 // --- Contrôles fenêtre ---
 document.getElementById("btn-min").addEventListener("click", () => window.anomia.minimize());
 document.getElementById("btn-max").addEventListener("click", () => window.anomia.maximize());
@@ -31,6 +40,7 @@ function goToView(name) {
     }
   });
   if (name === "twitch") loadStreamers();
+  if (name === "staff") loadStaff();
   if (name === "media") loadMedia();
   if (name === "admin") refreshAdminStats();
 }
@@ -782,3 +792,178 @@ async function initDiscordAuth() {
   });
 }
 initDiscordAuth();
+
+// --- Réglages (thème + temps de jeu) ---
+document.getElementById("btn-settings").addEventListener("click", async () => {
+  document.getElementById("settings-overlay").classList.remove("hidden");
+  const { seconds } = await window.anomia.getPlaytime();
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  document.getElementById("settings-playtime").textContent = h > 0 ? `${h}h ${m}min` : `${m} min`;
+});
+
+document.getElementById("settings-close").addEventListener("click", () => {
+  document.getElementById("settings-overlay").classList.add("hidden");
+});
+
+document.querySelectorAll(".theme-option").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const theme = btn.dataset.theme;
+    document.querySelectorAll(".theme-option").forEach((b) => b.classList.toggle("active", b === btn));
+    if (theme === "teal") {
+      document.documentElement.removeAttribute("data-theme");
+    } else {
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+    window.anomia.setSettings({ theme });
+  });
+});
+
+// --- Page Staff ---
+function renderStaffCard(member) {
+  const el = document.createElement("div");
+  el.className = "staff-card";
+  const avatar = member.avatarUrl || "../assets/logo.png";
+  el.innerHTML = `
+    <img src="${avatar}" alt="" class="staff-avatar" />
+    <span class="staff-name">${escapeHtml(member.name || "")}</span>
+    <span class="staff-role">${escapeHtml(member.role || "")}</span>
+    <p class="staff-bio">${escapeHtml(member.bio || "")}</p>
+  `;
+  return el;
+}
+
+let staffLoaded = false;
+async function loadStaff() {
+  if (staffLoaded) return;
+  staffLoaded = true;
+  const grid = document.getElementById("staff-grid");
+  const staff = await window.anomia.getStaff();
+  grid.innerHTML = "";
+  if (!staff.length) {
+    grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Équipe pas encore renseignée.</p>`;
+    staffLoaded = false;
+    return;
+  }
+  staff.forEach((m) => grid.appendChild(renderStaffCard(m)));
+}
+
+// --- Compte à rebours du prochain redémarrage programmé ---
+let restartCountdownInterval = null;
+
+function formatCountdown(msRemaining) {
+  if (msRemaining <= 0) return "imminent";
+  const totalMinutes = Math.floor(msRemaining / 60000);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h > 0) return `${h}h ${m}min`;
+  return `${m} min`;
+}
+
+async function refreshNextRestart() {
+  const banner = document.getElementById("restart-banner");
+  const text = document.getElementById("restart-banner-text");
+  const iso = await window.anomia.getNextRestart();
+
+  if (restartCountdownInterval) {
+    clearInterval(restartCountdownInterval);
+    restartCountdownInterval = null;
+  }
+
+  if (!iso) {
+    banner.classList.add("hidden");
+    return;
+  }
+
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) {
+    banner.classList.add("hidden");
+    return;
+  }
+
+  const tick = () => {
+    const remaining = target - Date.now();
+    if (remaining <= -5 * 60000) {
+      // Redémarrage annoncé mais jamais mis à jour après coup - on masque après 5 min de retard
+      banner.classList.add("hidden");
+      clearInterval(restartCountdownInterval);
+      return;
+    }
+    text.textContent = `⏱️ Prochain redémarrage dans ${formatCountdown(remaining)}`;
+    banner.classList.remove("hidden");
+  };
+
+  tick();
+  restartCountdownInterval = setInterval(tick, 30000);
+}
+refreshNextRestart();
+setInterval(refreshNextRestart, 5 * 60000); // revérifie la config toutes les 5 min
+
+// --- Tour guidé (premier lancement uniquement, persiste après une mise à jour) ---
+const ONBOARDING_STEPS = [
+  { selector: '[data-view="home"]', text: "Bienvenue sur le launcher Anomia ! Ici tu retrouves le statut du serveur et le bouton pour te connecter." },
+  { selector: '[data-view="news"]', text: "Les patch-notes du serveur, toujours à jour." },
+  { selector: '[data-view="twitch"]', text: "Vois en un coup d'œil quels streamers de la communauté sont en live." },
+  { selector: '[data-view="staff"]', text: "Découvre l'équipe qui fait tourner Anomia." },
+  { selector: "#btn-settings", text: "Personnalise le thème du launcher ici, et retrouve ton temps de jeu de la semaine." }
+];
+let onboardingStep = 0;
+
+function showOnboardingStep() {
+  const overlay = document.getElementById("onboarding-overlay");
+  const step = ONBOARDING_STEPS[onboardingStep];
+  if (!step) {
+    finishOnboarding();
+    return;
+  }
+  const target = document.querySelector(step.selector);
+  const tooltip = document.getElementById("onboarding-tooltip");
+  document.getElementById("onboarding-text").textContent = step.text;
+  document.getElementById("onboarding-progress").textContent = `${onboardingStep + 1}/${ONBOARDING_STEPS.length}`;
+  document.getElementById("onboarding-next").textContent =
+    onboardingStep === ONBOARDING_STEPS.length - 1 ? "Terminer" : "Suivant";
+
+  if (target) {
+    const rect = target.getBoundingClientRect();
+    document.getElementById("onboarding-highlight").style.cssText = `
+      top:${rect.top - 6}px; left:${rect.left - 6}px; width:${rect.width + 12}px; height:${rect.height + 12}px;
+    `;
+    const tooltipTop = Math.min(rect.bottom + 14, window.innerHeight - 160);
+    tooltip.style.cssText = `top:${tooltipTop}px; left:${Math.max(20, Math.min(rect.left, window.innerWidth - 320))}px;`;
+  }
+  overlay.classList.remove("hidden");
+}
+
+function finishOnboarding() {
+  document.getElementById("onboarding-overlay").classList.add("hidden");
+  window.anomia.setSettings({ onboardingSeen: true });
+}
+
+document.getElementById("onboarding-next").addEventListener("click", () => {
+  onboardingStep++;
+  showOnboardingStep();
+});
+document.getElementById("onboarding-skip").addEventListener("click", finishOnboarding);
+
+window.anomia.getSettings().then((settings) => {
+  if (!settings.onboardingSeen) {
+    onboardingStep = 0;
+    setTimeout(showOnboardingStep, 600); // laisse le launcher finir de s'afficher d'abord
+  }
+});
+
+// --- Rapports de crash FiveM ---
+window.anomia.onCrashDetected(async ({ path: crashPath }) => {
+  const confirmed = await showConfirm(
+    "Crash FiveM détecté",
+    "On dirait que FiveM vient de crasher. Tu veux envoyer le rapport à l'équipe pour nous aider à corriger ça ? Seul le texte du log est transmis, jamais tes fichiers persos."
+  );
+  if (!confirmed) return;
+
+  const result = await window.anomia.sendCrashReport(crashPath);
+  if (result.ok) {
+    await showInfo("Rapport envoyé", `<p>Merci ! Le rapport de crash a bien été transmis à l'équipe.</p>`);
+  } else {
+    await showInfo("Erreur", `<p>Impossible d'envoyer le rapport : ${escapeHtml(result.error || "raison inconnue")}</p>`);
+  }
+});

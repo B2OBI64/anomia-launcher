@@ -14,6 +14,10 @@
 -- ============================================================
 
 local MAINTENANCE_CONVAR = "anomia_maintenance" -- même convar que b2_maintenance
+-- Prochain redémarrage programmé, au format ISO (ex: "2026-08-30T23:00:00Z").
+-- Laisse vide si aucun redémarrage n'est prévu - le launcher n'affiche alors rien.
+-- setr anomia_next_restart "2026-08-30T23:00:00Z"   (dans server.cfg, ou via la console)
+local NEXT_RESTART_CONVAR = "anomia_next_restart"
 
 local QBCoreCache = nil
 local function getQBCore()
@@ -96,7 +100,8 @@ local function computeStats()
         avgPing = count > 0 and math.floor(total / count) or 0,
         players = #players,
         jobs = computeJobCounts(),
-        maintenance = GetConvar(MAINTENANCE_CONVAR, "false") == "true"
+        maintenance = GetConvar(MAINTENANCE_CONVAR, "false") == "true",
+        nextRestartAt = GetConvar(NEXT_RESTART_CONVAR, "") ~= "" and GetConvar(NEXT_RESTART_CONVAR, "") or nil
     }
 end
 

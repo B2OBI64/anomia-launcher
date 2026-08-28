@@ -50,6 +50,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
         Media
       </button>
+      <button class="nav-item" data-view="staff">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Staff
+      </button>
       <button class="nav-item" data-view="assets">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/></svg>
         Fichiers
@@ -61,6 +65,7 @@
 
       <div class="sidebar-footer">
         <button class="ext-link" id="btn-discord">Discord</button>
+        <button class="ext-link" id="btn-settings">Réglages</button>
         <span class="version" id="app-version">v…</span>
         <span class="update-status" id="update-status"></span>
       </div>
@@ -72,6 +77,11 @@
       <!-- Bannière maintenance serveur -->
       <div class="banner banner-maintenance hidden" id="maintenance-banner">
         <span>🛠️ Le serveur est actuellement en maintenance — seul le staff peut se connecter.</span>
+      </div>
+
+      <!-- Bannière prochain redémarrage programmé -->
+      <div class="banner banner-restart hidden" id="restart-banner">
+        <span id="restart-banner-text">⏱️ Prochain redémarrage dans —</span>
       </div>
 
       <!-- Bannière FiveM non détecté -->
@@ -194,6 +204,15 @@
         </div>
       </section>
 
+      <!-- VUE STAFF -->
+      <section class="view hidden" id="view-staff">
+        <span class="section-eyebrow">// EQUIPE</span>
+        <h1 class="view-title">L'équipe Anomia</h1>
+        <div class="staff-grid" id="staff-grid">
+          <!-- injecté par renderer.js -->
+        </div>
+      </section>
+
       <!-- VUE ADMIN (lecture seule, cachée par défaut) -->
       <section class="view hidden" id="view-admin">
         <span class="section-eyebrow">// STAFF</span>
@@ -257,6 +276,55 @@
     </div>
   </div>
 
+<<<<<<< HEAD
+=======
+  <!-- Tour guidé (premier lancement) -->
+  <div class="onboarding-overlay hidden" id="onboarding-overlay">
+    <div class="onboarding-highlight" id="onboarding-highlight"></div>
+    <div class="onboarding-tooltip" id="onboarding-tooltip">
+      <p id="onboarding-text"></p>
+      <div class="onboarding-footer">
+        <span class="onboarding-progress" id="onboarding-progress">1/5</span>
+        <div class="onboarding-actions">
+          <button class="btn-copy" id="onboarding-skip">Passer</button>
+          <button class="btn-connect" id="onboarding-next">Suivant</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale réglages -->
+  <div class="modal-overlay hidden" id="settings-overlay">
+    <div class="modal-box glass settings-modal">
+      <h3>Réglages</h3>
+      <div class="settings-section">
+        <span class="settings-label">Thème</span>
+        <div class="theme-options">
+          <button class="theme-option" data-theme="teal">
+            <span class="theme-swatch" style="background:#2dd4bf;"></span>
+            Teal
+          </button>
+          <button class="theme-option" data-theme="violet">
+            <span class="theme-swatch" style="background:#8b7cf6;"></span>
+            Violet
+          </button>
+          <button class="theme-option" data-theme="light">
+            <span class="theme-swatch" style="background:#eef3f2; border:1px solid #ccc;"></span>
+            Clair
+          </button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <span class="settings-label">Temps de jeu cette semaine</span>
+        <p class="settings-playtime" id="settings-playtime">—</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-connect" id="settings-close">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+>>>>>>> bd6af93 (Ajout De Fonctionnalité)
   <!-- Modale aperçu streamer -->
   <div class="modal-overlay hidden" id="streamer-overlay">
     <div class="modal-box glass streamer-modal">

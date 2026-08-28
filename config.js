@@ -24,6 +24,9 @@ module.exports = {
     discordCheckUrl: "http://185.44.80.32:30140/b2_discordcheck/",
     // Endpoint custom (ressource b2_twitchstatus) qui donne le statut live des streamers Anomia
     twitchStatusUrl: "http://185.44.80.32:30140/b2_twitchstatus/",
+    // Endpoint custom (ressource b2_crashreport) qui relaie les rapports de crash
+    // FiveM vers un salon Discord, sans jamais exposer le webhook au launcher.
+    crashReportUrl: "http://185.44.80.32:30140/b2_crashreport/",
     // Repli si les endpoints directs sont injoignables (pare-feu, endpoint privacy, etc.)
     fallbackStatusApiUrl: "https://servers-frontend.fivem.net/api/servers/single/8pqgm4"
   },
@@ -96,5 +99,15 @@ module.exports = {
     // Optionnel : lien vers ton panel txAdmin, pour un accès rapide (redémarrage/logs se font là-bas,
     // txAdmin a déjà sa propre authentification sécurisée - le launcher ne la duplique pas)
     txAdminUrl: null
+  },
+
+  // --- Page Staff (présentation de l'équipe, visible par tous) ---
+  // Même principe que les news/media : source locale de secours, remplaçable
+  // par une URL distante. Peut être éditée directement sur GitHub, ou
+  // synchronisée depuis Discord plus tard si tu veux (même mécanique que
+  // discord-news-sync/).
+  staff: {
+    remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/staff.json",
+    localFallback: "src/staff.json"
   }
 };
