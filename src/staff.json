@@ -1,8 +1,30 @@
 [
   {
     "name": "B2OBI64",
+    "category": "Admin",
     "role": "Fondateur / Développeur",
     "bio": "Créateur d'Anomia RP. S'occupe du serveur, des scripts custom et de ce launcher.",
+    "avatarUrl": ""
+  },
+  {
+    "name": "vito",
+    "category": "Admin",
+    "role": "Admin / Développement",
+    "bio": "Un ami de B2 de longue date, a décidé de rejoindre le projet pour aider B2 sur le projet.",
+    "avatarUrl": ""
+  },
+  {
+    "name": "smoke",
+    "category": "Admin",
+    "role": "Admin",
+    "bio": "Viewer de chez B2 depuis de longue date, a décidé de lancer le projet avec B2.",
+    "avatarUrl": ""
+  },
+  {
+    "name": "shiroi-okami",
+    "category": "Modo",
+    "role": "Modérateur (en test)",
+    "bio": "Viewer de chez B2, qui passe son test pour être modo du serveur.",
     "avatarUrl": ""
   }
 ]

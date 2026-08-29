@@ -857,6 +857,8 @@ body::before {
 }
 
 /* ---------- Staff ---------- */
+.staff-container { display: flex; flex-direction: column; gap: 26px; }
+.staff-category .section-eyebrow { display: block; margin-bottom: 12px; }
 .staff-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -872,7 +874,11 @@ body::before {
   align-items: center;
   text-align: center;
   gap: 8px;
+  cursor: pointer;
+  transition: border-color .15s ease, transform .12s ease;
 }
+.staff-card:hover { border-color: var(--teal); transform: translateY(-2px); }
+.staff-card:active { transform: translateY(0) scale(0.97); transition: transform .08s ease; }
 .staff-avatar {
   width: 68px;
   height: 68px;
@@ -952,8 +958,6 @@ body::before {
   gap: 10px;
 }
 
-<<<<<<< HEAD
-=======
 /* ---------- Modale réglages ---------- */
 .settings-modal { width: 380px; }
 .settings-section { margin-bottom: 20px; }
@@ -1036,7 +1040,6 @@ body::before {
 }
 .onboarding-actions { display: flex; gap: 8px; }
 
->>>>>>> bd6af93 (Ajout De Fonctionnalité)
 /* ---------- Modale aperçu streamer ---------- */
 .streamer-modal {
   width: 420px;
@@ -1044,6 +1047,9 @@ body::before {
   position: relative;
   overflow: hidden;
 }
+.staff-modal { padding-top: 26px; width: 380px; }
+.staff-modal-header { padding: 0 26px; }
+.staff-modal-bio { padding: 14px 26px 0; margin-bottom: 0; }
 .modal-close {
   position: absolute;
   top: 12px;

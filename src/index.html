@@ -208,7 +208,7 @@
       <section class="view hidden" id="view-staff">
         <span class="section-eyebrow">// EQUIPE</span>
         <h1 class="view-title">L'équipe Anomia</h1>
-        <div class="staff-grid" id="staff-grid">
+        <div class="staff-container" id="staff-grid">
           <!-- injecté par renderer.js -->
         </div>
       </section>
@@ -276,8 +276,6 @@
     </div>
   </div>
 
-<<<<<<< HEAD
-=======
   <!-- Tour guidé (premier lancement) -->
   <div class="onboarding-overlay hidden" id="onboarding-overlay">
     <div class="onboarding-highlight" id="onboarding-highlight"></div>
@@ -324,8 +322,22 @@
     </div>
   </div>
 
->>>>>>> bd6af93 (Ajout De Fonctionnalité)
   <!-- Modale aperçu streamer -->
+  <!-- Modale bio staff -->
+  <div class="modal-overlay hidden" id="staff-overlay">
+    <div class="modal-box glass streamer-modal staff-modal">
+      <button class="modal-close" id="staff-close" aria-label="Fermer">&#10005;</button>
+      <div class="streamer-modal-header staff-modal-header">
+        <img id="staff-modal-avatar" class="streamer-modal-avatar" src="" alt="" />
+        <div>
+          <h3 id="staff-modal-name">—</h3>
+          <span class="streamer-modal-status staff-modal-role" id="staff-modal-role">—</span>
+        </div>
+      </div>
+      <p id="staff-modal-bio" class="streamer-modal-bio staff-modal-bio"></p>
+    </div>
+  </div>
+
   <div class="modal-overlay hidden" id="streamer-overlay">
     <div class="modal-box glass streamer-modal">
       <button class="modal-close" id="streamer-close" aria-label="Fermer">&#10005;</button>

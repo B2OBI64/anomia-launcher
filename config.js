@@ -95,7 +95,7 @@ module.exports = {
   //   node -e "console.log(require('crypto').createHash('sha256').update('TON_MOT_DE_PASSE').digest('hex'))"
   // et colle uniquement le résultat ci-dessous.
   admin: {
-    passphraseHash: "1a61277108cb3af0e74d949b8eea53e1ace24a4930468942274acc5c5c5f7e1a", // ex: "3a7bd3e2360a3d..." — tant que c'est null, l'onglet reste inaccessible
+    passphraseHash: null, // ex: "3a7bd3e2360a3d..." — tant que c'est null, l'onglet reste inaccessible
     // Optionnel : lien vers ton panel txAdmin, pour un accès rapide (redémarrage/logs se font là-bas,
     // txAdmin a déjà sa propre authentification sécurisée - le launcher ne la duplique pas)
     txAdminUrl: null

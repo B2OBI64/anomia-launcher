@@ -91,12 +91,6 @@ local function fetchTwitchData(cfg, token, cb)
                 local ok, data = pcall(json.decode, streamsBody)
                 if ok and data and data.data then
                     for _, stream in ipairs(data.data) do
-<<<<<<< HEAD
-<<<<<<< HEAD
-                        liveByChannel[stream.user_login:lower()] = stream.viewer_count or 0
-=======
-=======
->>>>>>> bd6af93 (Ajout De Fonctionnalité)
                         liveByChannel[stream.user_login:lower()] = {
                             viewers = stream.viewer_count or 0,
                             title = stream.title or "",
@@ -105,23 +99,11 @@ local function fetchTwitchData(cfg, token, cb)
                                 and stream.thumbnail_url:gsub("{width}", "440"):gsub("{height}", "248")
                                 or nil
                         }
-<<<<<<< HEAD
->>>>>>> 2d9fa1b (Mise A Jour de la categorie Twitch et mise a jour de l'interface mise a jour)
-=======
->>>>>>> bd6af93 (Ajout De Fonctionnalité)
                     end
                 end
             end
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-            -- 2) Infos de profil (avatar, nom affiché) pour tous les channels de la liste
-=======
             -- 2) Infos de profil (avatar, bio, nom affiché) pour tous les channels de la liste
->>>>>>> 2d9fa1b (Mise A Jour de la categorie Twitch et mise a jour de l'interface mise a jour)
-=======
-            -- 2) Infos de profil (avatar, bio, nom affiché) pour tous les channels de la liste
->>>>>>> bd6af93 (Ajout De Fonctionnalité)
             PerformHttpRequest(
                 "https://api.twitch.tv/helix/users?" .. buildQuery("login", cfg.channels),
                 function(usersStatus, usersBody)
@@ -140,35 +122,16 @@ local function fetchTwitchData(cfg, token, cb)
                     for _, channel in ipairs(cfg.channels) do
                         local key = channel:lower()
                         local user = usersByLogin[key]
-<<<<<<< HEAD
-<<<<<<< HEAD
-                        local viewers = liveByChannel[key]
-=======
                         local liveInfo = liveByChannel[key]
->>>>>>> 2d9fa1b (Mise A Jour de la categorie Twitch et mise a jour de l'interface mise a jour)
-=======
-                        local liveInfo = liveByChannel[key]
->>>>>>> bd6af93 (Ajout De Fonctionnalité)
                         table.insert(result, {
                             channel = channel,
                             displayName = user and user.display_name or channel,
                             avatarUrl = user and user.profile_image_url or nil,
-<<<<<<< HEAD
-<<<<<<< HEAD
-                            live = viewers ~= nil,
-                            viewers = viewers or 0
-=======
-=======
->>>>>>> bd6af93 (Ajout De Fonctionnalité)
                             bio = user and user.description or "",
                             live = liveInfo ~= nil,
                             viewers = liveInfo and liveInfo.viewers or 0,
                             title = liveInfo and liveInfo.title or "",
                             thumbnailUrl = liveInfo and liveInfo.thumbnailUrl or nil
-<<<<<<< HEAD
->>>>>>> 2d9fa1b (Mise A Jour de la categorie Twitch et mise a jour de l'interface mise a jour)
-=======
->>>>>>> bd6af93 (Ajout De Fonctionnalité)
                         })
                     end
 

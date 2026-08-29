@@ -336,6 +336,25 @@ document.getElementById("streamer-close").addEventListener("click", () => {
   document.getElementById("streamer-overlay").classList.add("hidden");
 });
 
+// --- Fermeture générique des fenêtres normales : clic en dehors, ou touche Échap ---
+// (jamais appliqué à update-overlay, qui doit rester bloquant tant que la mise à jour n'est pas faite)
+const DISMISSABLE_OVERLAYS = ["confirm-overlay", "info-overlay", "admin-overlay", "streamer-overlay", "settings-overlay", "staff-overlay"];
+
+DISMISSABLE_OVERLAYS.forEach((id) => {
+  const overlay = document.getElementById(id);
+  if (!overlay) return;
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.classList.add("hidden");
+  });
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  DISMISSABLE_OVERLAYS.forEach((id) => {
+    document.getElementById(id)?.classList.add("hidden");
+  });
+});
+
 let streamersLoaded = false;
 async function loadStreamers() {
   if (streamersLoaded) return;
@@ -616,6 +635,7 @@ const updateDownloadBtn = document.getElementById("update-download-btn");
 const updateRetryBtn = document.getElementById("update-retry-btn");
 const updateStatusLabel = document.getElementById("update-status");
 let pendingUpdateVersion = null;
+let updateFlowActive = false; // true seulement entre "update-available" et la fin du process
 
 function setUpdateChangelog(notes) {
   if (notes && notes.trim()) {
@@ -627,6 +647,7 @@ function setUpdateChangelog(notes) {
 }
 
 window.anomia.onUpdateAvailable(({ version, releaseNotes }) => {
+  updateFlowActive = true;
   pendingUpdateVersion = version;
   updateOverlay.classList.remove("hidden");
   updateMessage.textContent = `Une nouvelle version (v${version}) est disponible. Le serveur nécessite la dernière version pour te connecter.`;
@@ -647,13 +668,18 @@ window.anomia.onUpdateNotAvailable(() => {
 });
 
 window.anomia.onUpdateProgress(({ percent }) => {
-  updateOverlay.classList.remove("hidden"); // sécurité si l'event arrive avant "available"
+  // Ne montre JAMAIS cette fenêtre bloquante en dehors d'un vrai cycle de mise à
+  // jour en cours - évite qu'un événement isolé/tardif ne bloque tout le launcher
+  // (bug corrigé : ça pouvait rendre l'appli totalement inutilisable).
+  if (!updateFlowActive) return;
+  updateOverlay.classList.remove("hidden");
   updateProgressTrack.classList.remove("hidden");
   updateProgressFill.style.width = `${Math.round(percent)}%`;
   updateProgressLabel.textContent = `${Math.round(percent)}%`;
 });
 
 window.anomia.onUpdateDownloaded(({ version, releaseNotes }) => {
+  if (!updateFlowActive) return;
   updateOverlay.classList.remove("hidden");
   setUpdateChangelog(releaseNotes);
   updateProgressTrack.classList.add("hidden");
@@ -669,7 +695,7 @@ window.anomia.onUpdateDownloaded(({ version, releaseNotes }) => {
 window.anomia.onUpdateError(({ message }) => {
   // Seulement affiché si une mise à jour était déjà en cours (overlay visible) -
   // une simple absence de connexion au démarrage ne doit jamais bloquer le launcher.
-  if (updateOverlay.classList.contains("hidden")) return;
+  if (!updateFlowActive || updateOverlay.classList.contains("hidden")) return;
   updateMessage.textContent = `Erreur pendant la mise à jour : ${message}`;
   updateProgressTrack.classList.add("hidden");
   updateDownloadBtn.classList.add("hidden");
@@ -828,24 +854,56 @@ function renderStaffCard(member) {
     <img src="${avatar}" alt="" class="staff-avatar" />
     <span class="staff-name">${escapeHtml(member.name || "")}</span>
     <span class="staff-role">${escapeHtml(member.role || "")}</span>
-    <p class="staff-bio">${escapeHtml(member.bio || "")}</p>
   `;
+  el.addEventListener("click", () => openStaffModal(member));
   return el;
 }
+
+function openStaffModal(member) {
+  document.getElementById("staff-modal-avatar").src = member.avatarUrl || "../assets/logo.png";
+  document.getElementById("staff-modal-name").textContent = member.name || "";
+  document.getElementById("staff-modal-role").textContent = member.role || "";
+  document.getElementById("staff-modal-bio").textContent = member.bio || "Aucune bio renseignée.";
+  document.getElementById("staff-overlay").classList.remove("hidden");
+}
+
+document.getElementById("staff-close").addEventListener("click", () => {
+  document.getElementById("staff-overlay").classList.add("hidden");
+});
+
+// Ordre d'affichage fixe des catégories. Une catégorie sans aucun membre
+// n'affiche tout simplement rien (ni titre, ni section vide).
+const STAFF_CATEGORY_ORDER = ["Admin", "Modo", "Helper", "Admin Discord", "Modo Discord"];
 
 let staffLoaded = false;
 async function loadStaff() {
   if (staffLoaded) return;
   staffLoaded = true;
-  const grid = document.getElementById("staff-grid");
+  const container = document.getElementById("staff-grid");
   const staff = await window.anomia.getStaff();
-  grid.innerHTML = "";
+  container.innerHTML = "";
+
   if (!staff.length) {
-    grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Équipe pas encore renseignée.</p>`;
+    container.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Équipe pas encore renseignée.</p>`;
     staffLoaded = false;
     return;
   }
-  staff.forEach((m) => grid.appendChild(renderStaffCard(m)));
+
+  STAFF_CATEGORY_ORDER.forEach((category) => {
+    const members = staff.filter((m) => m.category === category);
+    if (members.length === 0) return; // catégorie vide -> on n'affiche rien du tout
+
+    const section = document.createElement("div");
+    section.className = "staff-category";
+    section.innerHTML = `<span class="section-eyebrow">// ${escapeHtml(category.toUpperCase())}</span>`;
+
+    const grid = document.createElement("div");
+    grid.className = "staff-grid";
+    members.forEach((m) => grid.appendChild(renderStaffCard(m)));
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
 }
 
 // --- Compte à rebours du prochain redémarrage programmé ---
