@@ -4,13 +4,51 @@
 
 let isAdminUnlocked = false;
 
-// --- Thème (appliqué le plus tôt possible pour éviter un flash) ---
-window.anomia.getSettings().then((settings) => {
-  const theme = settings.theme || "teal";
-  if (theme !== "teal") document.documentElement.setAttribute("data-theme", theme);
-  document.querySelectorAll(".theme-option").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.theme === theme);
+// --- Thème : mode sombre/clair + couleur d'accent (appliqués le plus tôt possible) ---
+function hexToRgb(hex) {
+  const clean = hex.replace("#", "");
+  return {
+    r: parseInt(clean.substring(0, 2), 16),
+    g: parseInt(clean.substring(2, 4), 16),
+    b: parseInt(clean.substring(4, 6), 16)
+  };
+}
+function rgbToHex(r, g, b) {
+  return `#${[r, g, b].map((v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0")).join("")}`;
+}
+function darkenHex(hex, amount = 0.35) {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToHex(Math.round(r * (1 - amount)), Math.round(g * (1 - amount)), Math.round(b * (1 - amount)));
+}
+
+function applyMode(mode) {
+  if (mode === "light") {
+    document.documentElement.setAttribute("data-mode", "light");
+  } else {
+    document.documentElement.removeAttribute("data-mode");
+  }
+  document.querySelectorAll(".mode-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
   });
+}
+
+function applyAccentColor(hex) {
+  const root = document.documentElement;
+  const { r, g, b } = hexToRgb(hex);
+  root.style.setProperty("--teal", hex);
+  root.style.setProperty("--teal-dim", darkenHex(hex, 0.35));
+  root.style.setProperty("--teal-glow", `rgba(${r}, ${g}, ${b}, 0.35)`);
+  root.style.setProperty("--border", `rgba(${r}, ${g}, ${b}, 0.16)`);
+  root.style.setProperty("--border-strong", `rgba(${r}, ${g}, ${b}, 0.32)`);
+
+  document.querySelectorAll(".accent-swatch").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.color.toLowerCase() === hex.toLowerCase());
+  });
+}
+
+window.anomia.getSettings().then((settings) => {
+  applyMode(settings.mode || "dark");
+  applyAccentColor(settings.accentColor || "#2dd4bf");
 });
 
 // --- Contrôles fenêtre ---
@@ -165,6 +203,16 @@ async function refreshStatus() {
 }
 refreshStatus();
 setInterval(refreshStatus, 30000);
+
+// --- Temps de jeu hebdomadaire (affiché sur l'accueil) ---
+async function refreshPlaytime() {
+  const { seconds } = await window.anomia.getPlaytime();
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  document.getElementById("tm-playtime").textContent = h > 0 ? `${h}h ${m}min` : `${m} min`;
+}
+refreshPlaytime();
+setInterval(refreshPlaytime, 60000);
 
 // --- News ---
 function tagClass(tag) {
@@ -819,30 +867,43 @@ async function initDiscordAuth() {
 }
 initDiscordAuth();
 
-// --- Réglages (thème + temps de jeu) ---
-document.getElementById("btn-settings").addEventListener("click", async () => {
+// --- Réglages (mode sombre/clair + couleur d'accent) ---
+document.getElementById("btn-settings").addEventListener("click", () => {
   document.getElementById("settings-overlay").classList.remove("hidden");
-  const { seconds } = await window.anomia.getPlaytime();
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  document.getElementById("settings-playtime").textContent = h > 0 ? `${h}h ${m}min` : `${m} min`;
 });
 
 document.getElementById("settings-close").addEventListener("click", () => {
   document.getElementById("settings-overlay").classList.add("hidden");
 });
 
-document.querySelectorAll(".theme-option").forEach((btn) => {
+document.getElementById("mode-dark").addEventListener("click", () => {
+  applyMode("dark");
+  window.anomia.setSettings({ mode: "dark" });
+});
+document.getElementById("mode-light").addEventListener("click", () => {
+  applyMode("light");
+  window.anomia.setSettings({ mode: "light" });
+});
+
+document.querySelectorAll(".accent-swatch").forEach((btn) => {
   btn.addEventListener("click", () => {
-    const theme = btn.dataset.theme;
-    document.querySelectorAll(".theme-option").forEach((b) => b.classList.toggle("active", b === btn));
-    if (theme === "teal") {
-      document.documentElement.removeAttribute("data-theme");
-    } else {
-      document.documentElement.setAttribute("data-theme", theme);
-    }
-    window.anomia.setSettings({ theme });
+    const color = btn.dataset.color;
+    applyAccentColor(color);
+    window.anomia.setSettings({ accentColor: color });
   });
+});
+
+document.getElementById("rgb-apply").addEventListener("click", () => {
+  const r = parseInt(document.getElementById("rgb-r").value, 10);
+  const g = parseInt(document.getElementById("rgb-g").value, 10);
+  const b = parseInt(document.getElementById("rgb-b").value, 10);
+  if ([r, g, b].some((v) => Number.isNaN(v) || v < 0 || v > 255)) {
+    showInfo("Couleur personnalisée", `<p>Entre 3 valeurs entre 0 et 255 pour R, G et B.</p>`);
+    return;
+  }
+  const hex = rgbToHex(r, g, b);
+  applyAccentColor(hex);
+  window.anomia.setSettings({ accentColor: hex });
 });
 
 // --- Page Staff ---
@@ -963,7 +1024,7 @@ const ONBOARDING_STEPS = [
   { selector: '[data-view="news"]', text: "Les patch-notes du serveur, toujours à jour." },
   { selector: '[data-view="twitch"]', text: "Vois en un coup d'œil quels streamers de la communauté sont en live." },
   { selector: '[data-view="staff"]', text: "Découvre l'équipe qui fait tourner Anomia." },
-  { selector: "#btn-settings", text: "Personnalise le thème du launcher ici, et retrouve ton temps de jeu de la semaine." }
+  { selector: "#btn-settings", text: "Personnalise le launcher ici : mode sombre/clair et couleur d'accent." }
 ];
 let onboardingStep = 0;
 

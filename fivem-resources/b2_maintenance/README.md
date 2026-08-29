@@ -23,14 +23,11 @@ Depuis la console serveur, ou en jeu si tu as la permission ACE `admin` :
 /maintenance        -- affiche l'état actuel
 ```
 
-L'état est stocké dans un convar (`anomia_maintenance`), donc il persiste tant
-que le serveur tourne, même si tu redémarres la ressource. Il repasse à
-`false` par défaut si tu redémarres le serveur entier — si tu veux qu'il reste
-activé après un reboot complet, ajoute dans ton `server.cfg` :
-```
-setr anomia_maintenance true
-```
-et retire/mets `false` quand tu veux rouvrir.
+L'état est stocké de façon persistante (via le système `Kvp` de FiveM) : il
+reste actif même après un **redémarrage complet du serveur**, pas juste un
+restart de la ressource. Pas besoin d'ajouter quoi que ce soit dans
+`server.cfg` pour ça — active/désactive uniquement via la commande
+`/maintenance on|off`, et ça reste correct quoi qu'il arrive au serveur.
 
 ## Comment le launcher le voit
 

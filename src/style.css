@@ -66,33 +66,20 @@
   --font-mono: "Mono", "Consolas", monospace;
 }
 
-/* ---------- Variantes de thème ---------- */
-[data-theme="violet"] {
-  --teal: #8b7cf6;
-  --teal-dim: #6558c9;
-  --teal-glow: rgba(139, 124, 246, 0.35);
-  --border: rgba(139, 124, 246, 0.16);
-  --border-strong: rgba(139, 124, 246, 0.32);
-}
-
-[data-theme="light"] {
+/* ---------- Mode clair ---------- */
+/* La couleur d'accent (teal/violet/personnalisée) est appliquée dynamiquement en
+   JS par-dessus ces variables, quel que soit le mode - donc pas fixée ici. */
+[data-mode="light"] {
   --bg: #eef3f2;
   --bg-elevated: #ffffff;
   --panel: rgba(255, 255, 255, 0.92);
   --panel-solid: #ffffff;
-  --border: rgba(28, 143, 131, 0.22);
-  --border-strong: rgba(28, 143, 131, 0.4);
-  --teal: #1c8f83;
-  --teal-dim: #157167;
-  --teal-glow: rgba(28, 143, 131, 0.25);
-  --violet: #6a5acd;
-  --violet-glow: rgba(106, 90, 205, 0.25);
   --text: #0c1618;
   --text-dim: #3d5451;
   --text-faint: #7c928f;
 }
-[data-theme="light"] body::before { display: none; } /* le ciel étoilé ne fonctionne pas sur fond clair */
-[data-theme="light"] .home-hero-shade {
+[data-mode="light"] body::before { display: none; } /* le ciel étoilé ne fonctionne pas sur fond clair */
+[data-mode="light"] .home-hero-shade {
   background:
     linear-gradient(180deg, rgba(20,30,30,0.10) 0%, rgba(20,30,30,0.30) 45%, rgba(20,30,30,0.92) 100%),
     linear-gradient(90deg, rgba(20,30,30,0.5) 0%, rgba(20,30,30,0.05) 55%);
@@ -970,32 +957,57 @@ body::before {
   color: var(--text-faint);
   margin-bottom: 10px;
 }
-.theme-options { display: flex; gap: 8px; }
-.theme-option {
+.settings-sublabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .3px;
+  color: var(--text-faint);
+  margin: 12px 0 6px;
+}
+
+/* Mode sombre / clair - vrai switch on/off */
+.mode-toggle { display: flex; gap: 8px; }
+.mode-btn {
   flex: 1;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text-dim);
   padding: 10px 6px;
-  font-size: 11px;
+  font-size: 12.5px;
   font-family: var(--font-body);
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
   transition: border-color .15s ease, color .15s ease;
 }
-.theme-option:hover { border-color: var(--teal); }
-.theme-option.active { border-color: var(--teal); color: var(--text); }
-.theme-swatch { width: 20px; height: 20px; border-radius: 50%; display: block; }
-.settings-playtime {
-  font-family: var(--font-mono);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--teal);
-  margin: 0;
+.mode-btn:hover { border-color: var(--teal); }
+.mode-btn.active { border-color: var(--teal); color: var(--text); background: rgba(45, 212, 191, 0.08); }
+
+/* Couleur d'accent - 4 presets + personnalisée */
+.accent-options { display: flex; gap: 10px; margin-bottom: 4px; }
+.accent-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color .15s ease, transform .1s ease;
 }
+.accent-swatch:hover { transform: scale(1.08); }
+.accent-swatch.active { border-color: var(--text); }
+.rgb-inputs { display: flex; gap: 6px; align-items: center; }
+.rgb-inputs input {
+  width: 52px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 6px;
+  text-align: center;
+  outline: none;
+}
+.rgb-inputs input:focus { border-color: var(--teal); }
+.rgb-inputs .btn-copy { padding: 8px 14px; }
 
 /* ---------- Tour guidé ---------- */
 .onboarding-overlay {

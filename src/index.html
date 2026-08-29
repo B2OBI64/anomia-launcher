@@ -133,6 +133,10 @@
             <span class="telemetry-label">Entreprises ouvertes</span>
             <span class="telemetry-value violet" id="tm-jobs">—</span>
           </div>
+          <div class="telemetry-item">
+            <span class="telemetry-label">Temps de jeu (semaine)</span>
+            <span class="telemetry-value" id="tm-playtime">—</span>
+          </div>
         </div>
 
         <div class="section-header">
@@ -295,27 +299,32 @@
   <div class="modal-overlay hidden" id="settings-overlay">
     <div class="modal-box glass settings-modal">
       <h3>Réglages</h3>
+
       <div class="settings-section">
-        <span class="settings-label">Thème</span>
-        <div class="theme-options">
-          <button class="theme-option" data-theme="teal">
-            <span class="theme-swatch" style="background:#2dd4bf;"></span>
-            Teal
-          </button>
-          <button class="theme-option" data-theme="violet">
-            <span class="theme-swatch" style="background:#8b7cf6;"></span>
-            Violet
-          </button>
-          <button class="theme-option" data-theme="light">
-            <span class="theme-swatch" style="background:#eef3f2; border:1px solid #ccc;"></span>
-            Clair
-          </button>
+        <span class="settings-label">Mode</span>
+        <div class="mode-toggle">
+          <button class="mode-btn" id="mode-dark" data-mode="dark">🌙 Sombre</button>
+          <button class="mode-btn" id="mode-light" data-mode="light">☀️ Clair</button>
         </div>
       </div>
+
       <div class="settings-section">
-        <span class="settings-label">Temps de jeu cette semaine</span>
-        <p class="settings-playtime" id="settings-playtime">—</p>
+        <span class="settings-label">Couleur d'accent</span>
+        <div class="accent-options">
+          <button class="accent-swatch" data-color="#2dd4bf" style="background:#2dd4bf;" title="Teal"></button>
+          <button class="accent-swatch" data-color="#8b7cf6" style="background:#8b7cf6;" title="Violet"></button>
+          <button class="accent-swatch" data-color="#f2b84b" style="background:#f2b84b;" title="Ambre"></button>
+          <button class="accent-swatch" data-color="#4f9dff" style="background:#4f9dff;" title="Bleu"></button>
+        </div>
+        <span class="settings-sublabel">Personnalisée (RGB)</span>
+        <div class="rgb-inputs">
+          <input type="number" id="rgb-r" min="0" max="255" placeholder="R" />
+          <input type="number" id="rgb-g" min="0" max="255" placeholder="G" />
+          <input type="number" id="rgb-b" min="0" max="255" placeholder="B" />
+          <button class="btn-copy" id="rgb-apply">OK</button>
+        </div>
       </div>
+
       <div class="modal-actions">
         <button class="btn-connect" id="settings-close">Fermer</button>
       </div>
