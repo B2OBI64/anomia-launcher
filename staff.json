@@ -2,19 +2,19 @@
   {
     "name": "B2OBI64",
     "category": "Admin",
-    "role": "Fondateur / Développeur",
+    "role": "Fondateur",
     "bio": "Créateur d'Anomia RP. S'occupe du serveur, des scripts custom et de ce launcher.",
     "avatarUrl": ""
   },
   {
     "name": "vito",
     "category": "Admin",
-    "role": "Admin / Développement",
+    "role": "Fondateur",
     "bio": "Un ami de B2 de longue date, a décidé de rejoindre le projet pour aider B2 sur le projet.",
     "avatarUrl": ""
   },
   {
-    "name": "smoke",
+    "name": "somke",
     "category": "Admin",
     "role": "Admin",
     "bio": "Viewer de chez B2 depuis de longue date, a décidé de lancer le projet avec B2.",
@@ -25,6 +25,13 @@
     "category": "Modo",
     "role": "Modérateur (en test)",
     "bio": "Viewer de chez B2, qui passe son test pour être modo du serveur.",
+    "avatarUrl": ""
+  },
+  {
+    "name": "hugolem",
+    "category": "Admin Discord",
+    "role": "Fondateur Discord",
+    "bio": "",
     "avatarUrl": ""
   }
 ]
