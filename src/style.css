@@ -994,20 +994,25 @@ body::before {
 }
 .accent-swatch:hover { transform: scale(1.08); }
 .accent-swatch.active { border-color: var(--text); }
-.rgb-inputs { display: flex; gap: 6px; align-items: center; }
-.rgb-inputs input {
-  width: 52px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 8px 6px;
-  text-align: center;
-  outline: none;
+.color-picker-row { display: flex; align-items: center; gap: 12px; }
+.color-picker-row input[type="color"] {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  -webkit-appearance: none;
 }
-.rgb-inputs input:focus { border-color: var(--teal); }
-.rgb-inputs .btn-copy { padding: 8px 14px; }
+.color-picker-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 50%; }
+.color-picker-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+.color-picker-hex {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  letter-spacing: .5px;
+}
 
 /* ---------- Tour guidé ---------- */
 .onboarding-overlay {

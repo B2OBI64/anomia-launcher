@@ -48,7 +48,9 @@ function applyAccentColor(hex) {
 
 window.anomia.getSettings().then((settings) => {
   applyMode(settings.mode || "dark");
-  applyAccentColor(settings.accentColor || "#2dd4bf");
+  const accent = settings.accentColor || "#2dd4bf";
+  applyAccentColor(accent);
+  syncColorPicker(accent);
 });
 
 // --- Contrôles fenêtre ---
@@ -889,21 +891,30 @@ document.querySelectorAll(".accent-swatch").forEach((btn) => {
   btn.addEventListener("click", () => {
     const color = btn.dataset.color;
     applyAccentColor(color);
+    syncColorPicker(color);
     window.anomia.setSettings({ accentColor: color });
   });
 });
 
-document.getElementById("rgb-apply").addEventListener("click", () => {
-  const r = parseInt(document.getElementById("rgb-r").value, 10);
-  const g = parseInt(document.getElementById("rgb-g").value, 10);
-  const b = parseInt(document.getElementById("rgb-b").value, 10);
-  if ([r, g, b].some((v) => Number.isNaN(v) || v < 0 || v > 255)) {
-    showInfo("Couleur personnalisée", `<p>Entre 3 valeurs entre 0 et 255 pour R, G et B.</p>`);
-    return;
-  }
-  const hex = rgbToHex(r, g, b);
-  applyAccentColor(hex);
-  window.anomia.setSettings({ accentColor: hex });
+// --- Sélecteur de couleur personnalisée : vrai picker souris (natif) ---
+function syncColorPicker(hex) {
+  const picker = document.getElementById("color-picker");
+  const hexLabel = document.getElementById("color-picker-hex");
+  picker.value = hex;
+  hexLabel.textContent = hex.toUpperCase();
+}
+
+const colorPicker = document.getElementById("color-picker");
+colorPicker.addEventListener("input", () => {
+  // "input" se déclenche en continu pendant qu'on bouge la souris dans le
+  // sélecteur -> aperçu en direct, sans attendre la validation finale.
+  applyAccentColor(colorPicker.value);
+  document.getElementById("color-picker-hex").textContent = colorPicker.value.toUpperCase();
+});
+colorPicker.addEventListener("change", () => {
+  // "change" ne se déclenche qu'une fois la sélection validée -> c'est là
+  // qu'on sauvegarde, pour ne pas spammer l'enregistrement à chaque pixel.
+  window.anomia.setSettings({ accentColor: colorPicker.value });
 });
 
 // --- Page Staff ---
