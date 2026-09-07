@@ -48,9 +48,7 @@ function applyAccentColor(hex) {
 
 window.anomia.getSettings().then((settings) => {
   applyMode(settings.mode || "dark");
-  const accent = settings.accentColor || "#2dd4bf";
-  applyAccentColor(accent);
-  syncColorPicker(accent);
+  applyAccentColor(settings.accentColor || "#2dd4bf");
 });
 
 // --- Contrôles fenêtre ---
@@ -207,14 +205,38 @@ refreshStatus();
 setInterval(refreshStatus, 30000);
 
 // --- Temps de jeu hebdomadaire (affiché sur l'accueil) ---
-async function refreshPlaytime() {
-  const { seconds } = await window.anomia.getPlaytime();
+function formatDuration(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  document.getElementById("tm-playtime").textContent = h > 0 ? `${h}h ${m}min` : `${m} min`;
+  return h > 0 ? `${h}h ${m}min` : `${m} min`;
+}
+
+let lastPlaytimeStats = { day: 0, week: 0, month: 0, year: 0 };
+
+async function refreshPlaytime() {
+  lastPlaytimeStats = await window.anomia.getPlaytime();
+  document.getElementById("tm-playtime").textContent = formatDuration(lastPlaytimeStats.week);
 }
 refreshPlaytime();
 setInterval(refreshPlaytime, 60000);
+
+document.getElementById("tm-playtime-item").addEventListener("click", async () => {
+  const rows = [
+    ["Aujourd'hui", lastPlaytimeStats.day],
+    ["Cette semaine", lastPlaytimeStats.week],
+    ["Ce mois-ci", lastPlaytimeStats.month],
+    ["Cette année", lastPlaytimeStats.year]
+  ]
+    .map(
+      ([label, seconds]) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:13px;">
+        <span style="color:var(--text-dim);">${label}</span>
+        <span style="color:var(--teal);font-weight:700;">${formatDuration(seconds)}</span>
+      </div>`
+    )
+    .join("");
+  await showInfo("Temps de jeu", `<div>${rows}</div>`);
+});
 
 // --- News ---
 function tagClass(tag) {
@@ -891,30 +913,21 @@ document.querySelectorAll(".accent-swatch").forEach((btn) => {
   btn.addEventListener("click", () => {
     const color = btn.dataset.color;
     applyAccentColor(color);
-    syncColorPicker(color);
     window.anomia.setSettings({ accentColor: color });
   });
 });
 
-// --- Sélecteur de couleur personnalisée : vrai picker souris (natif) ---
-function syncColorPicker(hex) {
-  const picker = document.getElementById("color-picker");
-  const hexLabel = document.getElementById("color-picker-hex");
-  picker.value = hex;
-  hexLabel.textContent = hex.toUpperCase();
-}
-
-const colorPicker = document.getElementById("color-picker");
-colorPicker.addEventListener("input", () => {
-  // "input" se déclenche en continu pendant qu'on bouge la souris dans le
-  // sélecteur -> aperçu en direct, sans attendre la validation finale.
-  applyAccentColor(colorPicker.value);
-  document.getElementById("color-picker-hex").textContent = colorPicker.value.toUpperCase();
-});
-colorPicker.addEventListener("change", () => {
-  // "change" ne se déclenche qu'une fois la sélection validée -> c'est là
-  // qu'on sauvegarde, pour ne pas spammer l'enregistrement à chaque pixel.
-  window.anomia.setSettings({ accentColor: colorPicker.value });
+document.getElementById("rgb-apply").addEventListener("click", () => {
+  const r = parseInt(document.getElementById("rgb-r").value, 10);
+  const g = parseInt(document.getElementById("rgb-g").value, 10);
+  const b = parseInt(document.getElementById("rgb-b").value, 10);
+  if ([r, g, b].some((v) => Number.isNaN(v) || v < 0 || v > 255)) {
+    showInfo("Couleur personnalisée", `<p>Entre 3 valeurs entre 0 et 255 pour R, G et B.</p>`);
+    return;
+  }
+  const hex = rgbToHex(r, g, b);
+  applyAccentColor(hex);
+  window.anomia.setSettings({ accentColor: hex });
 });
 
 // --- Page Staff ---
