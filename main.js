@@ -72,6 +72,10 @@ function startLocalServer() {
 
       let urlPath = urlObj.pathname;
       if (urlPath === "/") urlPath = "/src/index.html";
+      // Le lien de redirection Discord pointe volontairement vers la racine
+      // (/oauth-callback.html) pour rester simple à enregistrer sur Discord,
+      // mais le vrai fichier vit dans src/ - on fait la correspondance ici.
+      if (urlPath === "/oauth-callback.html") urlPath = "/src/oauth-callback.html";
 
       // Sécurité basique : on reste cantonné au dossier du projet
       const safePath = path.normalize(path.join(__dirname, urlPath));
@@ -962,26 +966,6 @@ ipcMain.handle("twitch:getStatus", async () => {
     return { ok: false, error: result.error || "unknown_error" };
   } catch (err) {
     return { ok: false, error: "La ressource b2_twitchstatus ne répond pas (pas encore installée, ou serveur hors ligne)." };
-  }
-});
-
-// ============================================================
-// Succès (nécessite une connexion Discord préalable, voir plus haut)
-// ============================================================
-ipcMain.handle("achievements:get", async () => {
-  const profile = loadDiscordProfile();
-  if (!profile) {
-    return { ok: false, notConnected: true, list: config.achievements.list };
-  }
-
-  try {
-    const result = await fetchJson(`${config.server.achievementsUrl}?discordId=${profile.id}`, 6000);
-    if (result.linked === false) {
-      return { ok: true, linked: false, list: config.achievements.list };
-    }
-    return { ok: true, linked: true, achievements: result.achievements || {}, list: config.achievements.list };
-  } catch (err) {
-    return { ok: false, error: "La ressource b2_achievements ne répond pas (pas encore installée, ou serveur hors ligne).", list: config.achievements.list };
   }
 });
 
