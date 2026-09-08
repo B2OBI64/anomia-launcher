@@ -970,6 +970,26 @@ ipcMain.handle("twitch:getStatus", async () => {
 });
 
 // ============================================================
+// Succès (nécessite une connexion Discord préalable, voir plus haut)
+// ============================================================
+ipcMain.handle("achievements:get", async () => {
+  const profile = loadDiscordProfile();
+  if (!profile) {
+    return { ok: false, notConnected: true, list: config.achievements.list };
+  }
+
+  try {
+    const result = await fetchJson(`${config.server.achievementsUrl}?discordId=${profile.id}`, 6000);
+    if (result.linked === false) {
+      return { ok: true, linked: false, list: config.achievements.list };
+    }
+    return { ok: true, linked: true, achievements: result.achievements || {}, list: config.achievements.list };
+  } catch (err) {
+    return { ok: false, error: "La ressource b2_achievements ne répond pas (pas encore installée, ou serveur hors ligne).", list: config.achievements.list };
+  }
+});
+
+// ============================================================
 // Réglages locaux (thème, tour guidé déjà vu) - persistés indépendamment
 // de la version du launcher, donc jamais réinitialisés par une mise à jour.
 // ============================================================
