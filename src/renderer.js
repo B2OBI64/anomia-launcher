@@ -205,15 +205,39 @@ async function refreshStatus() {
 refreshStatus();
 setInterval(refreshStatus, 30000);
 
-// --- Temps de jeu hebdomadaire (affiché sur l'accueil) ---
-async function refreshPlaytime() {
-  const { seconds } = await window.anomia.getPlaytime();
+// --- Temps de jeu (affiché sur l'accueil) ---
+function formatDuration(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  document.getElementById("tm-playtime").textContent = h > 0 ? `${h}h ${m}min` : `${m} min`;
+  return h > 0 ? `${h}h ${m}min` : `${m} min`;
+}
+
+let lastPlaytimeStats = { day: 0, week: 0, month: 0, year: 0 };
+
+async function refreshPlaytime() {
+  lastPlaytimeStats = await window.anomia.getPlaytime();
+  document.getElementById("tm-playtime").textContent = formatDuration(lastPlaytimeStats.week);
 }
 refreshPlaytime();
 setInterval(refreshPlaytime, 60000);
+
+document.getElementById("tm-playtime-item").addEventListener("click", async () => {
+  const rows = [
+    ["Aujourd'hui", lastPlaytimeStats.day],
+    ["Cette semaine", lastPlaytimeStats.week],
+    ["Ce mois-ci", lastPlaytimeStats.month],
+    ["Cette année", lastPlaytimeStats.year]
+  ]
+    .map(
+      ([label, seconds]) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:13px;">
+        <span style="color:var(--text-dim);">${label}</span>
+        <span style="color:var(--teal);font-weight:700;">${formatDuration(seconds)}</span>
+      </div>`
+    )
+    .join("");
+  await showInfo("Temps de jeu", `<div>${rows}</div>`);
+});
 
 // --- News ---
 function tagClass(tag) {

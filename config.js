@@ -44,7 +44,7 @@ module.exports = {
   //      http://localhost:47823/oauth-callback.html
   //    (le port doit correspondre pile à discordAuth.redirectPort ci-dessous)
   discordAuth: {
-    clientId: "1534918391503257721",
+    clientId: "REMPLACE_MOI",
     redirectPort: 47823
   },
 
