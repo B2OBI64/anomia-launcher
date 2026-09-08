@@ -79,6 +79,7 @@ function goToView(name) {
   });
   if (name === "twitch") loadStreamers();
   if (name === "staff") loadStaff();
+  if (name === "achievements") loadAchievements();
   if (name === "media") loadMedia();
   if (name === "admin") refreshAdminStats();
 }
@@ -205,38 +206,14 @@ refreshStatus();
 setInterval(refreshStatus, 30000);
 
 // --- Temps de jeu hebdomadaire (affiché sur l'accueil) ---
-function formatDuration(seconds) {
+async function refreshPlaytime() {
+  const { seconds } = await window.anomia.getPlaytime();
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? `${h}h ${m}min` : `${m} min`;
-}
-
-let lastPlaytimeStats = { day: 0, week: 0, month: 0, year: 0 };
-
-async function refreshPlaytime() {
-  lastPlaytimeStats = await window.anomia.getPlaytime();
-  document.getElementById("tm-playtime").textContent = formatDuration(lastPlaytimeStats.week);
+  document.getElementById("tm-playtime").textContent = h > 0 ? `${h}h ${m}min` : `${m} min`;
 }
 refreshPlaytime();
 setInterval(refreshPlaytime, 60000);
-
-document.getElementById("tm-playtime-item").addEventListener("click", async () => {
-  const rows = [
-    ["Aujourd'hui", lastPlaytimeStats.day],
-    ["Cette semaine", lastPlaytimeStats.week],
-    ["Ce mois-ci", lastPlaytimeStats.month],
-    ["Cette année", lastPlaytimeStats.year]
-  ]
-    .map(
-      ([label, seconds]) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:13px;">
-        <span style="color:var(--text-dim);">${label}</span>
-        <span style="color:var(--teal);font-weight:700;">${formatDuration(seconds)}</span>
-      </div>`
-    )
-    .join("");
-  await showInfo("Temps de jeu", `<div>${rows}</div>`);
-});
 
 // --- News ---
 function tagClass(tag) {
@@ -989,6 +966,58 @@ async function loadStaff() {
     section.appendChild(grid);
     container.appendChild(section);
   });
+}
+
+// --- Succès ---
+const ACHIEVEMENT_ICONS = { hasJob: "💼", hasVehicle: "🚗", hasHouse: "🏠" };
+
+let achievementsLoaded = false;
+async function loadAchievements() {
+  if (achievementsLoaded) return;
+  achievementsLoaded = true;
+  const content = document.getElementById("achievements-content");
+  const result = await window.anomia.getAchievements();
+
+  if (!result.ok && result.notConnected) {
+    content.innerHTML = `
+      <div class="achievements-locked-msg">
+        <p>Connecte-toi avec Discord pour débloquer et suivre tes succès.</p>
+        <button class="btn-connect" id="achievements-discord-btn">Se connecter avec Discord</button>
+      </div>`;
+    document.getElementById("achievements-discord-btn").addEventListener("click", () => {
+      window.anomia.startDiscordAuth();
+    });
+    achievementsLoaded = false; // retenter une fois connecté
+    return;
+  }
+
+  if (!result.ok) {
+    content.innerHTML = `<div class="achievements-locked-msg"><p>${escapeHtml(result.error || "Erreur inconnue.")}</p></div>`;
+    achievementsLoaded = false;
+    return;
+  }
+
+  if (!result.linked) {
+    content.innerHTML = `<div class="achievements-locked-msg"><p>Reconnecte-toi une fois en jeu sur le serveur pour activer le suivi de tes succès (première fois seulement).</p></div>`;
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "achievements-grid";
+  (result.list || []).forEach((def) => {
+    const unlocked = Boolean(result.achievements && result.achievements[def.key]);
+    const badge = document.createElement("div");
+    badge.className = `achievement-badge ${unlocked ? "unlocked" : ""}`;
+    badge.innerHTML = `
+      <div class="achievement-icon">${ACHIEVEMENT_ICONS[def.key] || "🏆"}</div>
+      <span class="achievement-name">${escapeHtml(def.label)}</span>
+      <span class="achievement-desc">${escapeHtml(def.description)}</span>
+      <span class="achievement-status">${unlocked ? "Débloqué" : "Verrouillé"}</span>
+    `;
+    grid.appendChild(badge);
+  });
+  content.innerHTML = "";
+  content.appendChild(grid);
 }
 
 // --- Compte à rebours du prochain redémarrage programmé ---

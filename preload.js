@@ -95,6 +95,9 @@ contextBridge.exposeInMainWorld("anomia", {
   // Staff
   getStaff: () => ipcRenderer.invoke("staff:get"),
 
+  // Succès
+  getAchievements: () => ipcRenderer.invoke("achievements:get"),
+
   // Prochain redémarrage programmé
   getNextRestart: () => ipcRenderer.invoke("server:nextRestart"),
 

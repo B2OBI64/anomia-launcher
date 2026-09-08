@@ -24,6 +24,8 @@ module.exports = {
     discordCheckUrl: "http://185.44.80.32:30140/b2_discordcheck/",
     // Endpoint custom (ressource b2_twitchstatus) qui donne le statut live des streamers Anomia
     twitchStatusUrl: "http://185.44.80.32:30140/b2_twitchstatus/",
+    // Endpoint custom (ressource b2_achievements) qui vérifie les succès d'un joueur via son ID Discord
+    achievementsUrl: "http://185.44.80.32:30140/b2_achievements/",
     // Endpoint custom (ressource b2_crashreport) qui relaie les rapports de crash
     // FiveM vers un salon Discord, sans jamais exposer le webhook au launcher.
     crashReportUrl: "http://185.44.80.32:30140/b2_crashreport/",
@@ -109,5 +111,17 @@ module.exports = {
   staff: {
     remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/staff.json",
     localFallback: "src/staff.json"
+  },
+
+  // --- Succès (nécessite d'être connecté avec Discord, voir discordAuth) ---
+  // Textes affichés dans le launcher pour chaque succès - modifiables ici
+  // sans toucher au reste du code. La logique de calcul (vrai/faux) vit côté
+  // serveur dans b2_achievements/server/main.lua.
+  achievements: {
+    list: [
+      { key: "hasJob", label: "Vie active", description: "Avoir un métier" },
+      { key: "hasVehicle", label: "Sur la route", description: "Posséder un véhicule" },
+      { key: "hasHouse", label: "Chez soi", description: "Posséder un logement" }
+    ]
   }
 };

@@ -54,6 +54,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Staff
       </button>
+      <button class="nav-item" data-view="achievements">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg>
+        Succès
+      </button>
       <button class="nav-item" data-view="assets">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/></svg>
         Fichiers
@@ -133,7 +137,7 @@
             <span class="telemetry-label">Entreprises ouvertes</span>
             <span class="telemetry-value violet" id="tm-jobs">—</span>
           </div>
-          <div class="telemetry-item telemetry-item-clickable" id="tm-playtime-item">
+          <div class="telemetry-item">
             <span class="telemetry-label">Temps de jeu (semaine)</span>
             <span class="telemetry-value" id="tm-playtime">—</span>
           </div>
@@ -213,6 +217,15 @@
         <span class="section-eyebrow">// EQUIPE</span>
         <h1 class="view-title">L'équipe Anomia</h1>
         <div class="staff-container" id="staff-grid">
+          <!-- injecté par renderer.js -->
+        </div>
+      </section>
+
+      <!-- VUE SUCCÈS -->
+      <section class="view hidden" id="view-achievements">
+        <span class="section-eyebrow">// PROGRESSION</span>
+        <h1 class="view-title">Succès</h1>
+        <div id="achievements-content">
           <!-- injecté par renderer.js -->
         </div>
       </section>

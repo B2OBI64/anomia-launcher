@@ -966,6 +966,26 @@ ipcMain.handle("twitch:getStatus", async () => {
 });
 
 // ============================================================
+// Succès (nécessite une connexion Discord préalable, voir plus haut)
+// ============================================================
+ipcMain.handle("achievements:get", async () => {
+  const profile = loadDiscordProfile();
+  if (!profile) {
+    return { ok: false, notConnected: true, list: config.achievements.list };
+  }
+
+  try {
+    const result = await fetchJson(`${config.server.achievementsUrl}?discordId=${profile.id}`, 6000);
+    if (result.linked === false) {
+      return { ok: true, linked: false, list: config.achievements.list };
+    }
+    return { ok: true, linked: true, achievements: result.achievements || {}, list: config.achievements.list };
+  } catch (err) {
+    return { ok: false, error: "La ressource b2_achievements ne répond pas (pas encore installée, ou serveur hors ligne).", list: config.achievements.list };
+  }
+});
+
+// ============================================================
 // Réglages locaux (thème, tour guidé déjà vu) - persistés indépendamment
 // de la version du launcher, donc jamais réinitialisés par une mise à jour.
 // ============================================================
@@ -994,11 +1014,10 @@ ipcMain.handle("settings:get", () => loadSettings());
 ipcMain.handle("settings:set", (event, patch) => saveSettings(patch));
 
 // ============================================================
-// Temps de jeu (observé localement, jamais transmis à un serveur - c'est
-// purement pour l'affichage personnel du joueur). On considère que le
-// joueur "joue" quand FiveM.exe tourne en même temps que le launcher est
-// ouvert. Suivi sur 4 périodes indépendantes (jour/semaine/mois/année),
-// chacune remise à zéro uniquement quand SA propre période change.
+// Temps de jeu hebdomadaire (observé localement, jamais transmis à un
+// serveur - c'est purement pour l'affichage personnel du joueur).
+// On considère que le joueur "joue" quand FiveM.exe tourne en même temps
+// que le launcher est ouvert. Remis à zéro chaque nouvelle semaine ISO.
 // ============================================================
 function getIsoWeekKey(date = new Date()) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -1007,21 +1026,6 @@ function getIsoWeekKey(date = new Date()) {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
   return `${d.getUTCFullYear()}-W${weekNo}`;
-}
-
-function pad2(n) {
-  return String(n).padStart(2, "0");
-}
-
-// Jour/mois/année suivent l'heure locale du joueur (plus intuitif que l'UTC
-// pour "aujourd'hui"/"ce mois-ci"), la semaine garde son calcul ISO existant.
-function getPeriodKeys(date = new Date()) {
-  return {
-    day: `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`,
-    week: getIsoWeekKey(date),
-    month: `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`,
-    year: `${date.getFullYear()}`
-  };
 }
 
 function isFiveMRunning() {
@@ -1036,43 +1040,30 @@ function isFiveMRunning() {
 }
 
 const PLAYTIME_POLL_MS = 60000; // vérifie toutes les minutes
-const PLAYTIME_PERIODS = ["day", "week", "month", "year"];
 
 async function pollPlaytime() {
   const running = await isFiveMRunning();
   if (!running) return;
 
-  const keys = getPeriodKeys();
+  const weekKey = getIsoWeekKey();
   const settings = loadSettings();
-  const stats = settings.playtimeStats || {};
-  const addedSeconds = PLAYTIME_POLL_MS / 1000;
+  const playtime = settings.playtime && settings.playtime.week === weekKey
+    ? settings.playtime
+    : { week: weekKey, seconds: 0 };
 
-  PLAYTIME_PERIODS.forEach((period) => {
-    const current = stats[period];
-    if (!current || current.key !== keys[period]) {
-      stats[period] = { key: keys[period], seconds: addedSeconds };
-    } else {
-      current.seconds += addedSeconds;
-    }
-  });
-
-  saveSettings({ playtimeStats: stats });
+  playtime.seconds += PLAYTIME_POLL_MS / 1000;
+  saveSettings({ playtime });
 }
 
 setInterval(pollPlaytime, PLAYTIME_POLL_MS);
 
 ipcMain.handle("playtime:get", () => {
   const settings = loadSettings();
-  const stats = settings.playtimeStats || {};
-  const keys = getPeriodKeys();
-  const result = {};
-
-  PLAYTIME_PERIODS.forEach((period) => {
-    const current = stats[period];
-    result[period] = current && current.key === keys[period] ? current.seconds : 0;
-  });
-
-  return result; // { day, week, month, year } en secondes
+  const weekKey = getIsoWeekKey();
+  if (settings.playtime && settings.playtime.week === weekKey) {
+    return { seconds: settings.playtime.seconds };
+  }
+  return { seconds: 0 };
 });
 
 // ============================================================
