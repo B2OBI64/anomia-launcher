@@ -264,7 +264,9 @@ autoUpdater.on("error", (err) => {
 });
 
 ipcMain.on("update:install", () => {
-  autoUpdater.quitAndInstall();
+  // isSilent=true : aucune fenêtre d'installateur ne s'affiche, même une seconde.
+  // isForceRunAfter=true : relance le launcher automatiquement une fois l'installation terminée.
+  autoUpdater.quitAndInstall(true, true);
 });
 
 ipcMain.on("update:download", () => {
@@ -914,12 +916,56 @@ ipcMain.handle("fivem:check", async () => {
 // ============================================================
 // Admin (lecture seule) - déverrouillage par code d'accès local
 // ============================================================
+// Gardé en mémoire uniquement (jamais écrit sur disque) après un déverrouillage
+// réussi, pour authentifier les actions serveur sensibles (ex: maintenance)
+// déclenchées depuis le launcher pendant cette session.
+let cachedAdminPassphrase = null;
+
 ipcMain.handle("admin:unlock", async (event, passphrase) => {
   if (!config.admin.passphraseHash) {
     return { ok: false, error: "Aucun code d'accès configuré." };
   }
   const hash = crypto.createHash("sha256").update(passphrase || "").digest("hex");
-  return { ok: hash === config.admin.passphraseHash };
+  const ok = hash === config.admin.passphraseHash;
+  if (ok) cachedAdminPassphrase = passphrase;
+  return { ok };
+});
+
+ipcMain.handle("admin:toggleMaintenance", async (event, enable) => {
+  if (!cachedAdminPassphrase) {
+    return { ok: false, error: "Session admin expirée, redéverrouille l'onglet Admin." };
+  }
+  try {
+    const payload = JSON.stringify({ state: enable ? "on" : "off" });
+    await new Promise((resolve, reject) => {
+      const url = new URL(config.server.maintenanceToggleUrl);
+      const req = http.request(
+        url,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(payload),
+            "X-Admin-Passphrase": cachedAdminPassphrase
+          }
+        },
+        (res) => {
+          let data = "";
+          res.on("data", (c) => (data += c));
+          res.on("end", () => {
+            if (res.statusCode === 200) resolve();
+            else reject(new Error(data || `HTTP ${res.statusCode}`));
+          });
+        }
+      );
+      req.on("error", reject);
+      req.write(payload);
+      req.end();
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 });
 
 ipcMain.handle("admin:stats", async () => {
@@ -1122,6 +1168,28 @@ ipcMain.handle("staff:get", async () => {
     }
   }
   return staff;
+});
+
+ipcMain.handle("rules:get", async () => {
+  let content = "";
+  if (config.rules.remoteUrl) {
+    try {
+      const remote = await fetchJson(config.rules.remoteUrl);
+      if (remote && remote.content) content = remote.content;
+    } catch {
+      // on retombe sur le fichier local ci-dessous
+    }
+  }
+  if (!content) {
+    try {
+      const raw = fs.readFileSync(path.join(__dirname, config.rules.localFallback), "utf-8");
+      const parsed = JSON.parse(raw);
+      content = parsed.content || "";
+    } catch {
+      content = "";
+    }
+  }
+  return content;
 });
 
 // ============================================================

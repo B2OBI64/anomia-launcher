@@ -27,9 +27,8 @@ function applyMode(mode) {
   } else {
     document.documentElement.removeAttribute("data-mode");
   }
-  document.querySelectorAll(".mode-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.mode === mode);
-  });
+  const switchEl = document.getElementById("mode-switch");
+  if (switchEl) switchEl.dataset.mode = mode;
 }
 
 function applyAccentColor(hex) {
@@ -48,7 +47,10 @@ function applyAccentColor(hex) {
 
 window.anomia.getSettings().then((settings) => {
   applyMode(settings.mode || "dark");
-  applyAccentColor(settings.accentColor || "#2dd4bf");
+  const accent = settings.accentColor || "#2dd4bf";
+  applyAccentColor(accent);
+  document.getElementById("color-picker").value = accent;
+  document.getElementById("color-picker-hex").textContent = accent.toUpperCase();
 });
 
 // --- Contrôles fenêtre ---
@@ -80,6 +82,7 @@ function goToView(name) {
   if (name === "twitch") loadStreamers();
   if (name === "staff") loadStaff();
   if (name === "achievements") loadAchievements();
+  if (name === "rules") loadRules();
   if (name === "media") loadMedia();
   if (name === "admin") refreshAdminStats();
 }
@@ -98,6 +101,16 @@ document.getElementById("btn-discord").addEventListener("click", () => {
 
 // --- Connexion serveur ---
 document.getElementById("btn-connect").addEventListener("click", async (e) => {
+  const discordRequired = await window.anomia.isDiscordConfigured();
+
+  if (discordRequired && !discordProfile) {
+    await showInfo(
+      "Connexion Discord requise",
+      `<p>Tu dois te connecter avec Discord avant de pouvoir te connecter au serveur. Utilise le bouton "Se connecter avec Discord" dans la barre latérale.</p>`
+    );
+    return;
+  }
+
   if (discordProfile && discordProfile.allowed === false) {
     await showInfo(
       "Accès refusé",
@@ -705,6 +718,7 @@ const updateProgressTrack = document.getElementById("update-progress-track");
 const updateProgressFill = document.getElementById("update-progress-fill");
 const updateProgressLabel = document.getElementById("update-progress-label");
 const updateDownloadBtn = document.getElementById("update-download-btn");
+const updateDownloadBtnLabel = updateDownloadBtn.querySelector(".btn-neon-label");
 const updateRetryBtn = document.getElementById("update-retry-btn");
 const updateStatusLabel = document.getElementById("update-status");
 let pendingUpdateVersion = null;
@@ -729,7 +743,7 @@ window.anomia.onUpdateAvailable(({ version, releaseNotes }) => {
   updateProgressLabel.textContent = "";
   updateDownloadBtn.classList.remove("hidden");
   updateDownloadBtn.disabled = false;
-  updateDownloadBtn.textContent = "Télécharger et installer";
+  updateDownloadBtnLabel.textContent = "Télécharger et installer";
   updateRetryBtn.classList.add("hidden");
   updateStatusLabel.textContent = "Mise à jour dispo";
   updateStatusLabel.classList.remove("checking");
@@ -759,7 +773,7 @@ window.anomia.onUpdateDownloaded(({ version, releaseNotes }) => {
   updateProgressLabel.textContent = "";
   updateRetryBtn.classList.add("hidden");
   updateMessage.textContent = `Mise à jour v${version} téléchargée. Installation en cours…`;
-  updateDownloadBtn.textContent = "Installation en cours…";
+  updateDownloadBtnLabel.textContent = "Installation en cours…";
   updateDownloadBtn.disabled = true;
   // Installation automatique juste après le téléchargement, sans clic supplémentaire.
   setTimeout(() => window.anomia.installUpdate(), 900);
@@ -777,7 +791,7 @@ window.anomia.onUpdateError(({ message }) => {
 
 updateDownloadBtn.addEventListener("click", () => {
   updateDownloadBtn.disabled = true;
-  updateDownloadBtn.textContent = "Téléchargement en cours…";
+  updateDownloadBtnLabel.textContent = "Téléchargement en cours…";
   updateMessage.textContent = `Téléchargement de la v${pendingUpdateVersion} en cours…`;
   updateProgressTrack.classList.remove("hidden");
   updateProgressFill.style.width = "0%";
@@ -838,7 +852,41 @@ async function refreshAdminStats() {
     txBtn.classList.remove("hidden");
     txBtn.onclick = () => window.anomia.openExternal(stats.txAdminUrl);
   }
+
+  updateMaintenanceButtonDisplay();
 }
+
+function updateMaintenanceButtonDisplay() {
+  const statusEl = document.getElementById("admin-maintenance-status");
+  const btn = document.getElementById("btn-toggle-maintenance");
+  if (lastServerMaintenance) {
+    statusEl.textContent = "Statut actuel : 🛠️ Maintenance activée";
+    btn.textContent = "Désactiver la maintenance";
+  } else {
+    statusEl.textContent = "Statut actuel : ✓ Serveur normal";
+    btn.textContent = "Activer la maintenance";
+  }
+}
+
+document.getElementById("btn-toggle-maintenance").addEventListener("click", async () => {
+  const enabling = !lastServerMaintenance;
+  const confirmed = await showConfirm(
+    enabling ? "Activer la maintenance" : "Désactiver la maintenance",
+    enabling
+      ? "Tous les joueurs (sauf le staff) seront bloqués à la connexion, et verront un bandeau de maintenance dans leur launcher. Continuer ?"
+      : "Le serveur redevient accessible à tous normalement. Continuer ?"
+  );
+  if (!confirmed) return;
+
+  const result = await window.anomia.toggleMaintenance(enabling);
+  if (result.ok) {
+    lastServerMaintenance = enabling;
+    updateMaintenanceButtonDisplay();
+    await showInfo("Maintenance", `<p>Mode maintenance ${enabling ? "activé" : "désactivé"}. Ça se répercute chez tous les joueurs dans les 30 prochaines secondes (délai de rafraîchissement normal du launcher).</p>`);
+  } else {
+    await showInfo("Erreur", `<p>${escapeHtml(result.error || "Erreur inconnue")}</p>`);
+  }
+});
 
 // --- Connexion Discord (pré-vérification avant de se connecter) ---
 let discordProfile = null;
@@ -861,8 +909,18 @@ function renderDiscordSlot() {
       <img src="${avatarSrc}" alt="" />
       <span class="discord-profile-name">${escapeHtml(discordProfile.username || "Joueur")}</span>
       <span class="discord-profile-dot ${dotClass}"></span>
+      <button class="discord-profile-logout" id="btn-discord-logout" title="Se déconnecter" aria-label="Se déconnecter">&#10005;</button>
     </div>
   `;
+
+  document.getElementById("btn-discord-logout").addEventListener("click", async (e) => {
+    e.stopPropagation();
+    const confirmed = await showConfirm("Déconnexion Discord", "Te déconnecter de Discord ? Tu devras te reconnecter pour te connecter au serveur si la whitelist est activée.");
+    if (!confirmed) return;
+    window.anomia.logoutDiscord();
+    discordProfile = null;
+    renderDiscordSlot();
+  });
 }
 
 async function initDiscordAuth() {
@@ -901,34 +959,43 @@ document.getElementById("settings-close").addEventListener("click", () => {
   document.getElementById("settings-overlay").classList.add("hidden");
 });
 
-document.getElementById("mode-dark").addEventListener("click", () => {
-  applyMode("dark");
-  window.anomia.setSettings({ mode: "dark" });
+document.getElementById("settings-replay-tour").addEventListener("click", () => {
+  document.getElementById("settings-overlay").classList.add("hidden");
+  onboardingStep = 0;
+  showOnboardingStep();
 });
-document.getElementById("mode-light").addEventListener("click", () => {
-  applyMode("light");
-  window.anomia.setSettings({ mode: "light" });
+
+document.getElementById("mode-switch").addEventListener("click", () => {
+  const current = document.getElementById("mode-switch").dataset.mode;
+  const next = current === "light" ? "dark" : "light";
+  applyMode(next);
+  window.anomia.setSettings({ mode: next });
 });
 
 document.querySelectorAll(".accent-swatch").forEach((btn) => {
   btn.addEventListener("click", () => {
     const color = btn.dataset.color;
     applyAccentColor(color);
+    syncColorPicker(color);
     window.anomia.setSettings({ accentColor: color });
   });
 });
 
-document.getElementById("rgb-apply").addEventListener("click", () => {
-  const r = parseInt(document.getElementById("rgb-r").value, 10);
-  const g = parseInt(document.getElementById("rgb-g").value, 10);
-  const b = parseInt(document.getElementById("rgb-b").value, 10);
-  if ([r, g, b].some((v) => Number.isNaN(v) || v < 0 || v > 255)) {
-    showInfo("Couleur personnalisée", `<p>Entre 3 valeurs entre 0 et 255 pour R, G et B.</p>`);
-    return;
-  }
-  const hex = rgbToHex(r, g, b);
-  applyAccentColor(hex);
-  window.anomia.setSettings({ accentColor: hex });
+// --- Sélecteur de couleur personnalisée : vrai picker souris (natif) ---
+function syncColorPicker(hex) {
+  const picker = document.getElementById("color-picker");
+  const hexLabel = document.getElementById("color-picker-hex");
+  picker.value = hex;
+  hexLabel.textContent = hex.toUpperCase();
+}
+
+const colorPicker = document.getElementById("color-picker");
+colorPicker.addEventListener("input", () => {
+  applyAccentColor(colorPicker.value);
+  document.getElementById("color-picker-hex").textContent = colorPicker.value.toUpperCase();
+});
+colorPicker.addEventListener("change", () => {
+  window.anomia.setSettings({ accentColor: colorPicker.value });
 });
 
 // --- Page Staff ---
@@ -993,7 +1060,13 @@ async function loadStaff() {
 }
 
 // --- Succès ---
-const ACHIEVEMENT_ICONS = { hasJob: "💼", hasVehicle: "🚗", hasHouse: "🏠" };
+const ACHIEVEMENT_ICONS = {
+  firstCharacter: "🧍", tutorialDone: "🎓", hasJob: "💼", hasVehicle: "🚗", hasHouse: "🏠",
+  jobPromotion: "📈", money30k: "💵", money100k: "💰",
+  drivingDistance100: "🛣️", drivingDistance500: "🛣️", drivingDistance1000: "🛣️",
+  playtime1h: "⏱️", playtime10h: "⏱️", playtime100h: "⏱️", playtime500h: "⏱️",
+  customizedVehicle: "🎨"
+};
 
 let achievementsLoaded = false;
 async function loadAchievements() {
@@ -1030,12 +1103,13 @@ async function loadAchievements() {
   grid.className = "achievements-grid";
   (result.list || []).forEach((def) => {
     const unlocked = Boolean(result.achievements && result.achievements[def.key]);
+    const isSecretLocked = def.secret && !unlocked;
     const badge = document.createElement("div");
     badge.className = `achievement-badge ${unlocked ? "unlocked" : ""}`;
     badge.innerHTML = `
-      <div class="achievement-icon">${ACHIEVEMENT_ICONS[def.key] || "🏆"}</div>
-      <span class="achievement-name">${escapeHtml(def.label)}</span>
-      <span class="achievement-desc">${escapeHtml(def.description)}</span>
+      <div class="achievement-icon">${isSecretLocked ? "❓" : (ACHIEVEMENT_ICONS[def.key] || "🏆")}</div>
+      <span class="achievement-name">${isSecretLocked ? "???" : escapeHtml(def.label)}</span>
+      <span class="achievement-desc">${isSecretLocked ? "Succès secret" : escapeHtml(def.description)}</span>
       <span class="achievement-status">${unlocked ? "Débloqué" : "Verrouillé"}</span>
     `;
     grid.appendChild(badge);
@@ -1163,3 +1237,63 @@ window.anomia.onCrashDetected(async ({ path: crashPath }) => {
     await showInfo("Erreur", `<p>Impossible d'envoyer le rapport : ${escapeHtml(result.error || "raison inconnue")}</p>`);
   }
 });
+
+// --- Règlement ---
+function formatRules(raw) {
+  const lines = raw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  let html = "";
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (line.startsWith("●")) {
+      const bullets = [];
+      while (i < lines.length && lines[i].startsWith("●")) {
+        bullets.push(lines[i].replace(/^●\s*/, ""));
+        i++;
+      }
+      html += `<ul class="rules-list">${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
+      continue;
+    }
+
+    if (/^\d+\.\d+\s*—/.test(line)) {
+      html += `<h3 class="rules-subsection-title">${escapeHtml(line)}</h3>`;
+      i++;
+      continue;
+    }
+
+    if (/^\d+\.\s/.test(line)) {
+      html += `<h2 class="rules-section-title">${escapeHtml(line)}</h2>`;
+      i++;
+      continue;
+    }
+
+    if (line.startsWith("📜") || line.startsWith("📌") || line.startsWith("🏛️")) {
+      html += `<p class="rules-highlight">${escapeHtml(line)}</p>`;
+      i++;
+      continue;
+    }
+
+    html += `<p>${escapeHtml(line)}</p>`;
+    i++;
+  }
+
+  return html;
+}
+
+let rulesLoaded = false;
+async function loadRules() {
+  if (rulesLoaded) return;
+  rulesLoaded = true;
+  const container = document.getElementById("rules-content");
+  const raw = await window.anomia.getRules();
+
+  if (!raw) {
+    container.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Règlement pas encore disponible.</p>`;
+    rulesLoaded = false;
+    return;
+  }
+
+  container.innerHTML = formatRules(raw);
+}

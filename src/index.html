@@ -58,6 +58,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg>
         Succès
       </button>
+      <button class="nav-item" data-view="rules">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Règlement
+      </button>
       <button class="nav-item" data-view="assets">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/></svg>
         Fichiers
@@ -230,6 +234,15 @@
         </div>
       </section>
 
+      <!-- VUE RÈGLEMENT -->
+      <section class="view hidden" id="view-rules">
+        <span class="section-eyebrow">// A LIRE</span>
+        <h1 class="view-title">Règlement</h1>
+        <div class="rules-content" id="rules-content">
+          <!-- injecté par renderer.js -->
+        </div>
+      </section>
+
       <!-- VUE ADMIN (lecture seule, cachée par défaut) -->
       <section class="view hidden" id="view-admin">
         <span class="section-eyebrow">// STAFF</span>
@@ -251,6 +264,14 @@
         <div class="assets-card glass">
           <p>Pour redémarrer le serveur ou consulter les logs en direct, utilise txAdmin — le launcher ne duplique pas volontairement ces actions sensibles pour ne pas exposer de accès destructeur dans une appli distribuée à tout le monde.</p>
           <button class="btn-copy hidden" id="btn-open-txadmin">Ouvrir txAdmin →</button>
+        </div>
+
+        <div class="section-header" style="margin-top:26px;">
+          <h2>Mode maintenance</h2>
+        </div>
+        <div class="assets-card glass">
+          <p id="admin-maintenance-status">Statut actuel : —</p>
+          <button class="btn-connect" id="btn-toggle-maintenance">Activer la maintenance</button>
         </div>
       </section>
 
@@ -315,10 +336,11 @@
 
       <div class="settings-section">
         <span class="settings-label">Mode</span>
-        <div class="mode-toggle">
-          <button class="mode-btn" id="mode-dark" data-mode="dark">🌙 Sombre</button>
-          <button class="mode-btn" id="mode-light" data-mode="light">☀️ Clair</button>
-        </div>
+        <button class="mode-switch" id="mode-switch" data-mode="dark" aria-label="Basculer entre mode sombre et clair">
+          <span class="mode-switch-icon mode-switch-icon-moon">🌙</span>
+          <span class="mode-switch-icon mode-switch-icon-sun">☀️</span>
+          <span class="mode-switch-thumb"></span>
+        </button>
       </div>
 
       <div class="settings-section">
@@ -329,13 +351,16 @@
           <button class="accent-swatch" data-color="#f2b84b" style="background:#f2b84b;" title="Ambre"></button>
           <button class="accent-swatch" data-color="#4f9dff" style="background:#4f9dff;" title="Bleu"></button>
         </div>
-        <span class="settings-sublabel">Personnalisée (RGB)</span>
-        <div class="rgb-inputs">
-          <input type="number" id="rgb-r" min="0" max="255" placeholder="R" />
-          <input type="number" id="rgb-g" min="0" max="255" placeholder="G" />
-          <input type="number" id="rgb-b" min="0" max="255" placeholder="B" />
-          <button class="btn-copy" id="rgb-apply">OK</button>
+        <span class="settings-sublabel">Personnalisée</span>
+        <div class="color-picker-row">
+          <input type="color" id="color-picker" value="#2dd4bf" />
+          <span class="color-picker-hex" id="color-picker-hex">#2DD4BF</span>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <span class="settings-label">Tour guidé</span>
+        <button class="btn-copy" id="settings-replay-tour" style="width:100%;">Revoir le tour guidé</button>
       </div>
 
       <div class="modal-actions">
@@ -394,8 +419,14 @@
       </div>
       <div class="progress-label" id="update-progress-label"></div>
       <div class="modal-actions">
-        <button class="btn-connect hidden" id="update-download-btn">Télécharger et installer</button>
-        <button class="btn-connect hidden" id="update-retry-btn">Réessayer</button>
+        <button class="btn-neon btn-neon-primary hidden" id="update-download-btn">
+          <span></span><span></span><span></span><span></span>
+          <span class="btn-neon-label">Télécharger et installer</span>
+        </button>
+        <button class="btn-neon btn-neon-secondary hidden" id="update-retry-btn">
+          <span></span><span></span><span></span><span></span>
+          <span class="btn-neon-label">Réessayer</span>
+        </button>
       </div>
     </div>
   </div>

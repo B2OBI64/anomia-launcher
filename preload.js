@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Admin (lecture seule)
   unlockAdmin: (passphrase) => ipcRenderer.invoke("admin:unlock", passphrase),
+  toggleMaintenance: (enable) => ipcRenderer.invoke("admin:toggleMaintenance", enable),
   getAdminStats: () => ipcRenderer.invoke("admin:stats"),
 
   // Twitch
@@ -94,6 +95,9 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Staff
   getStaff: () => ipcRenderer.invoke("staff:get"),
+
+  // Règlement
+  getRules: () => ipcRenderer.invoke("rules:get"),
 
   // Succès
   getAchievements: () => ipcRenderer.invoke("achievements:get"),

@@ -23,6 +23,17 @@ Depuis la console serveur, ou en jeu si tu as la permission ACE `admin` :
 /maintenance        -- affiche l'état actuel
 ```
 
+## Bascule depuis le launcher (onglet Admin)
+
+Pour pouvoir activer/désactiver la maintenance directement depuis le
+launcher (sans passer par la console), ajoute dans `server.cfg` :
+```
+setr anomia_admin_passphrase "LE_MEME_CODE_QUE_TU_AS_HASHE_DANS_CONFIG_JS_DU_LAUNCHER"
+```
+C'est le même code en clair que celui dont tu as généré le hash pour
+`config.js → admin.passphraseHash`. Il reste 100% côté serveur, jamais
+exposé aux joueurs.
+
 L'état est stocké de façon persistante (via le système `Kvp` de FiveM) : il
 reste actif même après un **redémarrage complet du serveur**, pas juste un
 restart de la ressource. Pas besoin d'ajouter quoi que ce soit dans

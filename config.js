@@ -24,6 +24,9 @@ module.exports = {
     discordCheckUrl: "http://185.44.80.32:30140/b2_discordcheck/",
     // Endpoint custom (ressource b2_twitchstatus) qui donne le statut live des streamers Anomia
     twitchStatusUrl: "http://185.44.80.32:30140/b2_twitchstatus/",
+    // Endpoint réservé aux admins (protégé par le code d'accès) qui active/désactive
+    // la maintenance à distance depuis le launcher, sans passer par la console serveur.
+    maintenanceToggleUrl: "http://185.44.80.32:30140/b2_maintenance/toggle",
     // Endpoint custom (ressource b2_achievements) qui vérifie les succès d'un joueur via son ID Discord
     achievementsUrl: "http://185.44.80.32:30140/b2_achievements/",
     // Endpoint custom (ressource b2_crashreport) qui relaie les rapports de crash
@@ -97,7 +100,7 @@ module.exports = {
   //   node -e "console.log(require('crypto').createHash('sha256').update('TON_MOT_DE_PASSE').digest('hex'))"
   // et colle uniquement le résultat ci-dessous.
   admin: {
-    passphraseHash: null, // ex: "3a7bd3e2360a3d..." — tant que c'est null, l'onglet reste inaccessible
+    passphraseHash: 711c16f74e881ef705f0aff89cce0d20c85565a82556425f5006650e213d7006, // ex: "3a7bd3e2360a3d..." — tant que c'est null, l'onglet reste inaccessible
     // Optionnel : lien vers ton panel txAdmin, pour un accès rapide (redémarrage/logs se font là-bas,
     // txAdmin a déjà sa propre authentification sécurisée - le launcher ne la duplique pas)
     txAdminUrl: null
@@ -119,9 +122,30 @@ module.exports = {
   // serveur dans b2_achievements/server/main.lua.
   achievements: {
     list: [
-      { key: "hasJob", label: "Vie active", description: "Avoir un métier" },
-      { key: "hasVehicle", label: "Sur la route", description: "Posséder un véhicule" },
-      { key: "hasHouse", label: "Chez soi", description: "Posséder un logement" }
+      { key: "firstCharacter", label: "Premiers pas", description: "Créer ton premier personnage" },
+      { key: "tutorialDone", label: "Prêt à jouer", description: "Finir le tutoriel du serveur" },
+      { key: "hasJob", label: "Vie active", description: "Avoir ton premier métier" },
+      { key: "hasVehicle", label: "Sur la route", description: "Récupérer ta première voiture" },
+      { key: "hasHouse", label: "Chez soi", description: "Acheter ta première maison" },
+      { key: "jobPromotion", label: "Ambitieux", description: "Monter de grade dans ton entreprise (privée uniquement)" },
+      { key: "money30k", label: "Petit pécule", description: "Avoir récolté 30 000 $" },
+      { key: "money100k", label: "Bien loti", description: "Avoir récolté 100 000 $" },
+      { key: "drivingDistance100", label: "Sur la route", description: "Parcourir 100 km en voiture" },
+      { key: "drivingDistance500", label: "Grand routier", description: "Parcourir 500 km en voiture" },
+      { key: "drivingDistance1000", label: "Globe-trotteur", description: "Parcourir 1000 km en voiture" },
+      { key: "playtime1h", label: "Premiers instants", description: "Avoir joué 1 heure" },
+      { key: "playtime10h", label: "Habitué", description: "Avoir joué 10 heures" },
+      { key: "playtime100h", label: "Pilier", description: "Avoir joué 100 heures" },
+      { key: "playtime500h", label: "Vétéran", description: "Avoir joué 500 heures" },
+      { key: "customizedVehicle", label: "Sur mesure", description: "Personnaliser ta voiture", secret: true }
     ]
+  },
+
+  // --- Règlement du serveur (visible par tous) ---
+  // Même principe que les news/media/staff : source locale de secours,
+  // remplaçable par une URL distante éditable sans reconstruire le launcher.
+  rules: {
+    remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/rules.json",
+    localFallback: "src/rules.json"
   }
 };

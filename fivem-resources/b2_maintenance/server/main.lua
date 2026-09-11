@@ -80,3 +80,59 @@ AddEventHandler("playerConnecting", function(name, setKickReason, deferrals)
 end)
 
 print("[b2_maintenance] Prêt. Commande : /maintenance on|off (staff uniquement)")
+
+-- ============================================================
+-- Bascule à distance depuis le launcher (onglet Admin)
+--
+-- Le launcher n'a aucun accès direct à ta console serveur - ce endpoint lui
+-- permet d'activer/désactiver la maintenance à condition de connaître le
+-- même code d'accès admin que celui configuré dans config.js du launcher.
+--
+-- Configure dans server.cfg :
+--   setr anomia_admin_passphrase "LE_MEME_CODE_QUE_CELUI_HASHE_DANS_CONFIG_JS"
+-- ============================================================
+local ADMIN_PASSPHRASE_CONVAR = "anomia_admin_passphrase"
+
+SetHttpHandler(function(req, res)
+    if not req.path:find("/toggle") then
+        res.writeHead(404, { ['Content-Type'] = 'application/json' })
+        res.send(json.encode({ error = "not_found" }))
+        return
+    end
+
+    if req.method ~= "POST" then
+        res.writeHead(405, { ['Content-Type'] = 'application/json' })
+        res.send(json.encode({ error = "method_not_allowed" }))
+        return
+    end
+
+    req.setDataHandler(function(body)
+        local expected = GetConvar(ADMIN_PASSPHRASE_CONVAR, "")
+        local provided = req.headers["x-admin-passphrase"] or ""
+
+        if expected == "" then
+            res.writeHead(500, { ['Content-Type'] = 'application/json' })
+            res.send(json.encode({ error = "admin_passphrase_not_configured" }))
+            return
+        end
+
+        if provided ~= expected then
+            res.writeHead(403, { ['Content-Type'] = 'application/json' })
+            res.send(json.encode({ error = "invalid_passphrase" }))
+            return
+        end
+
+        local ok, data = pcall(json.decode, body)
+        if not ok or not data or (data.state ~= "on" and data.state ~= "off") then
+            res.writeHead(400, { ['Content-Type'] = 'application/json' })
+            res.send(json.encode({ error = "invalid_body" }))
+            return
+        end
+
+        setMaintenance(data.state == "on")
+        print(("[b2_maintenance] Bascule à distance depuis le launcher : %s"):format(data.state:upper()))
+
+        res.writeHead(200, { ['Content-Type'] = 'application/json' })
+        res.send(json.encode({ ok = true, maintenance = data.state == "on" }))
+    end)
+end)

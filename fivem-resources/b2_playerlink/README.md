@@ -31,3 +31,11 @@ personnage est chargé) — aucune action de leur part. Un joueur qui ne
 s'est jamais reconnecté depuis l'installation de cette ressource n'aura
 son lien créé qu'à sa **prochaine** connexion, pas de rattrapage rétroactif
 pour les sessions passées (normal, l'info n'existait pas avant).
+
+## Temps de jeu (pour les succès "1h / 10h / 100h / 500h joués")
+
+Cette ressource suit aussi le temps de jeu cumulé de chaque joueur, **côté
+serveur** (colonne `playtime_seconds` dans `anomia_discord_links`) — pas
+juste localement dans le launcher. Un tour toutes les minutes pour chaque
+joueur actuellement connecté et chargé, peu importe le PC/launcher utilisé.
+Aucune action requise de ta part, ça se met à jour tout seul.
