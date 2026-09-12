@@ -83,6 +83,7 @@ function goToView(name) {
   if (name === "staff") loadStaff();
   if (name === "achievements") loadAchievements();
   if (name === "rules") loadRules();
+  if (name === "map") loadMap();
   if (name === "media") loadMedia();
   if (name === "admin") refreshAdminStats();
 }
@@ -135,6 +136,7 @@ document.getElementById("btn-connect").addEventListener("click", async (e) => {
 
 // --- Statut serveur (polling) ---
 let lastJobStats = {};
+let lastAvgPingMs = null;
 let lastServerOnline = false;
 let lastServerMaintenance = false;
 
@@ -189,11 +191,16 @@ async function refreshStatus() {
 
     if (typeof status.avgPing === "number") {
       tmPing.textContent = `${status.avgPing} ms`;
+      lastAvgPingMs = status.avgPing;
     } else {
       const pings = (status.players || []).map((p) => p.ping).filter((p) => typeof p === "number" && p > 0);
-      tmPing.textContent = pings.length
-        ? `${Math.round(pings.reduce((a, b) => a + b, 0) / pings.length)} ms`
-        : "Indisponible";
+      if (pings.length) {
+        lastAvgPingMs = Math.round(pings.reduce((a, b) => a + b, 0) / pings.length);
+        tmPing.textContent = `${lastAvgPingMs} ms`;
+      } else {
+        lastAvgPingMs = null;
+        tmPing.textContent = "Indisponible";
+      }
     }
 
     lastJobStats = status.jobs || {};
@@ -210,6 +217,7 @@ async function refreshStatus() {
     tmPing.textContent = "—";
     tmJobs.textContent = "—";
     lastJobStats = {};
+    lastAvgPingMs = null;
     maintenanceBanner.classList.add("hidden");
   }
 
@@ -597,31 +605,21 @@ function showInfo(title, htmlMessage) {
   });
 }
 
-// --- Diagnostic réseau ---
-document.getElementById("btn-diagnose").addEventListener("click", async (e) => {
-  const btn = e.target;
-  const original = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "Test en cours…";
-
-  try {
-    const r = await window.anomia.diagnoseNetwork();
-    const lines = [
-      `<p><strong>Connexion (${r.ip}:${r.port})</strong> : ${r.tcpOk ? `✅ OK (${r.tcpLatencyMs} ms)` : `❌ Échec${r.tcpError ? " — " + r.tcpError : ""}`}</p>`,
-      `<p><strong>Serveur FiveM (HTTP)</strong> : ${r.httpOk ? `✅ Répond (${r.httpLatencyMs} ms)` : "❌ Ne répond pas"}</p>`
-    ];
-    if (!r.tcpOk) {
-      lines.push(`<p style="color:var(--text-dim);font-size:12.5px;">Le port ne répond pas — pare-feu, serveur hors ligne, ou mauvaise adresse.</p>`);
-    } else if (!r.httpOk) {
-      lines.push(`<p style="color:var(--text-dim);font-size:12.5px;">Le port est joignable mais le serveur ne répond pas en HTTP — le serveur redémarre peut-être.</p>`);
-    }
-    await showInfo("Diagnostic connexion", lines.join(""));
-  } catch (err) {
-    await showInfo("Diagnostic connexion", `<p>Erreur inattendue : ${err.message}</p>`);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = original;
+// --- Détail du ping (clic sur la carte télémétrie "Ping moyen") ---
+document.getElementById("tm-ping-item").addEventListener("click", async () => {
+  if (!lastServerOnline || lastAvgPingMs === null) {
+    await showInfo("Ping moyen", `<p style="color:var(--text-dim);">Aucune donnée disponible pour le moment (serveur hors ligne, ou ressource b2_pingstats pas installée).</p>`);
+    return;
   }
+  const quality = lastAvgPingMs < 60 ? "Excellent" : lastAvgPingMs < 120 ? "Bon" : lastAvgPingMs < 200 ? "Correct" : "Élevé";
+  await showInfo(
+    "Ping moyen",
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-family:var(--font-mono);font-size:13px;">
+      <span style="color:var(--text-dim);">Latence moyenne du serveur</span>
+      <span style="color:var(--teal);font-weight:700;">${lastAvgPingMs} ms</span>
+    </div>
+    <p style="color:var(--text-faint);font-size:11px;margin-top:8px;">${quality} — recalculé toutes les 30 secondes</p>`
+  );
 });
 
 // --- Population par job (clic sur la carte télémétrie "Entreprises ouvertes") ---
@@ -1065,7 +1063,9 @@ const ACHIEVEMENT_ICONS = {
   jobPromotion: "📈", money30k: "💵", money100k: "💰",
   drivingDistance100: "🛣️", drivingDistance500: "🛣️", drivingDistance1000: "🛣️",
   playtime1h: "⏱️", playtime10h: "⏱️", playtime100h: "⏱️", playtime500h: "⏱️",
-  customizedVehicle: "🎨"
+  customizedVehicle: "🎨",
+  vehicleCollector3: "🚙", vehicleCollector5: "🏎️",
+  houseCollector2: "🏘️", millionaire: "💎", newLife: "🔄"
 };
 
 let achievementsLoaded = false;
@@ -1296,4 +1296,85 @@ async function loadRules() {
   }
 
   container.innerHTML = formatRules(raw);
+}
+
+// --- Carte interactive (pan + zoom simples) ---
+let mapLoaded = false;
+let mapState = { scale: 1, x: 0, y: 0 };
+let mapDragging = false;
+let mapDragStart = { x: 0, y: 0 };
+
+function applyMapTransform() {
+  const inner = document.getElementById("map-inner");
+  inner.style.transform = `translate(${mapState.x}px, ${mapState.y}px) scale(${mapState.scale})`;
+}
+
+function renderMapMarkers(points) {
+  const container = document.getElementById("map-markers");
+  container.innerHTML = "";
+  points.forEach((point) => {
+    const marker = document.createElement("div");
+    marker.className = "map-marker";
+    marker.style.left = `${point.x}%`;
+    marker.style.top = `${point.y}%`;
+    marker.innerHTML = `
+      <span class="map-marker-dot"></span>
+      <span class="map-marker-label">${escapeHtml(point.label || "")}</span>
+    `;
+    marker.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showInfo(point.label || "Point d'intérêt", `<p>${escapeHtml(point.description || "")}</p>`);
+    });
+    container.appendChild(marker);
+  });
+}
+
+async function loadMap() {
+  if (mapLoaded) return;
+  mapLoaded = true;
+
+  const wrap = document.getElementById("map-wrap");
+  const img = document.getElementById("map-image");
+
+  const points = await window.anomia.getMapPoints();
+  document.getElementById("map-markers").style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%;";
+
+  const setupMarkers = () => renderMapMarkers(points);
+  if (img.complete) setupMarkers();
+  else img.addEventListener("load", setupMarkers, { once: true });
+
+  // Molette : zoom centré sur le curseur
+  wrap.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const rect = wrap.getBoundingClientRect();
+    const cursorX = e.clientX - rect.left;
+    const cursorY = e.clientY - rect.top;
+    const prevScale = mapState.scale;
+    const delta = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const newScale = Math.min(4, Math.max(0.3, prevScale * delta));
+
+    mapState.x = cursorX - ((cursorX - mapState.x) / prevScale) * newScale;
+    mapState.y = cursorY - ((cursorY - mapState.y) / prevScale) * newScale;
+    mapState.scale = newScale;
+    applyMapTransform();
+  });
+
+  // Clic-glisser pour se déplacer
+  wrap.addEventListener("mousedown", (e) => {
+    mapDragging = true;
+    wrap.classList.add("dragging");
+    mapDragStart = { x: e.clientX - mapState.x, y: e.clientY - mapState.y };
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!mapDragging) return;
+    mapState.x = e.clientX - mapDragStart.x;
+    mapState.y = e.clientY - mapDragStart.y;
+    applyMapTransform();
+  });
+  window.addEventListener("mouseup", () => {
+    mapDragging = false;
+    wrap.classList.remove("dragging");
+  });
+
+  applyMapTransform();
 }

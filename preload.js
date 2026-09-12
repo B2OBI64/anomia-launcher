@@ -99,6 +99,9 @@ contextBridge.exposeInMainWorld("anomia", {
   // Règlement
   getRules: () => ipcRenderer.invoke("rules:get"),
 
+  // Carte
+  getMapPoints: () => ipcRenderer.invoke("map:getPoints"),
+
   // Succès
   getAchievements: () => ipcRenderer.invoke("achievements:get"),
 

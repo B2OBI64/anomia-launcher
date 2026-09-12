@@ -53,9 +53,14 @@ local function checkAchievements(citizenid, cb)
         playtime1h = false,
         playtime10h = false,
         playtime100h = false,
-        playtime500h = false
+        playtime500h = false,
+        vehicleCollector3 = false,
+        vehicleCollector5 = false,
+        houseCollector2 = false,
+        millionaire = false,
+        newLife = false
     }
-    local pending = 4
+    local pending = 5
 
     local function done()
         pending = pending - 1
@@ -85,6 +90,7 @@ local function checkAchievements(citizenid, cb)
                     local total = (tonumber(money.cash) or 0) + (tonumber(money.bank) or 0)
                     if total >= 30000 then result.money30k = true end
                     if total >= 100000 then result.money100k = true end
+                    if total >= 1000000 then result.millionaire = true end
                 end
             end
 
@@ -109,6 +115,8 @@ local function checkAchievements(citizenid, cb)
                 local totalDistanceKm = totalDistanceMeters / 1000
 
                 if cnt > 0 then result.hasVehicle = true end
+                if cnt >= 3 then result.vehicleCollector3 = true end
+                if cnt >= 5 then result.vehicleCollector5 = true end
                 if totalDistanceKm >= 100 then result.drivingDistance100 = true end
                 if totalDistanceKm >= 500 then result.drivingDistance500 = true end
                 if totalDistanceKm >= 1000 then result.drivingDistance1000 = true end
@@ -131,11 +139,25 @@ local function checkAchievements(citizenid, cb)
 
     -- player_houses
     exports.oxmysql:execute("SELECT COUNT(*) as cnt FROM player_houses WHERE citizenid = ?", { citizenid }, function(rows)
-        if rows and rows[1] and tonumber(rows[1].cnt) and tonumber(rows[1].cnt) > 0 then
-            result.hasHouse = true
+        if rows and rows[1] and tonumber(rows[1].cnt) then
+            local cnt = tonumber(rows[1].cnt)
+            if cnt > 0 then result.hasHouse = true end
+            if cnt >= 2 then result.houseCollector2 = true end
         end
         done()
     end)
+
+    -- newLife : le même joueur (même license) a créé plus d'un personnage
+    exports.oxmysql:execute(
+        "SELECT COUNT(*) as cnt FROM players WHERE license = (SELECT license FROM players WHERE citizenid = ? LIMIT 1)",
+        { citizenid },
+        function(rows)
+            if rows and rows[1] and tonumber(rows[1].cnt) and tonumber(rows[1].cnt) > 1 then
+                result.newLife = true
+            end
+            done()
+        end
+    )
 
     -- temps de jeu cumulé (suivi côté serveur par b2_playerlink, pas par le launcher)
     exports.oxmysql:execute("SELECT playtime_seconds FROM anomia_discord_links WHERE citizenid = ? LIMIT 1", { citizenid }, function(rows)

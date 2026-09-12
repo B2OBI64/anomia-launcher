@@ -100,7 +100,7 @@ module.exports = {
   //   node -e "console.log(require('crypto').createHash('sha256').update('TON_MOT_DE_PASSE').digest('hex'))"
   // et colle uniquement le résultat ci-dessous.
   admin: {
-    passphraseHash: "711c16f74e881ef705f0aff89cce0d20c85565a82556425f5006650e213d7006", // ex: "3a7bd3e2360a3d..." — tant que c'est null, l'onglet reste inaccessible
+    passphraseHash: "711c16f74e881ef705f0aff89cce0d20c85565a82556425f5006650e213d7006", // hash du code admin — jamais le code en clair ici
     // Optionnel : lien vers ton panel txAdmin, pour un accès rapide (redémarrage/logs se font là-bas,
     // txAdmin a déjà sa propre authentification sécurisée - le launcher ne la duplique pas)
     txAdminUrl: null
@@ -137,7 +137,12 @@ module.exports = {
       { key: "playtime10h", label: "Habitué", description: "Avoir joué 10 heures" },
       { key: "playtime100h", label: "Pilier", description: "Avoir joué 100 heures" },
       { key: "playtime500h", label: "Vétéran", description: "Avoir joué 500 heures" },
-      { key: "customizedVehicle", label: "Sur mesure", description: "Personnaliser ta voiture", secret: true }
+      { key: "customizedVehicle", label: "Sur mesure", description: "Personnaliser ta voiture", secret: true },
+      { key: "vehicleCollector3", label: "Collectionneur", description: "Posséder 3 véhicules ou plus" },
+      { key: "vehicleCollector5", label: "Collectionneur confirmé", description: "Posséder 5 véhicules ou plus" },
+      { key: "houseCollector2", label: "Magnat de l'immobilier", description: "Posséder 2 logements ou plus", secret: true },
+      { key: "millionaire", label: "Millionnaire", description: "Avoir 1 000 000 $ cumulés" },
+      { key: "newLife", label: "Nouvelle vie", description: "Créer un 2ème personnage", secret: true }
     ]
   },
 
@@ -147,5 +152,15 @@ module.exports = {
   rules: {
     remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/rules.json",
     localFallback: "src/rules.json"
+  },
+
+  // --- Carte interactive ---
+  // Les points d'intérêt s'ajoutent petit à petit dans map-points.json, sans
+  // jamais avoir à reconstruire le launcher. Format d'un point :
+  //   { "x": 45.2, "y": 60.8, "label": "Nom du lieu", "description": "..." }
+  // x/y sont des pourcentages (0-100) de la position sur l'image de la carte.
+  map: {
+    remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/map-points.json",
+    localFallback: "src/map-points.json"
   }
 };

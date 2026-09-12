@@ -1192,6 +1192,28 @@ ipcMain.handle("rules:get", async () => {
   return content;
 });
 
+ipcMain.handle("map:getPoints", async () => {
+  let points = [];
+  if (config.map.remoteUrl) {
+    try {
+      const remote = await fetchJson(config.map.remoteUrl);
+      if (Array.isArray(remote)) points = remote;
+    } catch {
+      // on retombe sur le fichier local ci-dessous
+    }
+  }
+  if (points.length === 0) {
+    try {
+      const raw = fs.readFileSync(path.join(__dirname, config.map.localFallback), "utf-8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) points = parsed;
+    } catch {
+      points = [];
+    }
+  }
+  return points;
+});
+
 // ============================================================
 // Compte à rebours du prochain redémarrage programmé (via b2_pingstats)
 // ============================================================

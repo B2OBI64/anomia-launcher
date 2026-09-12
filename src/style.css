@@ -207,8 +207,50 @@ body::before {
 }
 .avatar-slot {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 20px;
+  padding: 4px 0 10px;
+  cursor: pointer;
+}
+.nav-dropdown-wrapper {
+  position: relative;
+}
+.nav-dropdown-hint {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .5px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  transition: color .15s ease;
+}
+.nav-dropdown-wrapper:hover .nav-dropdown-hint { color: var(--teal); }
+.nav-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  right: -1px;
+  z-index: 40;
+  background: var(--panel-solid);
+  border: 1px solid var(--border-strong);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity .15s ease, transform .15s ease, visibility .15s;
+  box-shadow: 0 12px 30px rgba(0,0,0,.4);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.nav-dropdown-wrapper:hover .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 .avatar-logo {
   width: 72px;
@@ -1024,6 +1066,67 @@ body::before {
   color: var(--teal);
   text-align: center;
   margin: 22px 0 10px !important;
+}
+
+/* ---------- Carte ---------- */
+.map-wrap {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 220px);
+  overflow: hidden;
+  background: #05090a;
+  border: 1px solid var(--border);
+  cursor: grab;
+}
+.map-wrap.dragging { cursor: grabbing; }
+.map-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  transition: transform .05s linear;
+}
+.map-inner img {
+  display: block;
+  width: 2200px;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+.map-marker {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.map-marker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--teal);
+  border: 2px solid #04201d;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 10px var(--teal-glow);
+}
+.map-marker-label {
+  margin-top: 2px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text);
+  background: rgba(5, 9, 10, 0.85);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.map-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  margin-top: 8px;
 }
 
 /* ---------- Assets ---------- */
