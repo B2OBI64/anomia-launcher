@@ -893,7 +893,11 @@ function renderDiscordSlot() {
   const slot = document.getElementById("discord-auth-slot");
 
   if (!discordProfile) {
-    slot.innerHTML = `<button class="ext-link discord-connect-btn" id="btn-discord-auth">Se connecter avec Discord</button>`;
+    slot.innerHTML = `
+      <button class="ext-link discord-connect-btn" id="btn-discord-auth">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span class="nav-label">Se connecter avec Discord</span>
+      </button>`;
     document.getElementById("btn-discord-auth").addEventListener("click", () => {
       window.anomia.startDiscordAuth();
     });
@@ -904,10 +908,12 @@ function renderDiscordSlot() {
   const avatarSrc = discordProfile.avatar || "../assets/logo.png";
   slot.innerHTML = `
     <div class="discord-profile" title="${discordProfile.allowed === false ? "Rôle whitelist manquant" : "Connecté"}">
-      <img src="${avatarSrc}" alt="" />
-      <span class="discord-profile-name">${escapeHtml(discordProfile.username || "Joueur")}</span>
-      <span class="discord-profile-dot ${dotClass}"></span>
-      <button class="discord-profile-logout" id="btn-discord-logout" title="Se déconnecter" aria-label="Se déconnecter">&#10005;</button>
+      <img src="${avatarSrc}" alt="" class="discord-profile-avatar" />
+      <span class="discord-profile-badge ${dotClass}"></span>
+      <div class="discord-profile-flyout">
+        <span class="discord-profile-name">${escapeHtml(discordProfile.username || "Joueur")}</span>
+        <button class="discord-profile-logout" id="btn-discord-logout" title="Se déconnecter" aria-label="Se déconnecter">&#10005; Déconnexion</button>
+      </div>
     </div>
   `;
 
