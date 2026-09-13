@@ -134,6 +134,10 @@ document.getElementById("btn-connect").addEventListener("click", async (e) => {
   window.anomia.connect();
 });
 
+window.anomia.onConnectError((message) => {
+  showInfo("Impossible de lancer FiveM", `<p>Le launcher n'a pas réussi à démarrer FiveM automatiquement : ${escapeHtml(message)}</p><p style="margin-top:8px;color:var(--text-faint);font-size:12px;">Essaie de rejoindre le serveur manuellement depuis FiveM directement.</p>`);
+});
+
 // --- Statut serveur (polling) ---
 let lastJobStats = {};
 let lastAvgPingMs = null;

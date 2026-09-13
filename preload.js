@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld("anomia", {
   // Serveur
   getServerStatus: () => ipcRenderer.invoke("server:status"),
   connect: () => ipcRenderer.send("server:connect"),
+  onConnectError: (callback) => {
+    ipcRenderer.removeAllListeners("connect:error");
+    ipcRenderer.on("connect:error", (event, message) => callback(message));
+  },
 
   // News
   getNews: () => ipcRenderer.invoke("news:get"),

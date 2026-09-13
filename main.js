@@ -560,15 +560,27 @@ ipcMain.handle("server:status", async () => {
 // ============================================================
 // Connexion au serveur
 // ============================================================
-ipcMain.on("server:connect", () => {
+ipcMain.on("server:connect", (event) => {
   const url = `fivem://connect/${config.server.ip}:${config.server.port}`;
 
   // FiveM refuse de se lancer si l'appel ne vient pas "du shell ou d'un navigateur"
   // (protection anti-triche). shell.openExternal() invoque le protocole avec le
-  // launcher lui-même comme processus parent, ce que FiveM rejette. En passant par
-  // explorer.exe comme intermédiaire, FiveM voit un lancement légitime.
+  // launcher lui-même comme processus parent, ce que FiveM rejette.
+  //
+  // On passe par "cmd /c start" (équivalent shell natif Windows), plus fiable que
+  // "explorer.exe url" directement sur certaines configurations Windows où ce
+  // dernier peut silencieusement ne rien faire sans erreur visible.
   if (process.platform === "win32") {
-    spawn("explorer.exe", [url], { detached: true, stdio: "ignore" }).unref();
+    const child = spawn("cmd.exe", ["/c", "start", '""', url], {
+      detached: true,
+      stdio: "ignore",
+      windowsVerbatimArguments: true
+    });
+    child.on("error", (err) => {
+      console.error("[connect] Échec du lancement de FiveM :", err.message);
+      event.sender.send("connect:error", err.message);
+    });
+    child.unref();
   } else {
     shell.openExternal(url);
   }
