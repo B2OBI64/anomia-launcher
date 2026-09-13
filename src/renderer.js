@@ -1074,7 +1074,8 @@ const ACHIEVEMENT_ICONS = {
   playtime1h: "⏱️", playtime10h: "⏱️", playtime100h: "⏱️", playtime500h: "⏱️",
   customizedVehicle: "🎨",
   vehicleCollector3: "🚙", vehicleCollector5: "🏎️",
-  houseCollector2: "🏘️", millionaire: "💎", newLife: "🔄"
+  houseCollector2: "🏘️", millionaire: "💎", newLife: "🔄",
+  licenceMoto: "🏍️", licenceCamion: "🚚", licenceBateau: "⛵", licenceAvion: "✈️", licenceHelicoptere: "🚁"
 };
 
 let achievementsLoaded = false;

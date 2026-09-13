@@ -144,7 +144,12 @@ module.exports = {
       { key: "vehicleCollector5", label: "Collectionneur confirmé", description: "Posséder 5 véhicules ou plus" },
       { key: "houseCollector2", label: "Magnat de l'immobilier", description: "Posséder 2 logements ou plus", secret: true },
       { key: "millionaire", label: "Millionnaire", description: "Avoir 1 000 000 $ cumulés" },
-      { key: "newLife", label: "Nouvelle vie", description: "Créer un 2ème personnage", secret: true }
+      { key: "newLife", label: "Nouvelle vie", description: "Créer un 2ème personnage", secret: true },
+      { key: "licenceMoto", label: "Deux-roues", description: "Obtenir le permis moto" },
+      { key: "licenceCamion", label: "Poids lourd", description: "Obtenir le permis camion" },
+      { key: "licenceBateau", label: "Marin d'eau douce", description: "Obtenir le permis bateau" },
+      { key: "licenceAvion", label: "Pilote", description: "Obtenir le permis avion" },
+      { key: "licenceHelicoptere", label: "Aviateur", description: "Obtenir le permis hélicoptère" }
     ],
     // Ordre du plus prestigieux au moins prestigieux - le premier succès
     // débloqué de cette liste est affiché comme "titre" à côté du profil.

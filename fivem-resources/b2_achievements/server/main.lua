@@ -58,9 +58,14 @@ local function checkAchievements(citizenid, cb)
         vehicleCollector5 = false,
         houseCollector2 = false,
         millionaire = false,
-        newLife = false
+        newLife = false,
+        licenceMoto = false,
+        licenceCamion = false,
+        licenceBateau = false,
+        licenceAvion = false,
+        licenceHelicoptere = false
     }
-    local pending = 5
+    local pending = 6
 
     local function done()
         pending = pending - 1
@@ -155,6 +160,25 @@ local function checkAchievements(citizenid, cb)
             if rows and rows[1] and tonumber(rows[1].cnt) and tonumber(rows[1].cnt) > 1 then
                 result.newLife = true
             end
+            done()
+        end
+    )
+
+    -- Permis (via b2_autoecole_permis - table dédiée de la ressource b2_autoecole,
+    -- pratique_valide = permis réellement obtenu, pas juste la théorie réussie)
+    exports.oxmysql:execute(
+        "SELECT permis_type FROM b2_autoecole_permis WHERE citizenid = ? AND pratique_valide = 1",
+        { citizenid },
+        function(rows)
+            local obtained = {}
+            if rows then
+                for _, row in ipairs(rows) do obtained[row.permis_type] = true end
+            end
+            result.licenceMoto = obtained.moto or false
+            result.licenceCamion = obtained.camion or false
+            result.licenceBateau = obtained.bateau or false
+            result.licenceAvion = obtained.avion or false
+            result.licenceHelicoptere = obtained.helicoptere or false
             done()
         end
     )
