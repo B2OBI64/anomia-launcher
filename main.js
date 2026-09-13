@@ -563,18 +563,29 @@ ipcMain.handle("server:status", async () => {
 ipcMain.on("server:connect", (event) => {
   const url = `fivem://connect/${config.server.ip}:${config.server.port}`;
 
-  // On a testé explorer.exe (rien ne se lance, aucune erreur) et cmd.exe /c start
-  // (rejeté explicitement par FiveM, "should be launched directly from the shell
-  // or a web browser", confirmé par crash dump) - aucun des deux ne fonctionne
-  // de façon fiable ici. On teste maintenant shell.openExternal() d'Electron
-  // directement (ShellExecuteW natif de Windows), qui est la vraie méthode "open
-  // with default handler" du système, potentiellement plus légitime aux yeux de
-  // la vérification anti-triche de FiveM que nos tentatives via un processus
-  // intermédiaire.
-  shell.openExternal(url).catch((err) => {
+  // Testé sans succès : explorer.exe (silence), cmd.exe /c start (rejeté
+  // explicitement par FiveM), shell.openExternal (silence aussi). Nouvelle
+  // approche : au lieu d'invoquer le protocole directement par programme, on
+  // écrit un vrai fichier raccourci .url (comme ceux que Windows crée pour un
+  // favori internet) et on demande à Windows de l'ouvrir - exactement le même
+  // chemin technique qu'un double-clic manuel dans l'Explorateur, ce qui
+  // pourrait être traité différemment par la vérification anti-triche de FiveM
+  // que nos tentatives précédentes d'invocation directe du protocole.
+  try {
+    const tmpDir = app.getPath("temp");
+    const shortcutPath = path.join(tmpDir, "anomia-connect.url");
+    fs.writeFileSync(shortcutPath, `[InternetShortcut]\r\nURL=${url}\r\n`, "utf-8");
+
+    shell.openPath(shortcutPath).then((errMsg) => {
+      if (errMsg) {
+        console.error("[connect] Échec du lancement de FiveM :", errMsg);
+        event.sender.send("connect:error", errMsg);
+      }
+    });
+  } catch (err) {
     console.error("[connect] Échec du lancement de FiveM :", err.message);
     event.sender.send("connect:error", err.message);
-  });
+  }
 });
 
 // ============================================================
