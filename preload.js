@@ -101,9 +101,11 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Carte
   getMapPoints: () => ipcRenderer.invoke("map:getPoints"),
+  sendGpsWaypoint: (x, y) => ipcRenderer.invoke("map:sendGpsWaypoint", x, y),
 
   // Succès
   getAchievements: () => ipcRenderer.invoke("achievements:get"),
+  getAchievementTitlePriority: () => ipcRenderer.invoke("achievements:getTitlePriority"),
 
   // Prochain redémarrage programmé
   getNextRestart: () => ipcRenderer.invoke("server:nextRestart"),

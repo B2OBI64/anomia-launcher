@@ -259,13 +259,21 @@
       <section class="view hidden" id="view-map">
         <span class="section-eyebrow">// EXPLORATION</span>
         <h1 class="view-title">Carte d'Anomia</h1>
+
+        <div class="map-toolbar">
+          <input type="text" id="map-search" class="map-search-input" placeholder="Rechercher un point d'intérêt…" />
+          <div class="map-filters" id="map-filters">
+            <!-- injecté par renderer.js -->
+          </div>
+        </div>
+
         <div class="map-wrap" id="map-wrap">
           <div class="map-inner" id="map-inner">
             <img src="../assets/map.jpg" alt="Carte" id="map-image" draggable="false" />
             <div id="map-markers"></div>
           </div>
         </div>
-        <p class="map-hint">Molette pour zoomer, clic-glisser pour te déplacer</p>
+        <p class="map-hint">Molette pour zoomer, clic-glisser pour te déplacer, clic sur un point pour t'y centrer</p>
       </section>
 
       <!-- VUE ADMIN (lecture seule, cachée par défaut) -->

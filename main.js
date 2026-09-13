@@ -1018,6 +1018,8 @@ ipcMain.handle("twitch:getStatus", async () => {
 // ============================================================
 // Succès (nécessite une connexion Discord préalable, voir plus haut)
 // ============================================================
+ipcMain.handle("achievements:getTitlePriority", () => config.achievements.titlePriority || []);
+
 ipcMain.handle("achievements:get", async () => {
   const profile = loadDiscordProfile();
   if (!profile) {
@@ -1029,9 +1031,50 @@ ipcMain.handle("achievements:get", async () => {
     if (result.linked === false) {
       return { ok: true, linked: false, list: config.achievements.list };
     }
-    return { ok: true, linked: true, achievements: result.achievements || {}, list: config.achievements.list };
+    return { ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, list: config.achievements.list };
   } catch (err) {
     return { ok: false, error: "La ressource b2_achievements ne répond pas (pas encore installée, ou serveur hors ligne).", list: config.achievements.list };
+  }
+});
+
+// ============================================================
+// Envoi d'un point GPS chez le joueur, s'il est en jeu (nécessite Discord)
+// ============================================================
+ipcMain.handle("map:sendGpsWaypoint", async (event, x, y) => {
+  const profile = loadDiscordProfile();
+  if (!profile) {
+    return { ok: false, reason: "not_connected" };
+  }
+
+  try {
+    const payload = JSON.stringify({ discordId: profile.id, x, y });
+    const result = await new Promise((resolve, reject) => {
+      const url = new URL(config.server.gpsWaypointUrl);
+      const req = http.request(
+        url,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) }
+        },
+        (res) => {
+          let data = "";
+          res.on("data", (c) => (data += c));
+          res.on("end", () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch {
+              reject(new Error("Réponse invalide du serveur"));
+            }
+          });
+        }
+      );
+      req.on("error", reject);
+      req.write(payload);
+      req.end();
+    });
+    return result;
+  } catch (err) {
+    return { ok: false, reason: "server_unreachable", error: err.message };
   }
 });
 

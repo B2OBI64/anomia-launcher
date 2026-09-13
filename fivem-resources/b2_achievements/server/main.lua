@@ -172,6 +172,60 @@ local function checkAchievements(citizenid, cb)
     end)
 end
 
+-- Historique : date de premier déblocage de chaque succès, par joueur
+CreateThread(function()
+    exports.oxmysql:execute([[
+        CREATE TABLE IF NOT EXISTS `anomia_achievements_unlocked` (
+            `citizenid` VARCHAR(50) NOT NULL,
+            `achievement_key` VARCHAR(50) NOT NULL,
+            `unlocked_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`citizenid`, `achievement_key`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ]], {}, function()
+        print("[b2_achievements] Table anomia_achievements_unlocked prête (historique des dates de déblocage).")
+    end)
+end)
+
+-- Enregistre (une seule fois, la première fois) la date de chaque succès
+-- actuellement débloqué, puis renvoie les dates connues pour ce joueur.
+local function recordAndFetchUnlockDates(citizenid, achievements, cb)
+    local unlockedKeys = {}
+    for key, value in pairs(achievements) do
+        if value == true then table.insert(unlockedKeys, key) end
+    end
+
+    if #unlockedKeys == 0 then
+        cb({})
+        return
+    end
+
+    local pending = #unlockedKeys
+    for _, key in ipairs(unlockedKeys) do
+        exports.oxmysql:execute(
+            "INSERT IGNORE INTO anomia_achievements_unlocked (citizenid, achievement_key) VALUES (?, ?)",
+            { citizenid, key },
+            function()
+                pending = pending - 1
+                if pending == 0 then
+                    exports.oxmysql:execute(
+                        "SELECT achievement_key, unlocked_at FROM anomia_achievements_unlocked WHERE citizenid = ?",
+                        { citizenid },
+                        function(rows)
+                            local dates = {}
+                            if rows then
+                                for _, row in ipairs(rows) do
+                                    dates[row.achievement_key] = row.unlocked_at
+                                end
+                            end
+                            cb(dates)
+                        end
+                    )
+                end
+            end
+        )
+    end
+end
+
 SetHttpHandler(function(req, res)
     local discordId = req.headers["x-discord-id"]
     if not discordId then
@@ -195,8 +249,10 @@ SetHttpHandler(function(req, res)
         end
 
         checkAchievements(citizenid, function(achievements)
-            res.writeHead(200, { ['Content-Type'] = 'application/json', ['Access-Control-Allow-Origin'] = '*' })
-            res.send(json.encode({ linked = true, achievements = achievements }))
+            recordAndFetchUnlockDates(citizenid, achievements, function(unlockedAt)
+                res.writeHead(200, { ['Content-Type'] = 'application/json', ['Access-Control-Allow-Origin'] = '*' })
+                res.send(json.encode({ linked = true, achievements = achievements, unlockedAt = unlockedAt }))
+            end)
         end)
     end)
 end)

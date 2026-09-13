@@ -912,10 +912,13 @@ function renderDiscordSlot() {
       <span class="discord-profile-badge ${dotClass}"></span>
       <div class="discord-profile-flyout">
         <span class="discord-profile-name">${escapeHtml(discordProfile.username || "Joueur")}</span>
+        <span class="discord-profile-title" id="achievement-title-badge"></span>
         <button class="discord-profile-logout" id="btn-discord-logout" title="Se déconnecter" aria-label="Se déconnecter">&#10005; Déconnexion</button>
       </div>
     </div>
   `;
+
+  refreshAchievementTitle();
 
   document.getElementById("btn-discord-logout").addEventListener("click", async (e) => {
     e.stopPropagation();
@@ -1110,6 +1113,14 @@ async function loadAchievements() {
   (result.list || []).forEach((def) => {
     const unlocked = Boolean(result.achievements && result.achievements[def.key]);
     const isSecretLocked = def.secret && !unlocked;
+    const unlockDate = result.unlockedAt && result.unlockedAt[def.key];
+    let dateLabel = "";
+    if (unlocked && unlockDate) {
+      const d = new Date(unlockDate.replace(" ", "T"));
+      if (!Number.isNaN(d.getTime())) {
+        dateLabel = `<span class="achievement-date">Débloqué le ${d.toLocaleDateString("fr-FR")}</span>`;
+      }
+    }
     const badge = document.createElement("div");
     badge.className = `achievement-badge ${unlocked ? "unlocked" : ""}`;
     badge.innerHTML = `
@@ -1117,6 +1128,7 @@ async function loadAchievements() {
       <span class="achievement-name">${isSecretLocked ? "???" : escapeHtml(def.label)}</span>
       <span class="achievement-desc">${isSecretLocked ? "Succès secret" : escapeHtml(def.description)}</span>
       <span class="achievement-status">${unlocked ? "Débloqué" : "Verrouillé"}</span>
+      ${dateLabel}
     `;
     grid.appendChild(badge);
   });
@@ -1304,15 +1316,69 @@ async function loadRules() {
   container.innerHTML = formatRules(raw);
 }
 
-// --- Carte interactive (pan + zoom simples) ---
+// --- Carte interactive (pan + zoom + recherche + filtres + GPS) ---
 let mapLoaded = false;
 let mapState = { scale: 1, x: 0, y: 0 };
 let mapDragging = false;
 let mapDragStart = { x: 0, y: 0 };
+let allMapPoints = [];
+let activeMapCategory = "all";
 
-function applyMapTransform() {
+function applyMapTransform(animated) {
   const inner = document.getElementById("map-inner");
+  inner.style.transition = animated ? "transform .45s cubic-bezier(.2,.8,.2,1)" : "none";
   inner.style.transform = `translate(${mapState.x}px, ${mapState.y}px) scale(${mapState.scale})`;
+}
+
+function zoomToPoint(point) {
+  const wrap = document.getElementById("map-wrap");
+  const rect = wrap.getBoundingClientRect();
+  const targetScale = 2.2;
+
+  // Position du point en pixels sur l'image à l'échelle 1
+  const imgWidth = 2200;
+  const imgHeight = document.getElementById("map-image").naturalHeight * (imgWidth / document.getElementById("map-image").naturalWidth);
+  const pointPxX = (point.x / 100) * imgWidth;
+  const pointPxY = (point.y / 100) * imgHeight;
+
+  mapState.scale = targetScale;
+  mapState.x = rect.width / 2 - pointPxX * targetScale;
+  mapState.y = rect.height / 2 - pointPxY * targetScale;
+  applyMapTransform(true);
+}
+
+async function openMapPointPopup(point) {
+  const canSendGps = typeof point.gameX === "number" && typeof point.gameY === "number";
+  const html = `
+    <p>${escapeHtml(point.description || "")}</p>
+    ${canSendGps ? `<button class="btn-connect" id="map-gps-btn" style="width:100%;margin-top:12px;">Envoyer sur le GPS in-game</button>` : ""}
+  `;
+  await showInfo(point.label || "Point d'intérêt", html);
+
+  const gpsBtn = document.getElementById("map-gps-btn");
+  if (gpsBtn) {
+    gpsBtn.addEventListener("click", async () => {
+      gpsBtn.disabled = true;
+      gpsBtn.textContent = "Envoi…";
+      const result = await window.anomia.sendGpsWaypoint(point.gameX, point.gameY);
+
+      if (result.ok) {
+        gpsBtn.textContent = "Point GPS envoyé ✓";
+      } else if (result.reason === "not_online") {
+        await showInfo("Pas connecté au serveur", `<p>Tu dois être connecté au serveur en jeu pour recevoir un point GPS. Connecte-toi d'abord, puis réessaie.</p>`);
+        gpsBtn.disabled = false;
+        gpsBtn.textContent = "Envoyer sur le GPS in-game";
+      } else if (result.reason === "not_connected") {
+        await showInfo("Discord requis", `<p>Connecte-toi avec Discord pour utiliser cette fonction.</p>`);
+        gpsBtn.disabled = false;
+        gpsBtn.textContent = "Envoyer sur le GPS in-game";
+      } else {
+        await showInfo("Erreur", `<p>Impossible d'envoyer le point GPS pour le moment.</p>`);
+        gpsBtn.disabled = false;
+        gpsBtn.textContent = "Envoyer sur le GPS in-game";
+      }
+    });
+  }
 }
 
 function renderMapMarkers(points) {
@@ -1329,9 +1395,42 @@ function renderMapMarkers(points) {
     `;
     marker.addEventListener("click", (e) => {
       e.stopPropagation();
-      showInfo(point.label || "Point d'intérêt", `<p>${escapeHtml(point.description || "")}</p>`);
+      zoomToPoint(point);
+      openMapPointPopup(point);
     });
     container.appendChild(marker);
+  });
+}
+
+function applyMapFiltersAndSearch() {
+  const search = document.getElementById("map-search").value.trim().toLowerCase();
+  const filtered = allMapPoints.filter((p) => {
+    const matchesCategory = activeMapCategory === "all" || p.category === activeMapCategory;
+    const matchesSearch = !search || (p.label || "").toLowerCase().includes(search);
+    return matchesCategory && matchesSearch;
+  });
+  renderMapMarkers(filtered);
+}
+
+function renderMapFilters(points) {
+  const container = document.getElementById("map-filters");
+  const categories = [...new Set(points.map((p) => p.category).filter(Boolean))];
+
+  if (categories.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const allBtn = `<button class="map-filter-btn active" data-category="all">Tous</button>`;
+  const catBtns = categories.map((cat) => `<button class="map-filter-btn" data-category="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`).join("");
+  container.innerHTML = allBtn + catBtns;
+
+  container.querySelectorAll(".map-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll(".map-filter-btn").forEach((b) => b.classList.toggle("active", b === btn));
+      activeMapCategory = btn.dataset.category;
+      applyMapFiltersAndSearch();
+    });
   });
 }
 
@@ -1342,12 +1441,17 @@ async function loadMap() {
   const wrap = document.getElementById("map-wrap");
   const img = document.getElementById("map-image");
 
-  const points = await window.anomia.getMapPoints();
+  allMapPoints = await window.anomia.getMapPoints();
   document.getElementById("map-markers").style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%;";
 
-  const setupMarkers = () => renderMapMarkers(points);
+  const setupMarkers = () => {
+    renderMapFilters(allMapPoints);
+    renderMapMarkers(allMapPoints);
+  };
   if (img.complete) setupMarkers();
   else img.addEventListener("load", setupMarkers, { once: true });
+
+  document.getElementById("map-search").addEventListener("input", applyMapFiltersAndSearch);
 
   // Molette : zoom centré sur le curseur
   wrap.addEventListener("wheel", (e) => {
@@ -1362,7 +1466,7 @@ async function loadMap() {
     mapState.x = cursorX - ((cursorX - mapState.x) / prevScale) * newScale;
     mapState.y = cursorY - ((cursorY - mapState.y) / prevScale) * newScale;
     mapState.scale = newScale;
-    applyMapTransform();
+    applyMapTransform(false);
   });
 
   // Clic-glisser pour se déplacer
@@ -1375,12 +1479,28 @@ async function loadMap() {
     if (!mapDragging) return;
     mapState.x = e.clientX - mapDragStart.x;
     mapState.y = e.clientY - mapDragStart.y;
-    applyMapTransform();
+    applyMapTransform(false);
   });
   window.addEventListener("mouseup", () => {
     mapDragging = false;
     wrap.classList.remove("dragging");
   });
 
-  applyMapTransform();
+  applyMapTransform(false);
+}
+
+// --- Titre de succès (le plus prestigieux débloqué, affiché près du profil) ---
+async function refreshAchievementTitle() {
+  const result = await window.anomia.getAchievements();
+  if (!result.ok || !result.linked || !result.achievements) return;
+
+  const priority = await window.anomia.getAchievementTitlePriority();
+  const unlockedKey = priority.find((key) => result.achievements[key]);
+  if (!unlockedKey) return;
+
+  const def = (result.list || []).find((d) => d.key === unlockedKey);
+  if (!def) return;
+
+  const titleEl = document.getElementById("achievement-title-badge");
+  if (titleEl) titleEl.textContent = def.label;
 }

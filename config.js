@@ -27,6 +27,8 @@ module.exports = {
     // Endpoint réservé aux admins (protégé par le code d'accès) qui active/désactive
     // la maintenance à distance depuis le launcher, sans passer par la console serveur.
     maintenanceToggleUrl: "http://185.44.80.32:30140/b2_maintenance/toggle",
+    // Endpoint pour poser un point GPS chez un joueur actuellement connecté en jeu, depuis la carte du launcher
+    gpsWaypointUrl: "http://185.44.80.32:30140/b2_gpswaypoint/",
     // Endpoint custom (ressource b2_achievements) qui vérifie les succès d'un joueur via son ID Discord
     achievementsUrl: "http://185.44.80.32:30140/b2_achievements/",
     // Endpoint custom (ressource b2_crashreport) qui relaie les rapports de crash
@@ -143,6 +145,14 @@ module.exports = {
       { key: "houseCollector2", label: "Magnat de l'immobilier", description: "Posséder 2 logements ou plus", secret: true },
       { key: "millionaire", label: "Millionnaire", description: "Avoir 1 000 000 $ cumulés" },
       { key: "newLife", label: "Nouvelle vie", description: "Créer un 2ème personnage", secret: true }
+    ],
+    // Ordre du plus prestigieux au moins prestigieux - le premier succès
+    // débloqué de cette liste est affiché comme "titre" à côté du profil.
+    titlePriority: [
+      "playtime500h", "millionaire", "vehicleCollector5", "houseCollector2",
+      "playtime100h", "money100k", "vehicleCollector3", "drivingDistance1000",
+      "playtime10h", "money30k", "jobPromotion", "hasHouse", "hasVehicle",
+      "hasJob", "tutorialDone", "playtime1h", "firstCharacter"
     ]
   },
 
@@ -157,8 +167,17 @@ module.exports = {
   // --- Carte interactive ---
   // Les points d'intérêt s'ajoutent petit à petit dans map-points.json, sans
   // jamais avoir à reconstruire le launcher. Format d'un point :
-  //   { "x": 45.2, "y": 60.8, "label": "Nom du lieu", "description": "..." }
-  // x/y sont des pourcentages (0-100) de la position sur l'image de la carte.
+  //   {
+  //     "x": 45.2, "y": 60.8,          -> position sur L'IMAGE (pourcentage 0-100), pour l'affichage
+  //     "gameX": -1037.5, "gameY": -2738.6, -> vraies coordonnées EN JEU, pour le bouton "Envoyer sur le GPS"
+  //     "label": "Nom du lieu",
+  //     "description": "...",
+  //     "category": "boutique"          -> optionnel, sert aux filtres (ex: boutique/spawn/event)
+  //   }
+  // Pour gameX/gameY : utilise une commande en jeu qui affiche tes coordonnées
+  // actuelles (souvent /coords sur les serveurs QBCore), place-toi à l'endroit
+  // exact, note les valeurs. Un point sans gameX/gameY reste affichable sur la
+  // carte mais n'aura simplement pas le bouton GPS.
   map: {
     remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/map-points.json",
     localFallback: "src/map-points.json"
