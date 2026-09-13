@@ -567,14 +567,15 @@ ipcMain.on("server:connect", (event) => {
   // (protection anti-triche). shell.openExternal() invoque le protocole avec le
   // launcher lui-même comme processus parent, ce que FiveM rejette.
   //
-  // On passe par "cmd /c start" (équivalent shell natif Windows), plus fiable que
-  // "explorer.exe url" directement sur certaines configurations Windows où ce
-  // dernier peut silencieusement ne rien faire sans erreur visible.
+  // IMPORTANT : FiveM refuse le lancement via "cmd /c start" (message "should
+  // be launched directly from the shell or a web browser", confirmé par un
+  // crash dump) - contrairement à ce qu'on pensait, cmd.exe n'est pas traité
+  // comme un "vrai" shell par sa vérification anti-triche. explorer.exe, lui,
+  // est la méthode documentée qui fonctionne pour ce genre de launcher custom.
   if (process.platform === "win32") {
-    const child = spawn("cmd.exe", ["/c", "start", '""', url], {
+    const child = spawn("explorer.exe", [url], {
       detached: true,
-      stdio: "ignore",
-      windowsVerbatimArguments: true
+      stdio: "ignore"
     });
     child.on("error", (err) => {
       console.error("[connect] Échec du lancement de FiveM :", err.message);
