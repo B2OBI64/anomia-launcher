@@ -563,28 +563,18 @@ ipcMain.handle("server:status", async () => {
 ipcMain.on("server:connect", (event) => {
   const url = `fivem://connect/${config.server.ip}:${config.server.port}`;
 
-  // FiveM refuse de se lancer si l'appel ne vient pas "du shell ou d'un navigateur"
-  // (protection anti-triche). shell.openExternal() invoque le protocole avec le
-  // launcher lui-même comme processus parent, ce que FiveM rejette.
-  //
-  // IMPORTANT : FiveM refuse le lancement via "cmd /c start" (message "should
-  // be launched directly from the shell or a web browser", confirmé par un
-  // crash dump) - contrairement à ce qu'on pensait, cmd.exe n'est pas traité
-  // comme un "vrai" shell par sa vérification anti-triche. explorer.exe, lui,
-  // est la méthode documentée qui fonctionne pour ce genre de launcher custom.
-  if (process.platform === "win32") {
-    const child = spawn("explorer.exe", [url], {
-      detached: true,
-      stdio: "ignore"
-    });
-    child.on("error", (err) => {
-      console.error("[connect] Échec du lancement de FiveM :", err.message);
-      event.sender.send("connect:error", err.message);
-    });
-    child.unref();
-  } else {
-    shell.openExternal(url);
-  }
+  // On a testé explorer.exe (rien ne se lance, aucune erreur) et cmd.exe /c start
+  // (rejeté explicitement par FiveM, "should be launched directly from the shell
+  // or a web browser", confirmé par crash dump) - aucun des deux ne fonctionne
+  // de façon fiable ici. On teste maintenant shell.openExternal() d'Electron
+  // directement (ShellExecuteW natif de Windows), qui est la vraie méthode "open
+  // with default handler" du système, potentiellement plus légitime aux yeux de
+  // la vérification anti-triche de FiveM que nos tentatives via un processus
+  // intermédiaire.
+  shell.openExternal(url).catch((err) => {
+    console.error("[connect] Échec du lancement de FiveM :", err.message);
+    event.sender.send("connect:error", err.message);
+  });
 });
 
 // ============================================================
