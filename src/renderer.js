@@ -102,10 +102,7 @@ document.getElementById("btn-discord").addEventListener("click", () => {
 
 // --- Connexion serveur ---
 document.getElementById("btn-connect").addEventListener("click", async (e) => {
-  // ⚠️ TEST : vérification neutralisée (forcée à false) pour isoler la méthode
-  // de lancement FiveM sans interférence - le vrai appel reste juste en dessous,
-  // en commentaire, prêt à être remis (retire simplement "&& false").
-  const discordRequired = (await window.anomia.isDiscordConfigured()) && false;
+  const discordRequired = await window.anomia.isDiscordConfigured();
 
   if (discordRequired && !discordProfile) {
     await showInfo(

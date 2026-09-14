@@ -47,9 +47,8 @@
       "icon": "assets/icon.ico"
     },
     "nsis": {
-      "oneClick": true,
-      "perMachine": false,
-      "runAfterFinish": true,
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Anomia Launcher"
