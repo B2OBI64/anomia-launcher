@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const https = require("https");
@@ -141,11 +141,6 @@ function createWindow() {
   });
 
   mainWindow.loadURL(`http://localhost:${localServerPort}/src/index.html`);
-
-  // ⚠️ TEST DE DIAGNOSTIC TEMPORAIRE : ouvre automatiquement la console pour
-  // voir les erreurs JS sans avoir besoin d'un raccourci clavier qui pourrait
-  // ne pas fonctionner. À retirer une fois le diagnostic terminé.
-  mainWindow.webContents.openDevTools({ mode: "detach" });
 
   // On ne montre la fenêtre principale qu'une fois le contenu prêt ET la
   // vérification de mise à jour terminée, avec un splash animé affiché au moins
@@ -566,15 +561,11 @@ ipcMain.handle("server:status", async () => {
 // Connexion au serveur
 // ============================================================
 ipcMain.on("server:connect", (event) => {
-  // ⚠️ TEST DE DIAGNOSTIC RADICAL : on vérifie juste que ce handler
-  // s'exécute VRAIMENT, avant même de parler de FiveM ou de navigateur.
-  dialog.showMessageBox(mainWindow, {
-    type: "info",
-    title: "TEST DIAGNOSTIC",
-    message: "Le handler server:connect s'est bien exécuté !",
-    buttons: ["OK"]
-  });
-
+  // Cfx.re a confirmé sur leur forum officiel que les launchers tiers ne
+  // peuvent volontairement plus invoquer fivem://connect/ directement
+  // ("servers should not be allowed full access to a user's system") -
+  // mais les navigateurs restent autorisés. On ouvre donc la vraie page
+  // cfx.re/join/CODE dans le navigateur par défaut.
   const url = `https://cfx.re/join/${config.server.cfxCode}`;
   shell.openExternal(url).catch((err) => {
     console.error("[connect] Échec de l'ouverture du lien :", err.message);

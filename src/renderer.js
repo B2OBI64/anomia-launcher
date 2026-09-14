@@ -102,6 +102,15 @@ document.getElementById("btn-discord").addEventListener("click", () => {
 
 // --- Connexion serveur ---
 document.getElementById("btn-connect").addEventListener("click", async (e) => {
+  // Important : on capture le bouton et la position du clic tout de suite,
+  // avant le moindre "await" - une fois qu'on a attendu quelque chose,
+  // e.currentTarget redevient null (comportement normal des événements DOM),
+  // ce qui faisait planter le code silencieusement avant même d'atteindre
+  // la connexion à FiveM.
+  const btn = e.currentTarget;
+  const clickX = e.clientX;
+  const clickY = e.clientY;
+
   const discordRequired = await window.anomia.isDiscordConfigured();
 
   if (discordRequired && !discordProfile) {
@@ -120,14 +129,13 @@ document.getElementById("btn-connect").addEventListener("click", async (e) => {
     return;
   }
 
-  const btn = e.currentTarget;
   const rect = btn.getBoundingClientRect();
   const size = Math.max(rect.width, rect.height);
   const dot = document.createElement("span");
   dot.className = "ripple-dot";
   dot.style.width = dot.style.height = `${size}px`;
-  dot.style.left = `${e.clientX - rect.left - size / 2}px`;
-  dot.style.top = `${e.clientY - rect.top - size / 2}px`;
+  dot.style.left = `${clickX - rect.left - size / 2}px`;
+  dot.style.top = `${clickY - rect.top - size / 2}px`;
   btn.appendChild(dot);
   setTimeout(() => dot.remove(), 550);
 
