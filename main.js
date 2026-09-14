@@ -142,6 +142,11 @@ function createWindow() {
 
   mainWindow.loadURL(`http://localhost:${localServerPort}/src/index.html`);
 
+  // ⚠️ TEST DE DIAGNOSTIC TEMPORAIRE : ouvre automatiquement la console pour
+  // voir les erreurs JS sans avoir besoin d'un raccourci clavier qui pourrait
+  // ne pas fonctionner. À retirer une fois le diagnostic terminé.
+  mainWindow.webContents.openDevTools({ mode: "detach" });
+
   // On ne montre la fenêtre principale qu'une fois le contenu prêt ET la
   // vérification de mise à jour terminée, avec un splash animé affiché au moins
   // MIN_SPLASH_MS (façon Discord). Sécurité : jamais plus de MAX_UPDATE_WAIT_MS
