@@ -561,16 +561,26 @@ ipcMain.handle("server:status", async () => {
 // Connexion au serveur
 // ============================================================
 ipcMain.on("server:connect", (event) => {
-  // Cfx.re a confirmé sur leur forum officiel que les launchers tiers ne
-  // peuvent volontairement plus invoquer fivem://connect/ directement
-  // ("servers should not be allowed full access to a user's system") -
-  // mais les navigateurs restent autorisés. On ouvre donc la vraie page
-  // cfx.re/join/CODE dans le navigateur par défaut.
-  const url = `https://cfx.re/join/${config.server.cfxCode}`;
-  shell.openExternal(url).catch((err) => {
-    console.error("[connect] Échec de l'ouverture du lien :", err.message);
-    event.sender.send("connect:error", err.message);
-  });
+  const url = `fivem://connect/${config.server.ip}:${config.server.port}`;
+
+  // Méthode d'origine (identique à la 1.4.5) : explorer.exe comme intermédiaire
+  // pour que FiveM voit un lancement légitime, sans passer par le navigateur.
+  // Le vrai bug qui empêchait la connexion n'était pas cette méthode (on l'a
+  // longtemps soupçonnée à tort) mais un plantage JS silencieux côté launcher,
+  // corrigé séparément - cette méthode directe redevient donc fiable.
+  if (process.platform === "win32") {
+    const child = spawn("explorer.exe", [url], { detached: true, stdio: "ignore" });
+    child.on("error", (err) => {
+      console.error("[connect] Échec du lancement de FiveM :", err.message);
+      event.sender.send("connect:error", err.message);
+    });
+    child.unref();
+  } else {
+    shell.openExternal(url).catch((err) => {
+      console.error("[connect] Échec du lancement de FiveM :", err.message);
+      event.sender.send("connect:error", err.message);
+    });
+  }
 });
 
 // ============================================================
