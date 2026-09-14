@@ -1129,7 +1129,10 @@ async function loadAchievements() {
     const unlockDate = result.unlockedAt && result.unlockedAt[def.key];
     let dateLabel = "";
     if (unlocked && unlockDate) {
-      const d = new Date(unlockDate.replace(" ", "T"));
+      // La date renvoyée par le serveur peut arriver sous différentes formes
+      // selon l'encodage MySQL (chaîne "YYYY-MM-DD HH:MM:SS", nombre, etc.) -
+      // on gère ça sans plaquer .replace() sur un type qui ne le supporte pas.
+      const d = new Date(typeof unlockDate === "string" ? unlockDate.replace(" ", "T") : unlockDate);
       if (!Number.isNaN(d.getTime())) {
         dateLabel = `<span class="achievement-date">Débloqué le ${d.toLocaleDateString("fr-FR")}</span>`;
       }
