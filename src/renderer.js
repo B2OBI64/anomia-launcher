@@ -102,6 +102,10 @@ document.getElementById("btn-discord").addEventListener("click", () => {
 
 // --- Connexion serveur ---
 document.getElementById("btn-connect").addEventListener("click", async (e) => {
+  // ⚠️ TEST DE DIAGNOSTIC TEMPORAIRE : vérifications Discord désactivées pour
+  // isoler si elles sont vraiment liées au problème de lancement de FiveM.
+  // À réactiver (voir version précédente) une fois le test terminé.
+  /*
   const discordRequired = await window.anomia.isDiscordConfigured();
 
   if (discordRequired && !discordProfile) {
@@ -119,6 +123,7 @@ document.getElementById("btn-connect").addEventListener("click", async (e) => {
     );
     return;
   }
+  */
 
   const btn = e.currentTarget;
   const rect = btn.getBoundingClientRect();
