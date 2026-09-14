@@ -563,29 +563,14 @@ ipcMain.handle("server:status", async () => {
 ipcMain.on("server:connect", (event) => {
   const url = `fivem://connect/${config.server.ip}:${config.server.port}`;
 
-  // Testé sans succès : explorer.exe (silence), cmd.exe /c start (rejeté
-  // explicitement par FiveM), shell.openExternal (silence aussi). Nouvelle
-  // approche : au lieu d'invoquer le protocole directement par programme, on
-  // écrit un vrai fichier raccourci .url (comme ceux que Windows crée pour un
-  // favori internet) et on demande à Windows de l'ouvrir - exactement le même
-  // chemin technique qu'un double-clic manuel dans l'Explorateur, ce qui
-  // pourrait être traité différemment par la vérification anti-triche de FiveM
-  // que nos tentatives précédentes d'invocation directe du protocole.
-  try {
-    const tmpDir = app.getPath("temp");
-    const shortcutPath = path.join(tmpDir, "anomia-connect.url");
-    fs.writeFileSync(shortcutPath, `[InternetShortcut]\r\nURL=${url}\r\n`, "utf-8");
-
-    shell.openPath(shortcutPath).then((errMsg) => {
-      if (errMsg) {
-        console.error("[connect] Échec du lancement de FiveM :", errMsg);
-        event.sender.send("connect:error", errMsg);
-      }
-    });
-  } catch (err) {
+  // Retour à explorer.exe (méthode qui fonctionnait avant l'ajout de la
+  // vérification Discord obligatoire) pour un test isolé.
+  const child = spawn("explorer.exe", [url], { detached: true, stdio: "ignore" });
+  child.on("error", (err) => {
     console.error("[connect] Échec du lancement de FiveM :", err.message);
     event.sender.send("connect:error", err.message);
-  }
+  });
+  child.unref();
 });
 
 // ============================================================
