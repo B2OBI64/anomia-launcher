@@ -561,16 +561,25 @@ ipcMain.handle("server:status", async () => {
 // Connexion au serveur
 // ============================================================
 ipcMain.on("server:connect", (event) => {
-  const url = `fivem://connect/${config.server.ip}:${config.server.port}`;
+  // ============================================================
+  // TROUVÉ : un développeur Cfx.re a confirmé sur leur forum officiel que
+  // les launchers tiers sont volontairement bloqués depuis des années
+  // ("servers should not be allowed full access to a user's system. Too
+  // many abusers.") - ce n'est pas un bug qu'on peut contourner par une
+  // astuce technique, quelle qu'elle soit.
+  //
+  // MAIS le même développeur précise que les navigateurs, eux, restent
+  // autorisés à lancer les liens de connexion. Donc au lieu d'invoquer
+  // fivem://connect/ nous-mêmes, on ouvre la vraie page cfx.re/join/CODE
+  // dans le navigateur par défaut - exactement comme un joueur qui
+  // cliquerait sur ce lien depuis le site officiel.
+  // ============================================================
+  const url = `https://cfx.re/join/${config.server.cfxCode}`;
 
-  // Retour à explorer.exe (méthode qui fonctionnait avant l'ajout de la
-  // vérification Discord obligatoire) pour un test isolé.
-  const child = spawn("explorer.exe", [url], { detached: true, stdio: "ignore" });
-  child.on("error", (err) => {
-    console.error("[connect] Échec du lancement de FiveM :", err.message);
+  shell.openExternal(url).catch((err) => {
+    console.error("[connect] Échec de l'ouverture du lien :", err.message);
     event.sender.send("connect:error", err.message);
   });
-  child.unref();
 });
 
 // ============================================================
