@@ -1,7 +1,7 @@
 {
   "name": "anomia-launcher",
   "productName": "Anomia Launcher",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Launcher officiel du serveur RP Anomia (FiveM)",
   "main": "main.js",
   "author": "B2OBI64",
@@ -56,6 +56,9 @@
     "linux": {
       "target": "AppImage",
       "icon": "assets/icon.png"
+    },
+    "releaseInfo": {
+      "releaseNotesFile": "release-notes.md"
     }
   }
 }

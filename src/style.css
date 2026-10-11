@@ -1577,3 +1577,28 @@ body::before {
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-thumb { background: rgba(45,212,191,.25); }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- Rareté des succès (bronze / argent / or / violet secret) ---------- */
+.achievement-badge { --rarity: #cd7f32; }
+.achievement-badge.rarity-bronze { --rarity: #cd7f32; }
+.achievement-badge.rarity-silver { --rarity: #c0c8d4; }
+.achievement-badge.rarity-gold   { --rarity: #f5c542; }
+.achievement-badge.rarity-secret { --rarity: #a855f7; }
+.achievement-badge.unlocked {
+  border-color: color-mix(in srgb, var(--rarity) 60%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--rarity) 18%, transparent);
+}
+.achievement-badge.unlocked .achievement-icon {
+  background: color-mix(in srgb, var(--rarity) 20%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rarity) 70%, transparent);
+}
+.achievement-rarity {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.achievement-badge.unlocked .achievement-rarity { color: var(--rarity); font-weight: 700; }
+.achievement-badge.unlocked.rarity-gold { box-shadow: 0 0 26px color-mix(in srgb, var(--rarity) 28%, transparent); }
+.achievement-badge.unlocked.rarity-secret { box-shadow: 0 0 26px color-mix(in srgb, var(--rarity) 32%, transparent); }

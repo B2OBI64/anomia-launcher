@@ -1,0 +1,1 @@
+Remplace wasabi_ambulance/game/client/b2_customize.lua par ce fichier (2 lignes ajoutees : succes premier K.O. et premier coma), puis: restart b2_achievements puis restart wasabi_ambulance.

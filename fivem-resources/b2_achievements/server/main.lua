@@ -22,6 +22,11 @@
 -- entrepreneuriale au même titre qu'une entreprise privée)
 local PUBLIC_JOBS = { unemployed = true, police = true, ambulance = true, gouvernement = true }
 
+-- Date d'anniversaire du serveur (succès "serverBirthday" : se connecter ce jour-là).
+-- Anniversaire = 3 juillet.
+-- Pour changer la date, modifie month (mois) et day (jour).
+local SERVER_BIRTHDAY = { month = 7, day = 3 } -- création du serveur : 03/07/2025
+
 local function findCitizenId(discordId, cb)
     exports.oxmysql:execute(
         "SELECT citizenid FROM anomia_discord_links WHERE discord_id = ? ORDER BY updated_at DESC LIMIT 1",
@@ -63,9 +68,16 @@ local function checkAchievements(citizenid, cb)
         licenceCamion = false,
         licenceBateau = false,
         licenceAvion = false,
-        licenceHelicoptere = false
+        licenceHelicoptere = false,
+        firstKO = false,
+        firstComa = false,
+        firstInvoicePaid = false,
+        playtime1000h = false,
+        drivingDistance10000 = false,
+        loginStreak30 = false,
+        serverBirthday = false
     }
-    local pending = 6
+    local pending = 10
 
     local function done()
         pending = pending - 1
@@ -109,15 +121,21 @@ local function checkAchievements(citizenid, cb)
         done()
     end)
 
-    -- player_vehicles : possession, distance parcourue, personnalisation
+    -- player_vehicles : possession + distance parcourue.
+    -- La distance vient de b2_hud (table b2_hud_odometer, km par plaque) : l'ancienne
+    -- colonne player_vehicles.drivingdistance n'est plus alimentée. On garde la
+    -- colonne comme repli (on prend la plus grande des deux valeurs).
     exports.oxmysql:execute(
-        "SELECT COUNT(*) as cnt, COALESCE(SUM(drivingdistance),0) as totalDistance FROM player_vehicles WHERE citizenid = ?",
+        "SELECT COUNT(*) as cnt, COALESCE(SUM(drivingdistance),0) as totalDistance, " ..
+        "COALESCE(SUM((SELECT o.km FROM b2_hud_odometer o WHERE o.plate = REPLACE(UPPER(pv.plate), ' ', '') LIMIT 1)),0) as hudKm " ..
+        "FROM player_vehicles pv WHERE pv.citizenid = ?",
         { citizenid },
         function(rows)
             if rows and rows[1] then
                 local cnt = tonumber(rows[1].cnt) or 0
-                local totalDistanceMeters = tonumber(rows[1].totalDistance) or 0
-                local totalDistanceKm = totalDistanceMeters / 1000
+                local legacyKm = (tonumber(rows[1].totalDistance) or 0) / 1000
+                local hudKm = tonumber(rows[1].hudKm) or 0
+                local totalDistanceKm = math.max(legacyKm, hudKm)
 
                 if cnt > 0 then result.hasVehicle = true end
                 if cnt >= 3 then result.vehicleCollector3 = true end
@@ -125,6 +143,7 @@ local function checkAchievements(citizenid, cb)
                 if totalDistanceKm >= 100 then result.drivingDistance100 = true end
                 if totalDistanceKm >= 500 then result.drivingDistance500 = true end
                 if totalDistanceKm >= 1000 then result.drivingDistance1000 = true end
+                if totalDistanceKm >= 10000 then result.drivingDistance10000 = true end
             end
             done()
         end
@@ -183,6 +202,60 @@ local function checkAchievements(citizenid, cb)
         end
     )
 
+    -- Première facture payée (b2_facturation : statut 'payée' côté destinataire)
+    exports.oxmysql:execute(
+        "SELECT COUNT(*) as cnt FROM b2_factures WHERE destinataire_id = ? AND statut = 'payée'",
+        { citizenid },
+        function(rows)
+            if rows and rows[1] and (tonumber(rows[1].cnt) or 0) > 0 then result.firstInvoicePaid = true end
+            done()
+        end
+    )
+
+    -- Premier K.O. / premier coma (événements remontés par wasabi_ambulance, voir plus bas)
+    exports.oxmysql:execute(
+        "SELECT event_key FROM anomia_achievement_events WHERE citizenid = ?",
+        { citizenid },
+        function(rows)
+            if rows then
+                for _, row in ipairs(rows) do
+                    if row.event_key == "ko" then result.firstKO = true end
+                    if row.event_key == "coma" then result.firstComa = true end
+                end
+            end
+            done()
+        end
+    )
+
+    -- Jours de connexion : série de 30 jours consécutifs + connexion le jour de l'anniversaire
+    exports.oxmysql:execute(
+        "SELECT DATE_FORMAT(login_day, '%Y-%m-%d') AS d FROM anomia_login_days WHERE citizenid = ? ORDER BY login_day ASC",
+        { citizenid },
+        function(rows)
+            if rows then
+                local streak, best, prev = 0, 0, nil
+                for _, row in ipairs(rows) do
+                    local y, mo, d = tostring(row.d):match("^(%d+)-(%d+)-(%d+)$")
+                    if y then
+                        local t = os.time({ year = tonumber(y), month = tonumber(mo), day = tonumber(d), hour = 12 })
+                        if prev and math.floor((t - prev) / 86400 + 0.5) == 1 then
+                            streak = streak + 1
+                        else
+                            streak = 1
+                        end
+                        if streak > best then best = streak end
+                        prev = t
+                        if SERVER_BIRTHDAY and tonumber(mo) == SERVER_BIRTHDAY.month and tonumber(d) == SERVER_BIRTHDAY.day then
+                            result.serverBirthday = true
+                        end
+                    end
+                end
+                if best >= 30 then result.loginStreak30 = true end
+            end
+            done()
+        end
+    )
+
     -- temps de jeu cumulé (suivi côté serveur par b2_playerlink, pas par le launcher)
     exports.oxmysql:execute("SELECT playtime_seconds FROM anomia_discord_links WHERE citizenid = ? LIMIT 1", { citizenid }, function(rows)
         if rows and rows[1] then
@@ -191,10 +264,58 @@ local function checkAchievements(citizenid, cb)
             if seconds >= 36000 then result.playtime10h = true end
             if seconds >= 360000 then result.playtime100h = true end
             if seconds >= 1800000 then result.playtime500h = true end
+            if seconds >= 3600000 then result.playtime1000h = true end
         end
         done()
     end)
 end
+
+-- Événements ponctuels (premier K.O., premier coma) : ne peuvent pas se déduire
+-- de la base, donc remontés en direct par wasabi_ambulance (b2_customize.lua).
+CreateThread(function()
+    exports.oxmysql:execute([[
+        CREATE TABLE IF NOT EXISTS `anomia_achievement_events` (
+            `citizenid` VARCHAR(50) NOT NULL,
+            `event_key` VARCHAR(30) NOT NULL,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`citizenid`, `event_key`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ]], {})
+end)
+
+CreateThread(function()
+    exports.oxmysql:execute([[
+        CREATE TABLE IF NOT EXISTS `anomia_login_days` (
+            `citizenid` VARCHAR(50) NOT NULL,
+            `login_day` DATE NOT NULL,
+            PRIMARY KEY (`citizenid`, `login_day`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ]], {})
+end)
+
+local ALLOWED_EVENTS = { ko = true, coma = true }
+
+RegisterNetEvent("b2_achievements:server:event", function(eventKey)
+    local src = source
+    if type(eventKey) ~= "string" or not ALLOWED_EVENTS[eventKey] then return end
+    local ok, QBCore = pcall(function() return exports['qb-core']:GetCoreObject() end)
+    if not ok or not QBCore then return end
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player or not Player.PlayerData or not Player.PlayerData.citizenid then return end
+    exports.oxmysql:execute(
+        "INSERT IGNORE INTO anomia_achievement_events (citizenid, event_key) VALUES (?, ?)",
+        { Player.PlayerData.citizenid, eventKey }
+    )
+end)
+
+CreateThread(function()
+    exports.oxmysql:execute([[
+        CREATE TABLE IF NOT EXISTS b2_hud_odometer (
+            plate VARCHAR(12) NOT NULL PRIMARY KEY,
+            km FLOAT NOT NULL DEFAULT 0
+        )
+    ]], {})
+end)
 
 -- Historique : date de premier déblocage de chaque succès, par joueur
 CreateThread(function()

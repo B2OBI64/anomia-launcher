@@ -1087,8 +1087,12 @@ const ACHIEVEMENT_ICONS = {
   customizedVehicle: "🎨",
   vehicleCollector3: "🚙", vehicleCollector5: "🏎️",
   houseCollector2: "🏘️", millionaire: "💎", newLife: "🔄",
-  licenceMoto: "🏍️", licenceCamion: "🚚", licenceBateau: "⛵", licenceAvion: "✈️", licenceHelicoptere: "🚁"
+  licenceMoto: "🏍️", licenceCamion: "🚚", licenceBateau: "⛵", licenceAvion: "✈️", licenceHelicoptere: "🚁",
+  firstKO: "🥊", firstComa: "🚑", firstInvoicePaid: "🧾",
+  playtime1000h: "👑", drivingDistance10000: "🌍", loginStreak30: "📅", serverBirthday: "🎂"
 };
+
+const RARITY_LABELS = { bronze: "Bronze", silver: "Argent", gold: "Or", secret: "Secret" };
 
 let achievementsLoaded = false;
 async function loadAchievements() {
@@ -1138,11 +1142,13 @@ async function loadAchievements() {
       }
     }
     const badge = document.createElement("div");
-    badge.className = `achievement-badge ${unlocked ? "unlocked" : ""}`;
+    const rarity = RARITY_LABELS[def.rarity] ? def.rarity : "bronze";
+    badge.className = `achievement-badge rarity-${rarity} ${unlocked ? "unlocked" : ""}`;
     badge.innerHTML = `
       <div class="achievement-icon">${isSecretLocked ? "❓" : (ACHIEVEMENT_ICONS[def.key] || "🏆")}</div>
       <span class="achievement-name">${isSecretLocked ? "???" : escapeHtml(def.label)}</span>
       <span class="achievement-desc">${isSecretLocked ? "Succès secret" : escapeHtml(def.description)}</span>
+      <span class="achievement-rarity">${isSecretLocked ? "Secret" : RARITY_LABELS[rarity]}</span>
       <span class="achievement-status">${unlocked ? "Débloqué" : "Verrouillé"}</span>
       ${dateLabel}
     `;

@@ -38,6 +38,16 @@ CreateThread(function()
     end)
 end)
 
+CreateThread(function()
+    exports.oxmysql:execute([[
+        CREATE TABLE IF NOT EXISTS `anomia_login_days` (
+            `citizenid` VARCHAR(50) NOT NULL,
+            `login_day` DATE NOT NULL,
+            PRIMARY KEY (`citizenid`, `login_day`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ]], {})
+end)
+
 local function extractDiscordId(src)
     for _, id in ipairs(GetPlayerIdentifiers(src)) do
         local discordId = id:match("^discord:(%d+)$")
@@ -75,6 +85,12 @@ AddEventHandler("QBCore:Server:OnPlayerLoaded", function()
 
     print(("[b2_playerlink] Lien trouvé : citizenid=%s <-> discord=%s -> enregistrement en cours..."):format(Player.PlayerData.citizenid, discordId))
 
+    -- Jour de connexion (pour les succès "30 jours d'affilée" et "anniversaire du serveur")
+    exports.oxmysql:execute(
+        "INSERT IGNORE INTO anomia_login_days (citizenid, login_day) VALUES (?, CURDATE())",
+        { Player.PlayerData.citizenid }
+    )
+
     exports.oxmysql:execute(
         "INSERT INTO anomia_discord_links (citizenid, discord_id) VALUES (?, ?) " ..
         "ON DUPLICATE KEY UPDATE discord_id = VALUES(discord_id), updated_at = CURRENT_TIMESTAMP",
@@ -102,20 +118,28 @@ CreateThread(function()
         local QBCore = getQBCore()
         if QBCore then
             local ok, players = pcall(function() return QBCore.Functions.GetPlayers() end)
-            if ok then
+            if ok and players then
+                -- Une SEULE requête pour tous les joueurs en ligne (au lieu d'une par joueur),
+                -- ce qui évite les avertissements "took XXXms to execute a query" d'oxmysql.
+                local rows, params = {}, {}
                 for _, src in ipairs(players) do
                     local Player = QBCore.Functions.GetPlayer(src)
                     if Player and Player.PlayerData and Player.PlayerData.citizenid then
-                        local discordId = extractDiscordId(src) or ""
-                        exports.oxmysql:execute(
-                            "INSERT INTO anomia_discord_links (citizenid, discord_id, playtime_seconds) VALUES (?, ?, 60) " ..
-                            "ON DUPLICATE KEY UPDATE " ..
-                            "playtime_seconds = playtime_seconds + 60, " ..
-                            "discord_id = IF(VALUES(discord_id) != '', VALUES(discord_id), discord_id), " ..
-                            "updated_at = CURRENT_TIMESTAMP",
-                            { Player.PlayerData.citizenid, discordId }
-                        )
+                        rows[#rows + 1] = "(?, ?, 60)"
+                        params[#params + 1] = Player.PlayerData.citizenid
+                        params[#params + 1] = extractDiscordId(src) or ""
                     end
+                end
+                if #rows > 0 then
+                    exports.oxmysql:execute(
+                        "INSERT INTO anomia_discord_links (citizenid, discord_id, playtime_seconds) VALUES " ..
+                        table.concat(rows, ", ") .. " " ..
+                        "ON DUPLICATE KEY UPDATE " ..
+                        "playtime_seconds = playtime_seconds + 60, " ..
+                        "discord_id = IF(VALUES(discord_id) != '', VALUES(discord_id), discord_id), " ..
+                        "updated_at = CURRENT_TIMESTAMP",
+                        params
+                    )
                 end
             end
         end
