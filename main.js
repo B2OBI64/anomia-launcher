@@ -13,6 +13,8 @@ const crypto = require("crypto");
 const { spawn } = require("child_process");
 const { autoUpdater } = require("electron-updater");
 const config = require("./config");
+const diagnostics = require("./diagnostics");
+diagnostics.init(app.getVersion());
 
 let mainWindow;
 let splashWindow;
@@ -120,7 +122,7 @@ function createSplashWindow() {
     height: 340,
     frame: false,
     resizable: false,
-    backgroundColor: "#05090a",
+    backgroundColor: "#07050d",
     show: false,
     webPreferences: { sandbox: false }
   });
@@ -136,7 +138,7 @@ function createWindow() {
     minHeight: 620,
     frame: false, // titlebar custom (style B2 Launcher)
     icon: path.join(__dirname, "assets", "icon.png"),
-    backgroundColor: "#0a1416",
+    backgroundColor: "#0e0a1a",
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -935,15 +937,52 @@ ipcMain.handle("fivem:check", async () => {
 // réussi, pour authentifier les actions serveur sensibles (ex: maintenance)
 // déclenchées depuis le launcher pendant cette session.
 let cachedAdminPassphrase = null;
+let cachedStaffRole = null; // "admin" | "mod"
+let cachedStaffCode = null; // code staff (admin ou modo), en mémoire uniquement
+
+function staffRequest(urlPath, code) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlPath, config.server.staffPanelUrl);
+    const req = http.get(url, { headers: { "x-staff-code": code, "User-Agent": "B2Launcher/1.0" }, timeout: 6000 }, (res) => {
+      let data = "";
+      res.on("data", (c) => (data += c));
+      res.on("end", () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); } catch (e) { reject(e); }
+      });
+    });
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+  });
+}
 
 ipcMain.handle("admin:unlock", async (event, passphrase) => {
-  if (!config.admin.passphraseHash) {
-    return { ok: false, error: "Aucun code d'accès configuré." };
+  const code = String(passphrase || "");
+  // 1) Code admin local (historique)
+  if (config.admin.passphraseHash) {
+    const hash = crypto.createHash("sha256").update(code).digest("hex");
+    if (hash === config.admin.passphraseHash) {
+      cachedAdminPassphrase = code;
+      cachedStaffCode = code;
+      cachedStaffRole = "admin";
+      return { ok: true, role: "admin" };
+    }
   }
-  const hash = crypto.createHash("sha256").update(passphrase || "").digest("hex");
-  const ok = hash === config.admin.passphraseHash;
-  if (ok) cachedAdminPassphrase = passphrase;
-  return { ok };
+  // 2) Code vérifié par le serveur (admin ou modo)
+  if (code) {
+    try {
+      const r = await staffRequest("role", code);
+      if (r.status === 200 && (r.body.role === "admin" || r.body.role === "mod")) {
+        cachedStaffRole = r.body.role;
+        cachedAdminPassphrase = r.body.role === "admin" ? code : null;
+        cachedStaffCode = code;
+        return { ok: true, role: r.body.role };
+      }
+      if (r.status === 429) return { ok: false, error: "Trop d'essais, réessaie dans une minute." };
+    } catch (e) {
+      return { ok: false, error: "Impossible de joindre le serveur pour vérifier le code (serveur éteint ?)." };
+    }
+  }
+  return { ok: false };
 });
 
 ipcMain.handle("admin:toggleMaintenance", async (event, enable) => {
@@ -980,6 +1019,19 @@ ipcMain.handle("admin:toggleMaintenance", async (event, enable) => {
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("admin:getPlayers", async () => {
+  if (!cachedStaffCode) return { ok: false, error: "Session staff expirée, redéverrouille l'onglet." };
+  try {
+    const r = await staffRequest("players", cachedStaffCode);
+    if (r.status === 200 && Array.isArray(r.body.players)) {
+      return { ok: true, role: r.body.role, players: r.body.players, maxClients: r.body.maxClients || 0 };
+    }
+    return { ok: false, error: r.body && r.body.error === "invalid_code" ? "Code refusé par le serveur." : "Réponse inattendue du serveur." };
+  } catch (e) {
+    return { ok: false, error: "Serveur injoignable (éteint ou ressource b2_staffpanel absente)." };
   }
 });
 
@@ -1030,6 +1082,50 @@ ipcMain.handle("twitch:getStatus", async () => {
   }
 });
 
+// Discord : membres en ligne / total via l'invitation publique (sans connexion ni jeton)
+const inviteCache = new Map();
+ipcMain.handle("discord:getCommunities", async () => {
+  const list = Array.isArray(config.discordCommunities) ? config.discordCommunities : [];
+  const out = [];
+  for (const c of list) {
+    const m = /(?:discord\.gg\/|discord\.com\/invite\/|^)([A-Za-z0-9-]{2,32})$/.exec(String(c.invite || "").trim());
+    if (!m) continue; // pas encore d'invitation : carte masquée
+    const code = m[1];
+    const entry = { name: c.name, color: c.color || null, url: `https://discord.gg/${code}`, online: null, members: null };
+    const cached = inviteCache.get(code);
+    if (cached && Date.now() - cached.at < 5 * 60 * 1000) {
+      Object.assign(entry, cached.data);
+    } else {
+      try {
+        const r = await fetchJson(`https://discord.com/api/v10/invites/${code}?with_counts=true`, 6000);
+        const data = {
+          online: typeof r.approximate_presence_count === "number" ? r.approximate_presence_count : null,
+          members: typeof r.approximate_member_count === "number" ? r.approximate_member_count : null
+        };
+        inviteCache.set(code, { at: Date.now(), data });
+        Object.assign(entry, data);
+      } catch (e) { /* on affiche la carte sans les chiffres */ }
+    }
+    out.push(entry);
+  }
+  return out;
+});
+
+// Clips Twitch de la communauté (via b2_twitchstatus/clips)
+ipcMain.handle("twitch:getClips", async () => {
+  try {
+    const result = await fetchJson(config.server.twitchClipsUrl, 8000);
+    if (Array.isArray(result)) {
+      // On ne renvoie que des clips twitch.tv valides (le launcher ouvre l'URL dans le navigateur)
+      const clips = result.filter((c) => c && typeof c.url === "string" && /^https:\/\/(www\.)?twitch\.tv\//.test(c.url)).slice(0, 24);
+      return { ok: true, clips };
+    }
+    return { ok: false, error: (result && result.error) || "unknown_error" };
+  } catch (err) {
+    return { ok: false, error: "unreachable" };
+  }
+});
+
 // ============================================================
 // Succès (nécessite une connexion Discord préalable, voir plus haut)
 // ============================================================
@@ -1046,7 +1142,7 @@ ipcMain.handle("achievements:get", async () => {
     if (result.linked === false) {
       return { ok: true, linked: false, list: config.achievements.list };
     }
-    return { ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, list: config.achievements.list };
+    return { ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, playtimeSeconds: result.playtimeSeconds || 0, list: config.achievements.list };
   } catch (err) {
     return { ok: false, error: "La ressource b2_achievements ne répond pas (pas encore installée, ou serveur hors ligne).", list: config.achievements.list };
   }
@@ -1117,6 +1213,34 @@ function saveSettings(patch) {
   }
   return updated;
 }
+
+ipcMain.handle("image:save", async (event, dataUrl, defaultName) => {
+  try {
+    const m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ""));
+    if (!m) return { ok: false, error: "image invalide" };
+    const safeName = String(defaultName || "profil-b2.png").replace(/[^A-Za-z0-9._-]/g, "_");
+    const res = await dialog.showSaveDialog(mainWindow, {
+      title: "Enregistrer l'image",
+      defaultPath: path.join(app.getPath("pictures"), safeName),
+      filters: [{ name: "Image PNG", extensions: ["png"] }]
+    });
+    if (res.canceled || !res.filePath) return { ok: false, canceled: true };
+    fs.writeFileSync(res.filePath, Buffer.from(m[1], "base64"));
+    shell.showItemInFolder(res.filePath);
+    return { ok: true, path: res.filePath };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("diagnostics:createReport", () => {
+  try {
+    const target = diagnostics.createManualReport();
+    return { ok: true, path: target };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
 
 ipcMain.handle("settings:get", () => loadSettings());
 ipcMain.handle("settings:set", (event, patch) => saveSettings(patch));
@@ -1251,7 +1375,7 @@ ipcMain.handle("rules:get", async () => {
 });
 
 // --- B2 Launcher : liste des serveurs + contenu des pages KannibAventure ---
-ipcMain.handle("servers:get", () => ({ servers: config.servers || [], hub: config.hub || { slides: [] } }));
+ipcMain.handle("servers:get", () => ({ servers: config.servers || [], hub: config.hub || { slides: [] }, twitch: config.twitch || null }));
 
 ipcMain.handle("kb:getContent", async (_event, name) => {
   const files = (config.kannibaventure && config.kannibaventure.files) || {};

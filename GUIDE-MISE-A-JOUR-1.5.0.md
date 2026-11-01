@@ -1,4 +1,4 @@
-# Mettre à jour le launcher : B2 Launcher v1.5.0 (grosse refonte)
+# Mettre à jour le launcher : B2 Launcher v1.5.1 (grosse refonte)
 
 ## 0. Avant de commencer
 - Le dossier du projet : `C:\Users\Boobi\Desktop\launcher anomia\anomia-launcher-clean`
@@ -25,7 +25,7 @@ Vérifie : barre des serveurs en haut, accueil avec slider, onglets Anomia (bout
 ## 4. Enregistrer sur GitHub
 ```
 git add .
-git commit -m "v1.5.0 : B2 Launcher"
+git commit -m "v1.5.1 : B2 Launcher"
 git push origin HEAD:main --force
 git checkout -B main
 ```
@@ -41,23 +41,37 @@ npm run dist:win:publish
 - Erreur 401 : jeton incorrect ou expiré.
 
 ## 6. Contrôler la release sur GitHub
-Sur github.com/B2OBI64/anomia-launcher > Releases, la version 1.5.0 doit contenir :
-- `B2 Launcher Setup 1.5.0.exe`
+Sur github.com/B2OBI64/anomia-launcher > Releases, la version 1.5.1 doit contenir :
+- `B2 Launcher Setup 1.5.1.exe`
 - le fichier `.blockmap`
 - `latest.yml`
 Le patch note du "Quoi de neuf" vient de `release-notes.md`. S'il n'apparaît pas dans le launcher, colle le même texte dans la description de la release GitHub.
 
 ## 7. Tester la mise à jour sur TON PC
-1. Ouvre l'ancien launcher (Anomia Launcher, version avant 1.5.0).
+1. Ouvre l'ancien launcher (Anomia Launcher, version avant 1.5.1).
 2. Il doit proposer la mise à jour, avec le patch note.
 3. Télécharge et laisse installer : il se relance en "B2 Launcher".
 4. Contrôle : tu es toujours connecté à Discord, un seul raccourci "B2 Launcher" (pas de doublon avec l'ancien), la nouvelle icône.
 
 ## 8. Si quelque chose ne va pas
-Supprime la release 1.5.0 sur GitHub (et son tag) : les joueurs ne la verront plus, ceux qui n'ont pas encore mis à jour ne sont pas touchés. Corrige, passe en 1.5.1 et republie.
+Supprime la release 1.5.1 sur GitHub (et son tag) : les joueurs ne la verront plus, ceux qui n'ont pas encore mis à jour ne sont pas touchés. Corrige, passe en 1.5.1 et republie.
 
 ## 9. Côté serveur Anomia (optionnel tant qu'il est arrêté)
 À la prochaine remise en ligne : copier `fivem-resources/b2_playerlink`, `b2_achievements` et `patch_wasabi_ambulance/b2_customize.lua`, puis redémarrer ces ressources.
 
 ## 10. Ce qui se modifie sans republier
 Sur GitHub (branche main) : `src/kb-devlog.json`, `src/kb-faq.json`, `src/kb-rules.json`, `src/kb-mods.json`, `news.json`... Les joueurs voient les changements au prochain affichage, sans nouvelle version.
+
+
+## Nouveautés de cette version côté serveur FiveM (clips Twitch + blocage Anomia)
+1. Remplace le dossier `fivem-resources/b2_twitchstatus` sur le serveur, puis dans la console : `restart b2_twitchstatus`.
+   - Optionnel : `setr anomia_twitch_clips_channel "b2obi64"` dans server.cfg (sinon la 1re chaîne de `anomia_twitch_channels` est utilisée).
+   - Test : ouvre `http://185.44.80.32:30140/b2_twitchstatus/clips` dans un navigateur, tu dois voir une liste JSON.
+2. Bloquer Anomia jusqu'en 2027 sans l'éteindre : dans la console du serveur, tape `maintenance on`. L'état est mémorisé après redémarrage, et les admins (ACE) passent quand même.
+3. Rapports d'erreur : dossier « Documents\B2 Launcher - Rapports » sur le PC du joueur.
+4. Panneau staff (liste des joueurs) :
+   - Copie `fivem-resources/b2_staffpanel` dans `resources/`, ajoute `ensure b2_staffpanel` dans server.cfg.
+   - Dans server.cfg : `setr anomia_admin_passphrase "CODE_ADMIN"` et `setr anomia_mod_passphrase "CODE_MODO"` (deux codes différents), puis `restart b2_staffpanel`.
+   - Dans le launcher : Ctrl+Alt+A puis le code. Modo = liste des joueurs seulement ; admin = en plus maintenance et connexion à Anomia en pause.
+   - Le serveur doit être allumé pour que le code modo soit vérifié.
+5. Profil partageable : remplace aussi `b2_achievements` (il renvoie maintenant le temps de jeu total) puis `restart b2_achievements`.

@@ -39,7 +39,7 @@ module.exports = {
       logo: "../assets/kannibaventure.png",
       color: "#a855f7",
       status: "soon",
-      connectLabel: "Prochainement",
+      connectLabel: "Décembre",
       // Discord du serveur Minecraft (le rôle d'accès sera renseigné plus tard) :
       discordInvite: "https://discord.gg/fdSjJPRJy4",
       discordGuildId: "1357757210272469212",
@@ -62,7 +62,7 @@ module.exports = {
         serverId: "kannibaventure",
         tag: "NOUVEAU SERVEUR MINECRAFT",
         title: "KannibAventure",
-        text: "Une nouvelle aventure se prépare. Suis le journal de développement pour ne rien manquer.",
+        text: "Ouverture prévue en décembre. Suis le journal de développement pour ne rien manquer.",
         button: "Découvrir"
       },
       {
@@ -74,6 +74,28 @@ module.exports = {
       }
     ],
     slideIntervalMs: 6500
+  },
+
+  // --- Discords affichés sur l'accueil (membres en ligne + bouton rejoindre) ---
+  // invite = code ou lien d'invitation. Laisse null tant que tu n'as pas le lien : la carte reste masquée.
+  discordCommunities: [
+    { name: "Communauté B2", invite: null, color: "#8b5cf6" }, // Discord principal de la chaîne : lien à renseigner
+    { name: "Anomia RP", invite: "https://discord.gg/ECBhuTMw7n", color: "#2dd4bf" },
+    { name: "KannibAventure", invite: "https://discord.gg/fdSjJPRJy4", color: "#a855f7" }
+  ],
+
+  // --- Chaîne Twitch affichée sur l'accueil du B2 Launcher ---
+  twitch: {
+    channel: "b2obi64",
+    displayName: "B2OBI64",
+    url: "https://twitch.tv/b2obi64",
+    discordInvite: "https://discord.gg/ECBhuTMw7n",
+    // Affichés même si le statut live n'est pas joignable (ex. serveur Anomia arrêté)
+    fallbackStreamers: [
+      { channel: "b2obi64", displayName: "B2OBI64" },
+      { channel: "toto_le_byr", displayName: "toto_le_byr" },
+      { channel: "romaintititox", displayName: "romaintititox" }
+    ]
   },
 
   // --- Contenu des pages KannibAventure (modifiable sur GitHub sans republier) ---
@@ -102,6 +124,8 @@ module.exports = {
     discordCheckUrl: "http://185.44.80.32:30140/b2_discordcheck/",
     // Endpoint custom (ressource b2_twitchstatus) qui donne le statut live des streamers Anomia
     twitchStatusUrl: "http://185.44.80.32:30140/b2_twitchstatus/",
+    staffPanelUrl: "http://185.44.80.32:30140/b2_staffpanel/",
+    twitchClipsUrl: "http://185.44.80.32:30140/b2_twitchstatus/clips",
     // Endpoint réservé aux admins (protégé par le code d'accès) qui active/désactive
     // la maintenance à distance depuis le launcher, sans passer par la console serveur.
     maintenanceToggleUrl: "http://185.44.80.32:30140/b2_maintenance/toggle",

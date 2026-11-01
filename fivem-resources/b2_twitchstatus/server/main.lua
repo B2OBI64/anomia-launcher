@@ -169,18 +169,115 @@ local function getTwitchStatus(cb)
     end)
 end
 
-SetHttpHandler(function(req, res)
-    getTwitchStatus(function(result, err)
-        res.writeHead(200, {
-            ['Content-Type'] = 'application/json',
-            ['Access-Control-Allow-Origin'] = '*'
-        })
-        if result then
-            res.send(json.encode(result))
-        else
-            res.send(json.encode({ error = err or "unknown_error" }))
+-- ============================================================
+-- Clips de la communaute  ->  http://IP:PORT/b2_twitchstatus/clips
+-- Clips recents (90 jours, sinon les plus vus) de la chaine principale.
+-- Chaine par defaut : la 1ere de anomia_twitch_channels, ou la convar
+--   setr anomia_twitch_clips_channel "b2obi64"
+-- ============================================================
+local clipsCache = { data = nil, expiresAt = 0 }
+local CLIPS_CACHE_MS = 5 * 60 * 1000
+local broadcasterIdCache = {}
+
+local function fetchClips(cfg, token, broadcasterId, withDate, cb)
+    local headers = { ["Client-Id"] = cfg.clientId, ["Authorization"] = "Bearer " .. token }
+    local url = "https://api.twitch.tv/helix/clips?first=24&broadcaster_id=" .. broadcasterId
+    if withDate then
+        url = url .. "&started_at=" .. os.date("!%Y-%m-%dT%H:%M:%SZ", os.time() - 90 * 86400)
+    end
+    PerformHttpRequest(url, function(status, body)
+        local list = {}
+        if status == 200 then
+            local ok, data = pcall(json.decode, body)
+            if ok and data and data.data then
+                for _, c in ipairs(data.data) do
+                    table.insert(list, {
+                        id = c.id,
+                        url = c.url,
+                        title = c.title or "",
+                        creator = c.creator_name or "",
+                        views = c.view_count or 0,
+                        duration = c.duration or 0,
+                        createdAt = c.created_at,
+                        thumbnailUrl = c.thumbnail_url
+                    })
+                end
+            end
         end
+        cb(list, status)
+    end, "GET", "", headers)
+end
+
+local function getClips(cb)
+    if clipsCache.data and GetGameTimer() < clipsCache.expiresAt then
+        cb(clipsCache.data)
+        return
+    end
+    local cfg = getConfig()
+    local channel = GetConvar("anomia_twitch_clips_channel", "")
+    if channel == "" then channel = cfg.channels[1] or "" end
+    if cfg.clientId == "" or cfg.clientSecret == "" or channel == "" then
+        cb(nil, "config_missing")
+        return
+    end
+    getAppAccessToken(cfg, function(token)
+        if not token then cb(nil, "twitch_auth_failed") return end
+        local headers = { ["Client-Id"] = cfg.clientId, ["Authorization"] = "Bearer " .. token }
+
+        local function withBroadcaster(id)
+            fetchClips(cfg, token, id, true, function(list, status)
+                if status ~= 200 then cb(nil, "twitch_clips_failed") return end
+                if #list > 0 then
+                    clipsCache.data = list
+                    clipsCache.expiresAt = GetGameTimer() + CLIPS_CACHE_MS
+                    cb(list)
+                    return
+                end
+                -- Rien dans les 90 derniers jours : on prend les plus vus de tous les temps
+                fetchClips(cfg, token, id, false, function(list2)
+                    clipsCache.data = list2
+                    clipsCache.expiresAt = GetGameTimer() + CLIPS_CACHE_MS
+                    cb(list2)
+                end)
+            end)
+        end
+
+        local key = channel:lower()
+        if broadcasterIdCache[key] then
+            withBroadcaster(broadcasterIdCache[key])
+            return
+        end
+        PerformHttpRequest("https://api.twitch.tv/helix/users?login=" .. key, function(status, body)
+            local ok, data = pcall(json.decode, body or "")
+            if status ~= 200 or not ok or not data or not data.data or not data.data[1] then
+                cb(nil, "twitch_user_not_found")
+                return
+            end
+            broadcasterIdCache[key] = data.data[1].id
+            withBroadcaster(data.data[1].id)
+        end, "GET", "", headers)
     end)
+end
+
+local function sendJson(res, result, err)
+    res.writeHead(200, {
+        ['Content-Type'] = 'application/json',
+        ['Access-Control-Allow-Origin'] = '*'
+    })
+    if result then
+        res.send(json.encode(result))
+    else
+        res.send(json.encode({ error = err or "unknown_error" }))
+    end
+end
+
+SetHttpHandler(function(req, res)
+    local path = tostring(req.path or "")
+    if path:find("clips", 1, true) then
+        getClips(function(result, err) sendJson(res, result, err) end)
+        return
+    end
+    getTwitchStatus(function(result, err) sendJson(res, result, err) end)
 end)
 
 print("[b2_twitchstatus] Pret. Verifie que anomia_twitch_client_id / anomia_twitch_client_secret / anomia_twitch_channels sont bien configures dans server.cfg.")

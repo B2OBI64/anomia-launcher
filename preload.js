@@ -58,10 +58,14 @@ contextBridge.exposeInMainWorld("anomia", {
   // Admin (lecture seule)
   unlockAdmin: (passphrase) => ipcRenderer.invoke("admin:unlock", passphrase),
   toggleMaintenance: (enable) => ipcRenderer.invoke("admin:toggleMaintenance", enable),
+  getStaffPlayers: () => ipcRenderer.invoke("admin:getPlayers"),
+  saveImage: (dataUrl, defaultName) => ipcRenderer.invoke("image:save", dataUrl, defaultName),
   getAdminStats: () => ipcRenderer.invoke("admin:stats"),
 
   // Twitch
   getTwitchStatus: () => ipcRenderer.invoke("twitch:getStatus"),
+  getDiscordCommunities: () => ipcRenderer.invoke("discord:getCommunities"),
+  getTwitchClips: () => ipcRenderer.invoke("twitch:getClips"),
 
   // Connexion Discord
   startDiscordAuth: () => ipcRenderer.send("discord:startAuth"),
@@ -128,6 +132,7 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Rapports de crash
   sendCrashReport: (crashPath) => ipcRenderer.invoke("crash:send", crashPath),
+  createDiagnosticReport: () => ipcRenderer.invoke("diagnostics:createReport"),
   onCrashDetected: (callback) => {
     ipcRenderer.removeAllListeners("crash:detected");
     ipcRenderer.on("crash:detected", (event, payload) => callback(payload));

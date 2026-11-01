@@ -395,8 +395,11 @@ SetHttpHandler(function(req, res)
 
         checkAchievements(citizenid, function(achievements)
             recordAndFetchUnlockDates(citizenid, achievements, function(unlockedAt)
-                res.writeHead(200, { ['Content-Type'] = 'application/json', ['Access-Control-Allow-Origin'] = '*' })
-                res.send(json.encode({ linked = true, achievements = achievements, unlockedAt = unlockedAt }))
+                exports.oxmysql:execute("SELECT playtime_seconds FROM anomia_discord_links WHERE citizenid = ? LIMIT 1", { citizenid }, function(rows)
+                    local playtime = (rows and rows[1] and tonumber(rows[1].playtime_seconds)) or 0
+                    res.writeHead(200, { ['Content-Type'] = 'application/json', ['Access-Control-Allow-Origin'] = '*' })
+                    res.send(json.encode({ linked = true, achievements = achievements, unlockedAt = unlockedAt, playtimeSeconds = playtime }))
+                end)
             end)
         end)
     end)

@@ -2,7 +2,9 @@
 // ANOMIA LAUNCHER — renderer
 // ============================================================
 
-let isAdminUnlocked = false;
+let discordProfile = null; // profil Discord connecté (déclaré en haut : utilisé par l'accueil)
+let isAdminUnlocked = false; // admin complet (bypass connexion, maintenance)
+let staffRole = null; // "admin" | "mod"
 
 // --- Thème : mode sombre/clair + couleur d'accent (appliqués le plus tôt possible) ---
 function hexToRgb(hex) {
@@ -27,8 +29,7 @@ function applyMode(mode) {
   } else {
     document.documentElement.removeAttribute("data-mode");
   }
-  const switchEl = document.getElementById("mode-switch");
-  if (switchEl) switchEl.dataset.mode = mode;
+  document.querySelectorAll(".bg-option").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
 }
 
 function applyAccentColor(hex) {
@@ -47,7 +48,13 @@ function applyAccentColor(hex) {
 
 window.anomia.getSettings().then((settings) => {
   applyMode(settings.mode || "dark");
-  const accent = settings.accentColor || "#2dd4bf";
+  // B2 Launcher : nouvelle identité violette. Une seule fois, on remplace l'ancien accent par défaut
+  // (teal Anomia) par le violet B2 ; le joueur peut ensuite choisir librement une autre couleur.
+  if (!settings.themeV2) {
+    settings.accentColor = "#8b5cf6";
+    window.anomia.setSettings({ accentColor: "#8b5cf6", themeV2: true });
+  }
+  const accent = settings.accentColor || "#8b5cf6";
   applyAccentColor(accent);
   document.getElementById("color-picker").value = accent;
   document.getElementById("color-picker-hex").textContent = accent.toUpperCase();
@@ -67,6 +74,7 @@ window.anomia.getAppVersion().then((v) => {
 const views = document.querySelectorAll(".view");
 let SERVERS = [];
 let HUB = { slides: [], slideIntervalMs: 6500 };
+let TWITCH = { channel: "b2obi64", displayName: "B2OBI64", url: "https://twitch.tv/b2obi64", fallbackStreamers: [] };
 let currentServerId = "hub";
 
 function getServer(id) {
@@ -85,13 +93,13 @@ function goToView(name) {
       v.classList.add("view-entering");
     }
   });
-  if (name === "hub") { loadStreamers(); startHubSlider(); } else { stopHubSlider(); }
+  if (name === "hub") { loadStreamers(); loadClips(); loadHomeMe(); loadDiscordCommunities(); startHubSlider(); } else { stopHubSlider(); }
   if (name === "staff") loadStaff();
   if (name === "achievements") loadAchievements();
   if (name === "rules") loadRules();
   if (name === "map") loadMap();
   if (name === "media") loadMedia();
-  if (name === "admin") refreshAdminStats();
+  if (name === "admin") { refreshAdminStats(); refreshStaffPlayers(); }
   if (name === "kb-devlog") loadKbDevlog();
   if (name === "kb-rules") loadKbRules();
   if (name === "kb-faq") loadKbFaq();
@@ -220,6 +228,8 @@ document.getElementById("hub-next").addEventListener("click", () => { showHubSli
 window.anomia.getServers().then((cfg) => {
   SERVERS = cfg.servers || [];
   HUB = cfg.hub || HUB;
+  if (cfg.twitch) TWITCH = cfg.twitch;
+  initTwitchPanel();
   renderServerBar();
   renderHubSlider();
   selectServer("hub");
@@ -502,7 +512,7 @@ function updateConnectButtonState() {
 
   // Serveur en pause (ex. Anomia jusqu'en 2027) : bouton grisé avec la date, sans connexion possible
   const anomia = getServer("anomia");
-  if (anomia && anomia.status !== "online") {
+  if (anomia && anomia.status !== "online" && !isAdminUnlocked) {
     btn.disabled = true;
     btn.textContent = `🔒 ${anomia.connectLabel || "Bientôt"}`;
     const st = document.getElementById("status-text");
@@ -822,6 +832,156 @@ document.addEventListener("keydown", (e) => {
 });
 
 let streamersLoaded = false;
+
+// --- Panneau chaîne Twitch (accueil) ---
+function initTwitchPanel() {
+  document.getElementById("twitch-panel-name").textContent = TWITCH.displayName || TWITCH.channel;
+  document.getElementById("twitch-watch").addEventListener("click", () => window.anomia.openExternal(TWITCH.url));
+  document.getElementById("twitch-discord").addEventListener("click", () => {
+    if (TWITCH.discordInvite) window.anomia.openExternal(TWITCH.discordInvite);
+  });
+}
+
+function updateTwitchLiveBadge(streamers) {
+  const badge = document.getElementById("twitch-live-badge");
+  const me = (streamers || []).find((s) => (s.channel || "").toLowerCase() === (TWITCH.channel || "").toLowerCase());
+  if (me && me.live) {
+    badge.textContent = `● EN LIVE · ${me.viewers} viewer${me.viewers > 1 ? "s" : ""}${me.title ? " · " + me.title : ""}`;
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+// Carte neutre (statut live indisponible) : un clic ouvre directement la chaîne
+function renderFallbackStreamerCard(s) {
+  const el = document.createElement("div");
+  el.className = "streamer-card";
+  el.innerHTML = `
+    <div class="streamer-avatar-wrap"><img src="../assets/logo.png" alt="" class="streamer-avatar" /></div>
+    <span class="streamer-name">${escapeHtml(s.displayName || s.channel)}</span>
+    <span class="streamer-status">Voir la chaîne</span>`;
+  el.addEventListener("click", () => window.anomia.openExternal(`https://twitch.tv/${s.channel}`));
+  return el;
+}
+
+// --- Accueil : résumé personnel + message de bienvenue ---
+let homeAchResult = null;
+const PLAYTIME_MILESTONES = [
+  [3600, "1 h"], [36000, "10 h"], [360000, "100 h"], [1800000, "500 h"], [3600000, "1000 h"]
+];
+
+function welcomeMessage(name) {
+  const now = new Date();
+  const h = now.getHours();
+  if (now.getDate() === 3 && now.getMonth() === 6) return { t: `Joyeux anniversaire d'Anomia, ${name} ! 🎂`, s: "Connecte-toi en jeu aujourd'hui pour débloquer un succès secret." };
+  const hello = h < 6 ? "Encore debout" : h < 18 ? "Salut" : "Bonsoir";
+  return { t: `${hello} ${name} !`, s: "Content de te revoir sur le B2 Launcher." };
+}
+
+async function loadHomeMe() {
+  const box = document.getElementById("home-me");
+  if (!discordProfile) { box.classList.add("hidden"); return; }
+  const name = discordProfile.username || "Joueur";
+  const w = welcomeMessage(name);
+  document.getElementById("home-me-greeting").textContent = w.t;
+  document.getElementById("home-me-sub").textContent = w.s;
+  box.classList.remove("hidden");
+
+  let r;
+  try { r = await window.anomia.getAchievements(); } catch (e) { r = null; }
+  if (!r || !r.ok || !r.linked) {
+    homeAchResult = null;
+    document.getElementById("home-me-playtime").textContent = "—";
+    document.getElementById("home-me-ach").textContent = "—";
+    document.getElementById("home-me-next").textContent = r && r.linked === false ? "Connecte-toi une fois en jeu pour activer ton suivi" : "Indisponible pour le moment";
+    document.getElementById("home-me-bar-fill").style.width = "0%";
+    document.getElementById("home-me-share").classList.add("hidden");
+    return;
+  }
+  homeAchResult = r;
+  document.getElementById("home-me-share").classList.remove("hidden");
+  const list = r.list || [];
+  const unlocked = list.filter((d) => r.achievements && r.achievements[d.key]).length;
+  const secs = r.playtimeSeconds || 0;
+  document.getElementById("home-me-playtime").textContent = secs >= 3600 ? `${Math.floor(secs / 3600)} h` : `${Math.floor(secs / 60)} min`;
+  document.getElementById("home-me-ach").textContent = `${unlocked}/${list.length}`;
+
+  const next = PLAYTIME_MILESTONES.find(([s]) => secs < s);
+  const prev = [...PLAYTIME_MILESTONES].reverse().find(([s]) => secs >= s);
+  if (next) {
+    const left = next[0] - secs;
+    const leftTxt = left >= 3600 ? `${Math.ceil(left / 3600)} h` : `${Math.ceil(left / 60)} min`;
+    document.getElementById("home-me-next").textContent = `Succès « ${next[1]} de jeu » : encore ${leftTxt}`;
+    const base = prev ? prev[0] : 0;
+    document.getElementById("home-me-bar-fill").style.width = `${Math.max(2, Math.round(((secs - base) / (next[0] - base)) * 100))}%`;
+  } else {
+    document.getElementById("home-me-next").textContent = "Tous les paliers de temps de jeu atteints 👑";
+    document.getElementById("home-me-bar-fill").style.width = "100%";
+  }
+}
+document.getElementById("home-me-share").addEventListener("click", () => { if (homeAchResult) openProfileCard(homeAchResult); });
+
+// --- Accueil : Discords (membres en ligne + rejoindre) ---
+let discordCommLoaded = false;
+async function loadDiscordCommunities() {
+  if (discordCommLoaded) return;
+  const section = document.getElementById("discord-section");
+  const grid = document.getElementById("discord-grid");
+  let list;
+  try { list = await window.anomia.getDiscordCommunities(); } catch (e) { list = []; }
+  if (!list || !list.length) { section.classList.add("hidden"); return; }
+  discordCommLoaded = true;
+  grid.innerHTML = "";
+  list.forEach((c) => {
+    const el = document.createElement("div");
+    el.className = "discord-card";
+    if (c.color && /^#[0-9a-fA-F]{6}$/.test(c.color)) el.style.setProperty("--dc", c.color);
+    const counts = c.online !== null
+      ? `<span class="discord-online"><i></i>${c.online} en ligne</span><span class="discord-members">${c.members !== null ? c.members + " membres" : ""}</span>`
+      : `<span class="discord-members">Rejoins le Discord</span>`;
+    el.innerHTML = `<span class="discord-name">${escapeHtml(c.name)}</span><div class="discord-counts">${counts}</div><button class="btn-copy">Rejoindre</button>`;
+    el.querySelector("button").addEventListener("click", () => window.anomia.openExternal(c.url));
+    grid.appendChild(el);
+  });
+  section.classList.remove("hidden");
+}
+
+let clipsLoaded = false;
+function formatClipDuration(sec) {
+  const s = Math.round(sec || 0);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+async function loadClips() {
+  if (clipsLoaded) return;
+  const section = document.getElementById("clips-section");
+  const grid = document.getElementById("clip-grid");
+  let result;
+  try { result = await window.anomia.getTwitchClips(); } catch (e) { result = { ok: false }; }
+  // Indisponible (serveur arrêté, Twitch non configuré...) : la section reste simplement cachée
+  if (!result || !result.ok || !result.clips || !result.clips.length) { section.classList.add("hidden"); return; }
+  clipsLoaded = true;
+  grid.innerHTML = "";
+  result.clips.forEach((c) => {
+    const el = document.createElement("div");
+    el.className = "clip-card";
+    const thumb = c.thumbnailUrl && /^https:\/\//.test(c.thumbnailUrl) ? c.thumbnailUrl : "";
+    el.innerHTML = `
+      <div class="clip-thumb" ${thumb ? `style="background-image:url('${escapeHtml(thumb)}')"` : ""}>
+        <span class="clip-duration">${formatClipDuration(c.duration)}</span>
+        <span class="clip-play">▶</span>
+      </div>
+      <div class="clip-info">
+        <span class="clip-title">${escapeHtml(c.title || "Clip")}</span>
+        <span class="clip-meta">Clippé par ${escapeHtml(c.creator || "?")} · ${Number(c.views || 0)} vue${c.views > 1 ? "s" : ""}</span>
+      </div>`;
+    el.addEventListener("click", () => window.anomia.openExternal(c.url));
+    grid.appendChild(el);
+  });
+  section.classList.remove("hidden");
+}
+
 async function loadStreamers() {
   if (streamersLoaded) return;
   streamersLoaded = true;
@@ -829,10 +989,13 @@ async function loadStreamers() {
   const result = await window.anomia.getTwitchStatus();
 
   if (!result.ok) {
-    grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Statut Twitch indisponible pour le moment.</p>`;
-    streamersLoaded = false; // permet de réessayer au prochain passage sur l'onglet
+    // Statut live indisponible (ex. serveur Anomia arrêté) : on affiche quand même les chaînes
+    grid.innerHTML = "";
+    (TWITCH.fallbackStreamers || []).forEach((s) => grid.appendChild(renderFallbackStreamerCard(s)));
+    streamersLoaded = false; // permet de réessayer au prochain passage sur l'accueil
     return;
   }
+  updateTwitchLiveBadge(result.streamers);
 
   grid.innerHTML = "";
   if (!result.streamers.length) {
@@ -1193,7 +1356,10 @@ async function tryUnlockAdmin() {
   document.getElementById("admin-overlay").classList.add("hidden");
 
   if (result.ok) {
-    isAdminUnlocked = true;
+    staffRole = result.role || "admin";
+    isAdminUnlocked = staffRole === "admin";
+    document.getElementById("admin-only-block").classList.toggle("hidden", !isAdminUnlocked);
+    document.getElementById("admin-title").textContent = isAdminUnlocked ? "Tableau de bord · Admin" : "Tableau de bord · Modération";
     document.getElementById("nav-admin").classList.remove("hidden");
     updateConnectButtonState();
     goToView("admin");
@@ -1207,6 +1373,59 @@ document.getElementById("admin-submit").addEventListener("click", tryUnlockAdmin
 document.getElementById("admin-passphrase").addEventListener("keydown", (e) => {
   if (e.key === "Enter") tryUnlockAdmin();
 });
+
+// --- Joueurs en ligne (staff) ---
+let staffPlayers = [];
+function pingClass(p) { return p < 80 ? "ping-good" : p < 150 ? "ping-mid" : "ping-bad"; }
+
+function renderStaffPlayers() {
+  const msg = document.getElementById("staff-players-msg");
+  const table = document.getElementById("staff-players-table");
+  const body = document.getElementById("staff-players-body");
+  const q = (document.getElementById("staff-players-search").value || "").trim().toLowerCase();
+  const rows = staffPlayers.filter((p) =>
+    !q || [p.id, p.name, p.character, p.job].some((v) => String(v == null ? "" : v).toLowerCase().includes(q)));
+  body.innerHTML = "";
+  if (!rows.length) {
+    table.classList.add("hidden");
+    msg.classList.remove("hidden");
+    msg.textContent = staffPlayers.length ? "Aucun joueur ne correspond à la recherche." : "Aucun joueur connecté.";
+    return;
+  }
+  msg.classList.add("hidden");
+  table.classList.remove("hidden");
+  rows.forEach((p) => {
+    const tr = document.createElement("tr");
+    const duty = p.onDuty === true ? " (en service)" : "";
+    tr.innerHTML = `<td>${Number(p.id)}</td><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.character || "—")}</td><td>${escapeHtml((p.job || "—") + duty)}</td><td class="${pingClass(p.ping)}">${Number(p.ping) || 0} ms</td>`;
+    body.appendChild(tr);
+  });
+}
+
+async function refreshStaffPlayers() {
+  const msg = document.getElementById("staff-players-msg");
+  let r;
+  try { r = await window.anomia.getStaffPlayers(); } catch (e) { r = { ok: false, error: "Erreur inconnue." }; }
+  const count = document.getElementById("staff-players-count");
+  if (!r || !r.ok) {
+    staffPlayers = [];
+    document.getElementById("staff-players-table").classList.add("hidden");
+    msg.classList.remove("hidden");
+    msg.textContent = (r && r.error) || "Liste indisponible.";
+    count.textContent = "";
+    return;
+  }
+  staffPlayers = r.players;
+  count.textContent = `(${r.players.length}${r.maxClients ? "/" + r.maxClients : ""})`;
+  renderStaffPlayers();
+}
+document.getElementById("staff-players-search").addEventListener("input", renderStaffPlayers);
+// Actualisation automatique toutes les 10 s tant que l'onglet staff est affiché
+setInterval(() => {
+  if (!staffRole) return;
+  const v = document.getElementById("view-admin");
+  if (v && !v.classList.contains("hidden")) refreshStaffPlayers();
+}, 10000);
 
 async function refreshAdminStats() {
   const stats = await window.anomia.getAdminStats();
@@ -1259,10 +1478,11 @@ document.getElementById("btn-toggle-maintenance").addEventListener("click", asyn
 });
 
 // --- Connexion Discord (pré-vérification avant de se connecter) ---
-let discordProfile = null;
+
 
 function renderDiscordSlot() {
   const slot = document.getElementById("discord-auth-slot");
+  loadHomeMe(); // le résumé de l'accueil suit l'état de connexion Discord
 
   if (!discordProfile) {
     slot.innerHTML = `
@@ -1338,17 +1558,30 @@ document.getElementById("settings-close").addEventListener("click", () => {
   document.getElementById("settings-overlay").classList.add("hidden");
 });
 
+document.getElementById("settings-diag").addEventListener("click", async () => {
+  const msg = document.getElementById("settings-diag-msg");
+  msg.textContent = "Création du rapport…";
+  try {
+    const r = await window.anomia.createDiagnosticReport();
+    msg.textContent = r && r.ok
+      ? "Rapport créé : le dossier s'est ouvert, envoie le .zip au staff."
+      : "Échec de la création du rapport.";
+  } catch (e) {
+    msg.textContent = "Échec de la création du rapport.";
+  }
+});
+
 document.getElementById("settings-replay-tour").addEventListener("click", () => {
   document.getElementById("settings-overlay").classList.add("hidden");
   onboardingStep = 0;
   showOnboardingStep();
 });
 
-document.getElementById("mode-switch").addEventListener("click", () => {
-  const current = document.getElementById("mode-switch").dataset.mode;
-  const next = current === "light" ? "dark" : "light";
-  applyMode(next);
-  window.anomia.setSettings({ mode: next });
+document.querySelectorAll(".bg-option").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    applyMode(btn.dataset.mode);
+    window.anomia.setSettings({ mode: btn.dataset.mode });
+  });
 });
 
 document.querySelectorAll(".accent-swatch").forEach((btn) => {
@@ -1515,8 +1748,178 @@ async function loadAchievements() {
     grid.appendChild(badge);
   });
   content.innerHTML = "";
+  const shareBtn = document.createElement("button");
+  shareBtn.className = "btn-copy btn-share-profile";
+  shareBtn.textContent = "📸 Partager mon profil";
+  shareBtn.addEventListener("click", () => openProfileCard(result));
+  content.appendChild(shareBtn);
   content.appendChild(grid);
 }
+
+// --- Carte de profil partageable (image PNG pour Discord) ---
+const RARITY_COLORS = { bronze: "#cd7f32", silver: "#c0c7d1", gold: "#facc15", secret: "#a855f7" };
+const RARITY_ORDER = { secret: 4, gold: 3, silver: 2, bronze: 1 };
+
+function loadImageSafe(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    if (/^https?:/.test(src)) img.crossOrigin = "anonymous"; // images distantes : nécessaire pour exporter le canvas
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function fitText(ctx, text, maxWidth) {
+  let t = String(text);
+  while (t.length > 1 && ctx.measureText(t).width > maxWidth) t = t.slice(0, -1);
+  return t === String(text) ? t : t.trimEnd() + "…";
+}
+
+async function drawProfileCard(result) {
+  const canvas = document.getElementById("profile-canvas");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  const accent = (getComputedStyle(document.documentElement).getPropertyValue("--teal") || "#8b5cf6").trim() || "#8b5cf6";
+
+  const list = result.list || [];
+  const unlockedDefs = list.filter((d) => result.achievements && result.achievements[d.key]);
+  const counts = { bronze: 0, silver: 0, gold: 0, secret: 0 };
+  unlockedDefs.forEach((d) => { counts[RARITY_COLORS[d.rarity] ? d.rarity : "bronze"]++; });
+  const top = [...unlockedDefs].sort((a, b) => (RARITY_ORDER[b.rarity] || 1) - (RARITY_ORDER[a.rarity] || 1)).slice(0, 8);
+
+  // Fond
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#0b0714"); bg.addColorStop(1, "#1b1033");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  const glow = ctx.createRadialGradient(W * 0.85, 0, 10, W * 0.85, 0, 520);
+  glow.addColorStop(0, accent + "55"); glow.addColorStop(1, "transparent");
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = accent; ctx.lineWidth = 4; roundRect(ctx, 14, 14, W - 28, H - 28, 22); ctx.stroke();
+
+  // Avatar
+  const avatarUrl = discordProfile && discordProfile.avatar ? discordProfile.avatar.replace("size=64", "size=256") : null;
+  const avatar = (avatarUrl && (await loadImageSafe(avatarUrl))) || (await loadImageSafe("../assets/logo.png"));
+  const ax = 70, ay = 70, ar = 90;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(ax + ar, ay + ar, ar, 0, Math.PI * 2); ctx.clip();
+  if (avatar) ctx.drawImage(avatar, ax, ay, ar * 2, ar * 2);
+  ctx.restore();
+  ctx.strokeStyle = accent; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.arc(ax + ar, ay + ar, ar, 0, Math.PI * 2); ctx.stroke();
+
+  // Nom + titre
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 54px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText(fitText(ctx, (discordProfile && discordProfile.username) || "Joueur", 640), 290, 130);
+  ctx.fillStyle = accent;
+  ctx.font = "600 26px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText("ANOMIA RP  ·  PROFIL JOUEUR", 292, 175);
+
+  // Stats
+  const hours = Math.floor((result.playtimeSeconds || 0) / 3600);
+  const stats = [
+    [hours > 0 ? `${hours} h` : "—", "TEMPS DE JEU"],
+    [`${unlockedDefs.length}/${list.length}`, "SUCCÈS"],
+    [`${counts.gold + counts.secret}`, "OR & SECRETS"]
+  ];
+  stats.forEach(([val, label], i) => {
+    const x = 290 + i * 250, y = 215;
+    ctx.fillStyle = "rgba(255,255,255,0.06)"; roundRect(ctx, x, y, 230, 96, 14); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = "800 40px 'Segoe UI', Arial, sans-serif"; ctx.fillText(val, x + 20, y + 52);
+    ctx.fillStyle = "#a99bc8"; ctx.font = "600 15px 'Segoe UI', Arial, sans-serif"; ctx.fillText(label, x + 20, y + 80);
+  });
+
+  // Raretés
+  ctx.font = "700 20px 'Segoe UI', Arial, sans-serif";
+  let rx = 70;
+  [["bronze", "Bronze"], ["silver", "Argent"], ["gold", "Or"], ["secret", "Secret"]].forEach(([k, label]) => {
+    ctx.fillStyle = RARITY_COLORS[k]; ctx.beginPath(); ctx.arc(rx + 9, 372, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#e8e0f5"; const t = `${label} ${counts[k]}`; ctx.fillText(t, rx + 26, 380);
+    rx += 26 + ctx.measureText(t).width + 34;
+  });
+
+  // Meilleurs succès
+  ctx.fillStyle = "#a99bc8"; ctx.font = "700 16px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText("MEILLEURS SUCCÈS", 70, 428);
+  if (!top.length) {
+    ctx.fillStyle = "#6f6390"; ctx.font = "500 22px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Aucun succès débloqué pour l'instant.", 70, 480);
+  }
+  top.forEach((d, i) => {
+    const col = i % 4, row = Math.floor(i / 4);
+    const x = 70 + col * 270, y = 445 + row * 88;
+    const rc = RARITY_COLORS[d.rarity] || RARITY_COLORS.bronze;
+    ctx.fillStyle = "rgba(255,255,255,0.06)"; roundRect(ctx, x, y, 254, 74, 12); ctx.fill();
+    ctx.strokeStyle = rc; ctx.lineWidth = 2; roundRect(ctx, x, y, 254, 74, 12); ctx.stroke();
+    ctx.font = "34px 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif";
+    ctx.fillStyle = "#fff"; ctx.fillText(ACHIEVEMENT_ICONS[d.key] || "🏆", x + 12, y + 50);
+    ctx.font = "700 17px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(fitText(ctx, d.label, 180), x + 62, y + 33);
+    ctx.fillStyle = rc; ctx.font = "600 14px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText((RARITY_LABELS[d.rarity] || "Bronze").toUpperCase(), x + 62, y + 55);
+  });
+
+  // Pied
+  ctx.fillStyle = "#8f82ad"; ctx.font = "600 18px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText("B2 LAUNCHER  ·  twitch.tv/b2obi64", 70, H - 36);
+  const dateStr = new Date().toLocaleDateString("fr-FR");
+  const dw = ctx.measureText(dateStr).width;
+  ctx.fillText(dateStr, W - 70 - dw, H - 36);
+}
+
+async function openProfileCard(result) {
+  const overlay = document.getElementById("profile-overlay");
+  const msg = document.getElementById("profile-msg");
+  msg.textContent = "Création de l'image…";
+  overlay.classList.remove("hidden");
+  try {
+    await drawProfileCard(result);
+    msg.textContent = "";
+  } catch (e) {
+    msg.textContent = "Impossible de générer l'image.";
+  }
+}
+
+function profileCanvasBlob() {
+  return new Promise((resolve) => document.getElementById("profile-canvas").toBlob(resolve, "image/png"));
+}
+
+document.getElementById("profile-close").addEventListener("click", () => {
+  document.getElementById("profile-overlay").classList.add("hidden");
+});
+document.getElementById("profile-copy").addEventListener("click", async () => {
+  const msg = document.getElementById("profile-msg");
+  try {
+    const blob = await profileCanvasBlob();
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    msg.textContent = "Image copiée : colle-la directement dans Discord (Ctrl+V).";
+  } catch (e) {
+    msg.textContent = "Copie impossible, utilise « Enregistrer en PNG ».";
+  }
+});
+document.getElementById("profile-save").addEventListener("click", async () => {
+  const msg = document.getElementById("profile-msg");
+  try {
+    const dataUrl = document.getElementById("profile-canvas").toDataURL("image/png");
+    const r = await window.anomia.saveImage(dataUrl, "profil-b2.png");
+    if (r && r.ok) msg.textContent = "Image enregistrée.";
+    else if (r && r.canceled) msg.textContent = "";
+    else msg.textContent = "Échec de l'enregistrement.";
+  } catch (e) {
+    msg.textContent = "Échec de l'enregistrement (image bloquée ?).";
+  }
+});
 
 // --- Compte à rebours du prochain redémarrage programmé ---
 let restartCountdownInterval = null;

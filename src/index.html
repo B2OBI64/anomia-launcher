@@ -152,6 +152,47 @@
           <button class="hub-arrow hub-next" id="hub-next" aria-label="Suivant">&#8250;</button>
           <div class="hub-dots" id="hub-dots"></div>
         </div>
+        <div class="twitch-panel" id="twitch-panel">
+          <img src="../assets/logo.png" alt="" class="twitch-panel-logo" />
+          <div class="twitch-panel-info">
+            <span class="hub-tag">// TWITCH</span>
+            <h2 id="twitch-panel-name">B2OBI64</h2>
+            <p id="twitch-panel-text">Retrouve les lives, les annonces et la communauté.</p>
+            <span class="twitch-live-badge hidden" id="twitch-live-badge"></span>
+          </div>
+          <div class="twitch-panel-actions">
+            <button class="hub-cta" id="twitch-watch">Regarder sur Twitch</button>
+            <button class="twitch-secondary" id="twitch-discord">Discord de la communauté</button>
+          </div>
+        </div>
+        <div class="home-me hidden" id="home-me">
+          <div class="home-me-head">
+            <div>
+              <span class="hub-tag">// MON RÉSUMÉ</span>
+              <h2 id="home-me-greeting">Salut !</h2>
+              <p id="home-me-sub"></p>
+            </div>
+            <button class="btn-copy" id="home-me-share">📸 Partager mon profil</button>
+          </div>
+          <div class="home-me-stats">
+            <div class="home-me-stat"><span class="home-me-val" id="home-me-playtime">—</span><span class="home-me-lbl">TEMPS DE JEU</span></div>
+            <div class="home-me-stat"><span class="home-me-val" id="home-me-ach">—</span><span class="home-me-lbl">SUCCÈS</span></div>
+            <div class="home-me-stat wide"><span class="home-me-val small" id="home-me-next">—</span><span class="home-me-lbl">PROCHAIN PALIER</span><div class="home-me-bar"><div id="home-me-bar-fill"></div></div></div>
+          </div>
+        </div>
+        <div id="discord-section" class="hidden">
+          <div class="section-header"><div><span class="section-eyebrow">// DISCORD</span><h2>Rejoindre la communauté</h2></div></div>
+          <div class="discord-grid" id="discord-grid"></div>
+        </div>
+        <div id="clips-section" class="hidden">
+          <div class="section-header">
+            <div>
+              <span class="section-eyebrow">// CLIPS</span>
+              <h2>Clips de la communauté</h2>
+            </div>
+          </div>
+          <div class="clip-grid" id="clip-grid"></div>
+        </div>
         <div class="section-header">
           <div>
             <span class="section-eyebrow">// LIVE</span>
@@ -169,9 +210,9 @@
           <img src="../assets/kannibaventure.png" alt="KannibAventure" class="kb-hero-logo" />
           <span class="kb-eyebrow">NOUVEAU SERVEUR MINECRAFT</span>
           <h1 class="kb-title">KannibAventure</h1>
-          <p class="kb-text">Une nouvelle aventure se prépare. Serveur Java avec mods et plugins. Reste connecté, les premières infos arrivent bientôt.</p>
+          <p class="kb-text">Une nouvelle aventure se prépare. Serveur Java avec mods et plugins. Ouverture prévue en décembre (date précise à venir). Reste connecté, les premières infos arrivent bientôt.</p>
           <div class="kb-actions">
-            <button class="btn-connect" id="kb-connect" disabled>Prochainement</button>
+            <button class="btn-connect" id="kb-connect" disabled>Décembre</button>
             <button class="kb-discord-btn" id="kb-discord">Rejoindre le Discord</button>
           </div>
         </div>
@@ -329,7 +370,7 @@
       <!-- VUE ADMIN (lecture seule, cachée par défaut) -->
       <section class="view hidden" id="view-admin">
         <span class="section-eyebrow">// STAFF</span>
-        <h1 class="view-title">Tableau de bord</h1>
+        <h1 class="view-title" id="admin-title">Tableau de bord</h1>
         <div class="telemetry-strip" style="margin-bottom:20px;">
           <div class="telemetry-item">
             <span class="telemetry-label">Joueurs</span>
@@ -344,6 +385,19 @@
             <span class="telemetry-value dim" id="admin-resources">—</span>
           </div>
         </div>
+        <div class="section-header">
+          <h2>Joueurs en ligne <span id="staff-players-count" style="color:var(--text-dim);font-size:14px;"></span></h2>
+          <input type="text" id="staff-players-search" class="map-search-input" placeholder="Rechercher un joueur, un ID, un métier…" style="max-width:280px;" />
+        </div>
+        <div class="assets-card glass" style="padding:0;overflow:hidden;">
+          <div id="staff-players-msg" style="padding:14px 18px;color:var(--text-dim);font-size:13px;">Chargement…</div>
+          <table class="staff-table hidden" id="staff-players-table">
+            <thead><tr><th>ID</th><th>Joueur</th><th>Personnage</th><th>Métier</th><th>Ping</th></tr></thead>
+            <tbody id="staff-players-body"></tbody>
+          </table>
+        </div>
+
+        <div id="admin-only-block" style="margin-top:26px;">
         <div class="assets-card glass">
           <p>Pour redémarrer le serveur ou consulter les logs en direct, utilise txAdmin — le launcher ne duplique pas volontairement ces actions sensibles pour ne pas exposer de accès destructeur dans une appli distribuée à tout le monde.</p>
           <button class="btn-copy hidden" id="btn-open-txadmin">Ouvrir txAdmin →</button>
@@ -356,9 +410,24 @@
           <p id="admin-maintenance-status">Statut actuel : —</p>
           <button class="btn-connect" id="btn-toggle-maintenance">Activer la maintenance</button>
         </div>
+        </div>
       </section>
 
     </main>
+  </div>
+
+  <!-- Carte de profil partageable -->
+  <div class="modal-overlay hidden" id="profile-overlay">
+    <div class="modal-box glass" style="max-width:760px;width:92vw;">
+      <h3>Ton profil B2</h3>
+      <canvas id="profile-canvas" width="1200" height="675" style="width:100%;border-radius:8px;border:1px solid var(--border-strong);"></canvas>
+      <p id="profile-msg" style="font-size:12px;color:var(--text-dim);margin:8px 0 0;min-height:16px;"></p>
+      <div class="modal-actions">
+        <button class="btn-copy" id="profile-close">Fermer</button>
+        <button class="btn-copy" id="profile-copy">Copier l'image</button>
+        <button class="btn-connect" id="profile-save">Enregistrer en PNG</button>
+      </div>
+    </div>
   </div>
 
   <!-- Modale de confirmation custom -->
@@ -418,32 +487,37 @@
       <h3>Réglages</h3>
 
       <div class="settings-section">
-        <span class="settings-label">Mode</span>
-        <button class="mode-switch" id="mode-switch" data-mode="dark" aria-label="Basculer entre mode sombre et clair">
-          <span class="mode-switch-icon mode-switch-icon-moon">🌙</span>
-          <span class="mode-switch-icon mode-switch-icon-sun">☀️</span>
-          <span class="mode-switch-thumb"></span>
-        </button>
+        <span class="settings-label">Fond</span>
+        <div class="bg-options" id="bg-options">
+          <button class="bg-option" data-mode="dark" title="Noir violet"><span class="bg-preview bg-preview-dark"></span><span>Noir violet</span></button>
+          <button class="bg-option" data-mode="light" title="Blanc"><span class="bg-preview bg-preview-light"></span><span>Blanc</span></button>
+        </div>
       </div>
 
       <div class="settings-section">
         <span class="settings-label">Couleur d'accent</span>
         <div class="accent-options">
+          <button class="accent-swatch" data-color="#8b5cf6" style="background:#8b5cf6;" title="Violet B2"></button>
           <button class="accent-swatch" data-color="#2dd4bf" style="background:#2dd4bf;" title="Teal"></button>
-          <button class="accent-swatch" data-color="#8b7cf6" style="background:#8b7cf6;" title="Violet"></button>
           <button class="accent-swatch" data-color="#f2b84b" style="background:#f2b84b;" title="Ambre"></button>
           <button class="accent-swatch" data-color="#4f9dff" style="background:#4f9dff;" title="Bleu"></button>
         </div>
         <span class="settings-sublabel">Personnalisée</span>
         <div class="color-picker-row">
-          <input type="color" id="color-picker" value="#2dd4bf" />
-          <span class="color-picker-hex" id="color-picker-hex">#2DD4BF</span>
+          <input type="color" id="color-picker" value="#8b5cf6" />
+          <span class="color-picker-hex" id="color-picker-hex">#8B5CF6</span>
         </div>
       </div>
 
       <div class="settings-section">
         <span class="settings-label">Tour guidé</span>
         <button class="btn-copy" id="settings-replay-tour" style="width:100%;">Revoir le tour guidé</button>
+      </div>
+
+      <div class="settings-section">
+        <span class="settings-label">Un problème avec le launcher ?</span>
+        <button class="btn-copy" id="settings-diag" style="width:100%;">Créer un rapport d'erreur</button>
+        <p class="settings-hint" id="settings-diag-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);">Crée un .zip (sans mot de passe) à envoyer au staff.</p>
       </div>
 
       <div class="modal-actions">
