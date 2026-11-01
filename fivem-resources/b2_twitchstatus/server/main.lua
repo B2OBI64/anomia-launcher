@@ -94,6 +94,7 @@ local function fetchTwitchData(cfg, token, cb)
                         liveByChannel[stream.user_login:lower()] = {
                             viewers = stream.viewer_count or 0,
                             title = stream.title or "",
+                            game = stream.game_name or "",
                             -- Twitch fournit un gabarit avec {width}x{height} à remplacer
                             thumbnailUrl = stream.thumbnail_url
                                 and stream.thumbnail_url:gsub("{width}", "440"):gsub("{height}", "248")
@@ -131,6 +132,7 @@ local function fetchTwitchData(cfg, token, cb)
                             live = liveInfo ~= nil,
                             viewers = liveInfo and liveInfo.viewers or 0,
                             title = liveInfo and liveInfo.title or "",
+                            game = liveInfo and liveInfo.game or "",
                             thumbnailUrl = liveInfo and liveInfo.thumbnailUrl or nil
                         })
                     end

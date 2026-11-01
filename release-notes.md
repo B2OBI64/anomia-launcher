@@ -10,11 +10,12 @@ Refonte complète
 - Les streamers de la communauté sont désormais sur l'accueil.
 - L'accueil présente ta chaîne Twitch B2OBI64 avec un accès direct au live et au Discord.
 - Nouvelle section « Clips de la communauté » sur l'accueil : les clips Twitch faits par les viewers, un clic pour les regarder.
+- Profil joueur : clique sur ton avatar Discord pour ouvrir ton profil (temps de jeu, succès, raretés). Il reste ouvert jusqu'à ce que tu recliques dessus. Tu peux choisir 3 succès à mettre en avant, faire une capture de ton profil et te déconnecter. Le pseudo vient directement de Discord.
+- Streamers : le streamer en live apparaît à la place de la chaîne B2OBI64 quand elle est hors ligne, avec les viewers et la catégorie. Clique sur un streamer pour l'afficher et le regarder.
 - Accueil personnalisé : message de bienvenue (avec une surprise le jour de l'anniversaire d'Anomia), résumé de ton temps de jeu et de tes succès, et ton prochain palier.
 - Accueil : cartes Discord de chaque serveur avec le nombre de membres en ligne et un bouton pour rejoindre.
-- Succès : nouveau bouton « Partager mon profil » qui crée une carte image (temps de jeu, succès, raretés) à copier dans Discord ou à enregistrer.
 - Version staff : les modérateurs et admins ont un onglet avec la liste des joueurs en ligne (ID, personnage, métier, ping) mise à jour automatiquement.
-- Réglages : choix du fond entre Noir violet et Blanc.
+- Réglages : nouveau sélecteur de fond « verre liquide » : soleil (Blanc), lune (Noir violet) ou automatique (suit le thème de Windows).
 - L'écran de démarrage (vérification des mises à jour) affiche maintenant B2 Launcher.
 - Ton compte Discord, tes réglages et ton temps de jeu sont conservés.
 

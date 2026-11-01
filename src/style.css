@@ -1975,3 +1975,68 @@ body::before {
 .discord-counts { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--text-dim); min-height: 32px; }
 .discord-online { color: #4ade80; display: flex; align-items: center; gap: 6px; font-weight: 600; }
 .discord-online i { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; display: inline-block; }
+
+/* Sélecteur de fond « verre liquide » (soleil / lune / auto) */
+.glass-switch { --i: 1; position: relative; display: inline-grid; grid-template-columns: repeat(3, 64px); padding: 5px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); border: 1px solid var(--border-strong);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.06); }
+.gs-thumb { position: absolute; top: 5px; left: 5px; width: 64px; height: calc(100% - 10px); border-radius: 999px;
+  transform: translateX(calc(var(--i) * 64px));
+  transition: transform .45s cubic-bezier(.34, 1.4, .5, 1);
+  background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.08));
+  backdrop-filter: blur(6px) saturate(1.6); -webkit-backdrop-filter: blur(6px) saturate(1.6);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.55), inset 0 -2px 6px color-mix(in srgb, var(--teal) 35%, transparent), 0 4px 14px color-mix(in srgb, var(--teal) 35%, rgba(0,0,0,.4)); }
+.glass-switch.moving .gs-thumb { animation: gs-stretch .45s ease; }
+@keyframes gs-stretch { 0% { scale: 1 1; } 35% { scale: 1.22 .9; } 100% { scale: 1 1; } }
+.gs-btn { position: relative; z-index: 1; height: 42px; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; border-radius: 999px; color: var(--text-dim); cursor: pointer; transition: color .25s, transform .2s; }
+.gs-btn svg { width: 22px; height: 22px; }
+.gs-btn:hover { color: var(--text); }
+.gs-btn:active { transform: scale(.92); }
+.gs-btn.active { color: var(--teal); }
+.gs-caption { display: block; margin-top: 8px; font-size: 12px; color: var(--text-dim); }
+:root[data-mode="light"] .glass-switch { background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.02)); box-shadow: inset 0 2px 6px rgba(0,0,0,.12); }
+:root[data-mode="light"] .gs-thumb { background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.6)); box-shadow: inset 0 1px 1px #fff, 0 3px 10px rgba(0,0,0,.18); }
+@media (prefers-reduced-motion: reduce) { .gs-thumb, .glass-switch.moving .gs-thumb { transition: none; animation: none; } }
+
+/* Streamer sélectionné + catégorie */
+.streamer-card.selected { border-color: var(--teal); box-shadow: 0 0 16px var(--teal-glow); }
+.streamer-game { font-size: 11px; color: var(--text-dim); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.section-hint { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); }
+
+/* Bouton avatar Discord + panneau de profil */
+button.discord-profile { background: transparent; border: 0; padding: 0; cursor: pointer; }
+button.discord-profile:hover .discord-profile-avatar { box-shadow: 0 0 0 2px var(--teal); }
+button.discord-profile[aria-expanded="true"] .discord-profile-avatar { box-shadow: 0 0 0 2px var(--teal), 0 0 14px var(--teal-glow); }
+.profile-panel { position: fixed; top: 128px; right: 18px; width: 340px; max-height: calc(100vh - 150px); overflow-y: auto; z-index: 45;
+  padding: 18px; background: var(--panel-solid); border: 1px solid var(--border-strong); border-radius: 10px; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
+.pp-head { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+.pp-head img { width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--teal); object-fit: cover; }
+.pp-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pp-name { font-size: 20px; font-weight: 800; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp-title { font-size: 12px; color: var(--teal); font-weight: 600; }
+.pp-title:empty { display: none; }
+.pp-sub { font-size: 11px; color: var(--text-dim); }
+.pp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.pp-stats > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: color-mix(in srgb, var(--teal) 8%, transparent); border-radius: 6px; }
+.pp-stats b { font-size: 18px; color: var(--text); }
+.pp-stats span { font-size: 9px; letter-spacing: .08em; color: var(--text-dim); }
+.pp-rarity { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-dim); margin-bottom: 14px; }
+.pp-rarity i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+.pp-showcase-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; letter-spacing: .1em; color: var(--text-dim); margin-bottom: 8px; }
+.pp-link { background: none; border: 0; color: var(--teal); cursor: pointer; font-size: 12px; }
+.pp-showcase { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.pp-ach { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: rgba(255,255,255,.04); }
+.pp-ach.rarity-bronze { border-color: #cd7f32; } .pp-ach.rarity-silver { border-color: #c0c7d1; } .pp-ach.rarity-gold { border-color: #facc15; } .pp-ach.rarity-secret { border-color: #a855f7; }
+.pp-ach-icon { font-size: 22px; } .pp-ach-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); } .pp-ach-r { font-size: 10px; color: var(--text-dim); text-transform: uppercase; }
+.pp-empty { font-size: 12px; color: var(--text-dim); margin: 0; }
+.pp-editor { margin-bottom: 12px; padding: 10px; border: 1px dashed var(--border-strong); border-radius: 8px; }
+.pp-editor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; max-height: 190px; overflow-y: auto; }
+.pp-pick { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); cursor: pointer; text-align: left; font-size: 12px; }
+.pp-pick em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp-pick.on { border-color: var(--teal); color: var(--text); background: color-mix(in srgb, var(--teal) 16%, transparent); }
+.pp-editor-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: var(--text-dim); }
+.pp-msg { font-size: 12px; color: var(--text-dim); margin: 0 0 10px; }
+.pp-msg:empty { display: none; }
+.pp-actions { display: flex; flex-direction: column; gap: 8px; }
+.pp-actions .btn-copy { width: 100%; }
+.pp-danger { color: #f87171; border-color: rgba(248,113,113,.4); }
