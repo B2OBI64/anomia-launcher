@@ -1,5 +1,10 @@
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const path = require("path");
+
+// B2 Launcher : le produit a été renommé (avant : "Anomia Launcher"). On garde l'ancien
+// dossier de données pour que les joueurs ne perdent ni leur connexion Discord, ni leurs
+// réglages, ni leur temps de jeu après la mise à jour.
+app.setPath("userData", path.join(app.getPath("appData"), "Anomia Launcher"));
 const fs = require("fs");
 const https = require("https");
 const http = require("http");
@@ -129,7 +134,8 @@ function createWindow() {
     height: 700,
     minWidth: 980,
     minHeight: 620,
-    frame: false, // titlebar custom (style Anomia)
+    frame: false, // titlebar custom (style B2 Launcher)
+    icon: path.join(__dirname, "assets", "icon.png"),
     backgroundColor: "#0a1416",
     show: false,
     webPreferences: {
@@ -1242,6 +1248,183 @@ ipcMain.handle("rules:get", async () => {
     }
   }
   return content;
+});
+
+// --- B2 Launcher : liste des serveurs + contenu des pages KannibAventure ---
+ipcMain.handle("servers:get", () => ({ servers: config.servers || [], hub: config.hub || { slides: [] } }));
+
+ipcMain.handle("kb:getContent", async (_event, name) => {
+  const files = (config.kannibaventure && config.kannibaventure.files) || {};
+  const fileName = files[name]; // seuls les noms déclarés dans la config sont autorisés
+  if (!fileName) return null;
+  const readLocal = () => {
+    try { return JSON.parse(fs.readFileSync(path.join(__dirname, "src", fileName), "utf-8")); }
+    catch { return null; }
+  };
+  try {
+    const remote = await fetchJson(config.kannibaventure.remoteBase + fileName);
+    if (remote) return remote;
+  } catch {
+    // on retombe sur le fichier local
+  }
+  return readLocal();
+});
+
+// --- KannibAventure : installateur de mods ---
+const kbModsStatePath = () => path.join(app.getPath("userData"), "kb-mods-state.json");
+
+function readKbModsState() {
+  try { return JSON.parse(fs.readFileSync(kbModsStatePath(), "utf-8")); } catch { return {}; }
+}
+function writeKbModsState(state) {
+  try { fs.writeFileSync(kbModsStatePath(), JSON.stringify(state, null, 2)); } catch { /* non bloquant */ }
+}
+function defaultMinecraftModsFolder() {
+  return path.join(app.getPath("appData"), ".minecraft", "mods");
+}
+
+async function loadKbModsManifest() {
+  const fileName = config.kannibaventure.files.mods;
+  try {
+    const remote = await fetchJson(config.kannibaventure.remoteBase + fileName);
+    if (remote && Array.isArray(remote.mods)) return remote;
+  } catch { /* fichier local ci-dessous */ }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, "src", fileName), "utf-8")); }
+  catch { return { minecraft: null, loader: null, mods: [] }; }
+}
+
+// Un nom de fichier de mod doit être un simple nom .jar (jamais un chemin) et une URL https.
+function isSafeMod(mod) {
+  return mod && typeof mod.file === "string" && /^[\w.\-+() ]+\.jar$/i.test(mod.file) &&
+    typeof mod.url === "string" && mod.url.startsWith("https://") &&
+    typeof mod.sha256 === "string" && /^[a-f0-9]{64}$/i.test(mod.sha256);
+}
+
+function sha256File(filePath) {
+  return new Promise((resolve) => {
+    const hash = crypto.createHash("sha256");
+    const stream = fs.createReadStream(filePath);
+    stream.on("data", (d) => hash.update(d));
+    stream.on("end", () => resolve(hash.digest("hex")));
+    stream.on("error", () => resolve(null));
+  });
+}
+
+function downloadWithRedirects(url, destPath, onChunk, redirects = 0) {
+  return new Promise((resolve, reject) => {
+    if (redirects > 5) return reject(new Error("trop de redirections"));
+    if (!url.startsWith("https://")) return reject(new Error("URL non sécurisée"));
+    const req = https.get(url, { headers: { "User-Agent": "B2Launcher/1.5" } }, (res) => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+        res.resume();
+        const next = new URL(res.headers.location, url).toString();
+        return downloadWithRedirects(next, destPath, onChunk, redirects + 1).then(resolve, reject);
+      }
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        res.resume();
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+      const tmp = destPath + ".part";
+      const out = fs.createWriteStream(tmp);
+      res.on("data", (chunk) => onChunk && onChunk(chunk.length));
+      res.pipe(out);
+      out.on("finish", () => out.close(() => fs.rename(tmp, destPath, (e) => (e ? reject(e) : resolve()))));
+      out.on("error", (e) => { fs.unlink(tmp, () => {}); reject(e); });
+    });
+    req.on("error", reject);
+    req.setTimeout(30000, () => req.destroy(new Error("timeout")));
+  });
+}
+
+async function computeKbModsStatus() {
+  const manifest = await loadKbModsManifest();
+  const state = readKbModsState();
+  const folder = state.folder || defaultMinecraftModsFolder();
+  const folderExists = fs.existsSync(folder);
+  const mods = [];
+  for (const mod of manifest.mods || []) {
+    if (!isSafeMod(mod)) continue;
+    let status = "missing";
+    const target = path.join(folder, mod.file);
+    if (folderExists && fs.existsSync(target)) {
+      const hash = await sha256File(target);
+      status = hash && hash.toLowerCase() === mod.sha256.toLowerCase() ? "ok" : "outdated";
+    }
+    mods.push({ name: mod.name || mod.file, file: mod.file, size: mod.size || 0, status });
+  }
+  return {
+    minecraft: manifest.minecraft || null,
+    loader: manifest.loader || null,
+    loaderVersion: manifest.loaderVersion || null,
+    notes: manifest.notes || "",
+    folder,
+    folderExists,
+    mods
+  };
+}
+
+ipcMain.handle("kbmods:getState", () => computeKbModsStatus());
+
+ipcMain.handle("kbmods:chooseFolder", async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Choisis le dossier mods de Minecraft",
+    defaultPath: path.dirname(defaultMinecraftModsFolder()),
+    properties: ["openDirectory", "createDirectory"]
+  });
+  if (result.canceled || !result.filePaths[0]) return { ok: false };
+  const state = readKbModsState();
+  state.folder = result.filePaths[0];
+  writeKbModsState(state);
+  return { ok: true };
+});
+
+ipcMain.handle("kbmods:install", async (event) => {
+  const manifest = await loadKbModsManifest();
+  const state = readKbModsState();
+  const folder = state.folder || defaultMinecraftModsFolder();
+  const wanted = (manifest.mods || []).filter(isSafeMod);
+  if (!wanted.length) return { ok: false, error: "Aucun mod à installer pour le moment." };
+
+  try { fs.mkdirSync(folder, { recursive: true }); } catch (e) { return { ok: false, error: `Dossier inaccessible : ${e.message}` }; }
+
+  // On ne télécharge que ce qui manque ou ne correspond plus à l'empreinte attendue
+  const todo = [];
+  for (const mod of wanted) {
+    const target = path.join(folder, mod.file);
+    const hash = fs.existsSync(target) ? await sha256File(target) : null;
+    if (!hash || hash.toLowerCase() !== mod.sha256.toLowerCase()) todo.push(mod);
+  }
+
+  let done = 0;
+  for (const mod of todo) {
+    const target = path.join(folder, mod.file);
+    event.sender.send("kbmods:progress", { file: mod.name || mod.file, done, total: todo.length });
+    try {
+      await downloadWithRedirects(mod.url, target);
+      const hash = await sha256File(target);
+      if (!hash || hash.toLowerCase() !== mod.sha256.toLowerCase()) {
+        fs.unlink(target, () => {});
+        return { ok: false, error: `Fichier corrompu ou modifié : ${mod.file} (empreinte différente).` };
+      }
+    } catch (e) {
+      return { ok: false, error: `Échec du téléchargement de ${mod.file} : ${e.message}` };
+    }
+    done++;
+  }
+
+  // Retire uniquement les anciens mods que CE launcher avait installés et qui ne sont plus dans la liste
+  const wantedFiles = new Set(wanted.map((m) => m.file));
+  const removed = [];
+  for (const oldFile of state.installed || []) {
+    if (!wantedFiles.has(oldFile) && /^[\w.\-+() ]+\.jar$/i.test(oldFile)) {
+      try { fs.unlinkSync(path.join(folder, oldFile)); removed.push(oldFile); } catch { /* déjà absent */ }
+    }
+  }
+  state.installed = Array.from(wantedFiles);
+  writeKbModsState(state);
+
+  event.sender.send("kbmods:progress", { file: "", done: todo.length, total: todo.length });
+  return { ok: true, downloaded: todo.length, removed: removed.length, upToDate: wanted.length - todo.length };
 });
 
 ipcMain.handle("map:getPoints", async () => {

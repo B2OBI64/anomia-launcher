@@ -127,7 +127,7 @@ local function checkAchievements(citizenid, cb)
     -- colonne comme repli (on prend la plus grande des deux valeurs).
     exports.oxmysql:execute(
         "SELECT COUNT(*) as cnt, COALESCE(SUM(drivingdistance),0) as totalDistance, " ..
-        "COALESCE(SUM((SELECT o.km FROM b2_hud_odometer o WHERE o.plate = REPLACE(UPPER(pv.plate), ' ', '') LIMIT 1)),0) as hudKm " ..
+        "COALESCE(SUM((SELECT o.km FROM b2_hud_odometer o WHERE o.plate COLLATE utf8mb4_general_ci = REPLACE(UPPER(pv.plate), ' ', '') COLLATE utf8mb4_general_ci LIMIT 1)),0) as hudKm " ..
         "FROM player_vehicles pv WHERE pv.citizenid = ?",
         { citizenid },
         function(rows)

@@ -1,16 +1,29 @@
-Correctifs et nouveautés
+Nouveau : B2 LAUNCHER (v1.5.0)
 
-Succès
-- Correction des succès « Parcourir 100 / 500 / 1000 km » : ils comptent désormais le kilométrage réel de tes véhicules (compteur du HUD).
-- Nouveau système de rareté : chaque succès est Bronze, Argent ou Or, et les succès secrets passent en violet une fois débloqués.
-- Nouveau succès : « Premier K.O. »
-- Nouveau succès : « Entre la vie et la mort » (premier coma)
-- Nouveau succès : « Bon contribuable » (payer sa première facture)
-- Nouveaux succès Or : « Légende vivante » (1 000 h), « Tour du monde » (10 000 km) et « Fidèle au poste » (30 jours de connexion d'affilée).
-- Nouveau succès secret lié à l'anniversaire du serveur.
-- Correction d'un cas où le temps de jeu pouvait ne pas être pris en compte dans les succès.
+Le launcher change de nom et devient le B2 Launcher : un seul launcher pour tous les serveurs de la communauté B2.
 
-Serveur
-- Le temps de jeu est enregistré plus efficacement (fin des ralentissements ponctuels).
+Refonte complète
+- Nouveau nom et nouveau logo : B2 Launcher.
+- Les serveurs sont maintenant en haut du launcher, représentés par leur logo cliquable : Accueil, Anomia RP et KannibAventure.
+- Chaque serveur a ses propres onglets (actualités, succès, règlement, carte...).
+- Nouvel accueil avec un slider animé qui présente les serveurs.
+- Les streamers de la communauté sont désormais sur l'accueil.
+- Ton compte Discord, tes réglages et ton temps de jeu sont conservés.
 
-Bon jeu sur Anomia !
+Anomia RP
+- Le serveur est en pause et revient en 2027 : le bouton de connexion est grisé et affiche 2027.
+- Tes succès, le règlement, la carte et le staff restent consultables.
+
+KannibAventure (nouveau serveur Minecraft)
+- Première page de présentation du serveur : Minecraft Java avec mods et plugins.
+- Journal de développement, règlement et FAQ pour suivre l'avancement.
+- Onglet Fichiers : un installateur de mods qui télécharge et met à jour les mods du serveur en vérifiant leur intégrité.
+- Onglet Carte : une carte du monde qui se dévoile au fil de l'exploration (carte globale de la communauté ou carte personnelle), disponible à l'ouverture.
+- Le serveur n'est pas encore ouvert : le bouton de connexion est grisé en attendant.
+
+Succès (Anomia)
+- Correction des succès de kilomètres (100 / 500 / 1000 km).
+- Nouveau système de rareté : Bronze, Argent, Or, et violet pour les succès secrets.
+- Nouveaux succès : Premier K.O., Entre la vie et la mort, Bon contribuable, Légende vivante, Tour du monde, Fidèle au poste et un succès secret d'anniversaire.
+
+Bon jeu à tous !

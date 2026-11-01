@@ -6,6 +6,18 @@ contextBridge.exposeInMainWorld("anomia", {
   maximize: () => ipcRenderer.send("window:maximize"),
   close: () => ipcRenderer.send("window:close"),
 
+  // B2 Launcher : serveurs et contenu KannibAventure
+  getServers: () => ipcRenderer.invoke("servers:get"),
+  getKbContent: (name) => ipcRenderer.invoke("kb:getContent", name),
+
+  getKbModsState: () => ipcRenderer.invoke("kbmods:getState"),
+  chooseKbModsFolder: () => ipcRenderer.invoke("kbmods:chooseFolder"),
+  installKbMods: () => ipcRenderer.invoke("kbmods:install"),
+  onKbModsProgress: (callback) => {
+    ipcRenderer.removeAllListeners("kbmods:progress");
+    ipcRenderer.on("kbmods:progress", (event, payload) => callback(payload));
+  },
+
   // Serveur
   getServerStatus: () => ipcRenderer.invoke("server:status"),
   connect: () => ipcRenderer.send("server:connect"),

@@ -1,9 +1,87 @@
 // ============================================================
-// ANOMIA LAUNCHER - CONFIGURATION
+// B2 LAUNCHER - CONFIGURATION
 // Modifie uniquement ce fichier pour adapter le launcher.
 // ============================================================
 
 module.exports = {
+  // ============================================================
+  // B2 LAUNCHER : liste des serveurs de jeu affichés en haut du launcher.
+  // Chaque serveur a son logo, sa couleur, son statut et ses onglets.
+  //   status : "online" (jouable) | "paused" (en pause, bouton grisé) | "soon" (teaser)
+  //   connectLabel : texte du bouton grisé (ex. "2027")
+  //   tabs : onglets affichés pour ce serveur (view = id de la section dans index.html)
+  // ============================================================
+  servers: [
+    {
+      id: "anomia",
+      name: "Anomia RP",
+      game: "GTA V · FiveM",
+      logo: "../assets/anomia-logo.png",
+      color: "#2dd4bf",
+      status: "paused",
+      connectLabel: "2027",
+      discordInvite: "https://discord.gg/ECBhuTMw7n",
+      tabs: [
+        { view: "home", label: "Accueil" },
+        { view: "news", label: "Actualités" },
+        { view: "media", label: "Média" },
+        { view: "staff", label: "Staff" },
+        { view: "achievements", label: "Succès" },
+        { view: "rules", label: "Règlement" },
+        { view: "map", label: "Carte" },
+        { view: "assets", label: "Fichiers" }
+      ]
+    },
+    {
+      id: "kannibaventure",
+      name: "KannibAventure",
+      game: "Minecraft · Java (mods + plugins)",
+      logo: "../assets/kannibaventure.png",
+      color: "#a855f7",
+      status: "soon",
+      connectLabel: "Prochainement",
+      // Discord du serveur Minecraft (le rôle d'accès sera renseigné plus tard) :
+      discordInvite: "https://discord.gg/fdSjJPRJy4",
+      discordGuildId: "1357757210272469212",
+      requiredRoleId: null,
+      tabs: [
+        { view: "kb-home", label: "Accueil" },
+        { view: "kb-devlog", label: "Journal de dev" },
+        { view: "kb-map", label: "Carte" },
+        { view: "kb-files", label: "Fichiers" },
+        { view: "kb-rules", label: "Règlement" },
+        { view: "kb-faq", label: "FAQ" }
+      ]
+    }
+  ],
+
+  // --- Accueil global : slider de présentation des serveurs ---
+  hub: {
+    slides: [
+      {
+        serverId: "kannibaventure",
+        tag: "NOUVEAU SERVEUR MINECRAFT",
+        title: "KannibAventure",
+        text: "Une nouvelle aventure se prépare. Suis le journal de développement pour ne rien manquer.",
+        button: "Découvrir"
+      },
+      {
+        serverId: "anomia",
+        tag: "SERVEUR RP · GTA V",
+        title: "Anomia RP",
+        text: "Le serveur fait une pause et revient en 2027. Tes succès et le règlement restent consultables.",
+        button: "Voir Anomia"
+      }
+    ],
+    slideIntervalMs: 6500
+  },
+
+  // --- Contenu des pages KannibAventure (modifiable sur GitHub sans republier) ---
+  kannibaventure: {
+    remoteBase: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/src/",
+    files: { devlog: "kb-devlog.json", faq: "kb-faq.json", rules: "kb-rules.json", mods: "kb-mods.json" }
+  },
+
   // --- Connexion serveur FiveM ---
   server: {
     ip: "185.44.80.32",

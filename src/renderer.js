@@ -63,12 +63,18 @@ window.anomia.getAppVersion().then((v) => {
   document.getElementById("app-version").textContent = `v${v}`;
 });
 
-// --- Navigation entre vues ---
-const navItems = document.querySelectorAll(".nav-item");
+// --- Navigation : barre des serveurs (haut) + onglets du serveur sélectionné ---
 const views = document.querySelectorAll(".view");
+let SERVERS = [];
+let HUB = { slides: [], slideIntervalMs: 6500 };
+let currentServerId = "hub";
+
+function getServer(id) {
+  return SERVERS.find((s) => s.id === id) || null;
+}
 
 function goToView(name) {
-  navItems.forEach((btn) => btn.classList.toggle("active", btn.dataset.view === name));
+  document.querySelectorAll(".tab-item").forEach((btn) => btn.classList.toggle("active", btn.dataset.view === name));
   views.forEach((v) => {
     const shouldShow = v.id === `view-${name}`;
     v.classList.toggle("hidden", !shouldShow);
@@ -79,20 +85,359 @@ function goToView(name) {
       v.classList.add("view-entering");
     }
   });
-  if (name === "twitch") loadStreamers();
+  if (name === "hub") { loadStreamers(); startHubSlider(); } else { stopHubSlider(); }
   if (name === "staff") loadStaff();
   if (name === "achievements") loadAchievements();
   if (name === "rules") loadRules();
   if (name === "map") loadMap();
   if (name === "media") loadMedia();
   if (name === "admin") refreshAdminStats();
+  if (name === "kb-devlog") loadKbDevlog();
+  if (name === "kb-rules") loadKbRules();
+  if (name === "kb-faq") loadKbFaq();
+  if (name === "kb-files") refreshKbFiles();
+  if (name === "kb-map") initKbMap();
 }
 
-navItems.forEach((btn) => {
-  btn.addEventListener("click", () => goToView(btn.dataset.view));
-});
+function selectServer(id) {
+  currentServerId = id;
+  document.querySelectorAll(".server-btn").forEach((b) => b.classList.toggle("active", b.dataset.server === id));
+
+  const tabbar = document.getElementById("tabbar");
+  const navAdmin = document.getElementById("nav-admin");
+
+  if (id === "hub") {
+    tabbar.classList.add("hidden");
+    navAdmin.style.display = "none";
+    goToView("hub");
+    return;
+  }
+
+  const server = getServer(id);
+  if (!server) return;
+  tabbar.classList.remove("hidden");
+  tabbar.style.setProperty("--server-color", server.color || "var(--teal)");
+  document.getElementById("tabbar-server").textContent = server.name.toUpperCase();
+
+  const tabsEl = document.getElementById("tabbar-tabs");
+  tabsEl.innerHTML = "";
+  (server.tabs || []).forEach((tab) => {
+    const btn = document.createElement("button");
+    btn.className = "tab-item";
+    btn.dataset.view = tab.view;
+    btn.textContent = tab.label;
+    btn.addEventListener("click", () => goToView(tab.view));
+    tabsEl.appendChild(btn);
+  });
+  // L'onglet Admin n'existe que pour Anomia (il reste masqué tant que le code staff n'est pas saisi)
+  navAdmin.style.display = id === "anomia" ? "" : "none";
+
+  const first = (server.tabs || [])[0];
+  if (first) goToView(first.view);
+}
+
+document.getElementById("nav-admin").addEventListener("click", () => goToView("admin"));
 document.querySelectorAll("[data-goto]").forEach((btn) => {
   btn.addEventListener("click", () => goToView(btn.dataset.goto));
+});
+
+function renderServerBar() {
+  const bar = document.getElementById("server-bar");
+  bar.innerHTML = `
+    <button class="server-btn" data-server="hub" title="Accueil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+    </button>
+    <span class="server-sep"></span>
+  `;
+  SERVERS.forEach((srv) => {
+    const btn = document.createElement("button");
+    btn.className = `server-btn server-logo status-${srv.status || "online"}`;
+    btn.dataset.server = srv.id;
+    btn.title = srv.name;
+    btn.style.setProperty("--server-color", srv.color || "var(--teal)");
+    btn.innerHTML = `<img src="${srv.logo}" alt="${escapeHtml(srv.name)}" />`;
+    bar.appendChild(btn);
+  });
+  bar.querySelectorAll(".server-btn").forEach((b) => {
+    b.addEventListener("click", () => selectServer(b.dataset.server));
+  });
+}
+
+// --- Slider de l'accueil ---
+let hubIndex = 0;
+let hubTimer = null;
+
+function renderHubSlider() {
+  const slidesEl = document.getElementById("hub-slides");
+  const dotsEl = document.getElementById("hub-dots");
+  slidesEl.innerHTML = "";
+  dotsEl.innerHTML = "";
+  (HUB.slides || []).forEach((slide, i) => {
+    const srv = getServer(slide.serverId);
+    const el = document.createElement("div");
+    el.className = "hub-slide";
+    el.style.setProperty("--server-color", (srv && srv.color) || "var(--teal)");
+    el.innerHTML = `
+      <div class="hub-slide-text">
+        <span class="hub-tag">${escapeHtml(slide.tag || "")}</span>
+        <h2>${escapeHtml(slide.title || (srv && srv.name) || "")}</h2>
+        <p>${escapeHtml(slide.text || "")}</p>
+        <button class="hub-cta">${escapeHtml(slide.button || "Voir")}</button>
+      </div>
+      ${srv ? `<img class="hub-slide-logo" src="${srv.logo}" alt="" />` : ""}
+    `;
+    el.querySelector(".hub-cta").addEventListener("click", () => selectServer(slide.serverId));
+    slidesEl.appendChild(el);
+
+    const dot = document.createElement("button");
+    dot.className = "hub-dot";
+    dot.setAttribute("aria-label", `Slide ${i + 1}`);
+    dot.addEventListener("click", () => { showHubSlide(i); startHubSlider(); });
+    dotsEl.appendChild(dot);
+  });
+  showHubSlide(0);
+}
+
+function showHubSlide(i) {
+  const slides = document.querySelectorAll(".hub-slide");
+  if (!slides.length) return;
+  hubIndex = (i + slides.length) % slides.length;
+  slides.forEach((s, idx) => s.classList.toggle("active", idx === hubIndex));
+  document.querySelectorAll(".hub-dot").forEach((d, idx) => d.classList.toggle("active", idx === hubIndex));
+}
+
+function startHubSlider() {
+  stopHubSlider();
+  if ((HUB.slides || []).length < 2) return;
+  hubTimer = setInterval(() => showHubSlide(hubIndex + 1), HUB.slideIntervalMs || 6500);
+}
+function stopHubSlider() {
+  if (hubTimer) { clearInterval(hubTimer); hubTimer = null; }
+}
+document.getElementById("hub-prev").addEventListener("click", () => { showHubSlide(hubIndex - 1); startHubSlider(); });
+document.getElementById("hub-next").addEventListener("click", () => { showHubSlide(hubIndex + 1); startHubSlider(); });
+
+window.anomia.getServers().then((cfg) => {
+  SERVERS = cfg.servers || [];
+  HUB = cfg.hub || HUB;
+  renderServerBar();
+  renderHubSlider();
+  selectServer("hub");
+  updateConnectButtonState(); // applique l'état "en pause" d'Anomia si besoin
+});
+
+// --- Pages KannibAventure ---
+let kbDevlogLoaded = false;
+async function loadKbDevlog() {
+  if (kbDevlogLoaded) return;
+  const list = document.getElementById("kb-devlog-list");
+  const data = await window.anomia.getKbContent("devlog");
+  list.innerHTML = "";
+  if (!Array.isArray(data) || !data.length) {
+    list.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Le journal de développement arrive bientôt.</p>`;
+    return;
+  }
+  kbDevlogLoaded = true;
+  data.forEach((item) => list.appendChild(renderNewsCard(item)));
+}
+
+let kbRulesLoaded = false;
+async function loadKbRules() {
+  if (kbRulesLoaded) return;
+  const container = document.getElementById("kb-rules-content");
+  const data = await window.anomia.getKbContent("rules");
+  const raw = data && data.content;
+  if (!raw) {
+    container.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Règlement pas encore disponible.</p>`;
+    return;
+  }
+  kbRulesLoaded = true;
+  container.innerHTML = formatRules(raw);
+}
+
+let kbFaqLoaded = false;
+async function loadKbFaq() {
+  if (kbFaqLoaded) return;
+  const list = document.getElementById("kb-faq-list");
+  const data = await window.anomia.getKbContent("faq");
+  list.innerHTML = "";
+  if (!Array.isArray(data) || !data.length) {
+    list.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">FAQ bientôt disponible.</p>`;
+    return;
+  }
+  kbFaqLoaded = true;
+  data.forEach((item) => {
+    const d = document.createElement("details");
+    d.className = "kb-faq-item";
+    d.innerHTML = `<summary>${escapeHtml(item.q || "")}</summary><p>${escapeHtml(item.a || "")}</p>`;
+    list.appendChild(d);
+  });
+}
+
+// --- KannibAventure : installateur de mods ---
+const KB_STATUS_LABEL = { ok: "À jour", missing: "À installer", outdated: "À mettre à jour" };
+let kbInstalling = false;
+
+function formatBytes(n) {
+  if (!n) return "";
+  if (n > 1048576) return `${(n / 1048576).toFixed(1)} Mo`;
+  return `${Math.max(1, Math.round(n / 1024))} Ko`;
+}
+
+async function refreshKbFiles() {
+  const state = await window.anomia.getKbModsState();
+  const meta = document.getElementById("kb-files-meta");
+  const loaderLabel = state.loader ? `${state.loader}${state.loaderVersion ? " " + state.loaderVersion : ""}` : "à définir";
+  meta.innerHTML = `
+    <span class="kb-chip">Minecraft ${escapeHtml(state.minecraft || "—")}</span>
+    <span class="kb-chip">Chargeur : ${escapeHtml(loaderLabel)}</span>
+    <span class="kb-chip">${state.mods.length} mod${state.mods.length > 1 ? "s" : ""}</span>`;
+  document.getElementById("kb-files-notes").textContent = state.notes || "";
+  document.getElementById("kb-folder-path").textContent = state.folder + (state.folderExists ? "" : "  (sera créé)");
+
+  const list = document.getElementById("kb-mod-list");
+  list.innerHTML = "";
+  state.mods.forEach((mod) => {
+    const row = document.createElement("div");
+    row.className = "kb-mod-row";
+    row.innerHTML = `<span class="kb-mod-name">${escapeHtml(mod.name)}</span>
+      <span class="kb-mod-size">${formatBytes(mod.size)}</span>
+      <span class="kb-mod-status ${mod.status}">${KB_STATUS_LABEL[mod.status] || ""}</span>`;
+    list.appendChild(row);
+  });
+
+  const btn = document.getElementById("kb-install-btn");
+  const needs = state.mods.filter((m) => m.status !== "ok").length;
+  if (!state.mods.length) {
+    btn.disabled = true;
+    btn.textContent = "Aucun mod publié";
+  } else if (!needs) {
+    btn.disabled = kbInstalling;
+    btn.textContent = "Tout est à jour · Revérifier";
+  } else {
+    btn.disabled = kbInstalling;
+    btn.textContent = `Installer / mettre à jour (${needs})`;
+  }
+}
+
+document.getElementById("kb-folder-change").addEventListener("click", async () => {
+  const res = await window.anomia.chooseKbModsFolder();
+  if (res && res.ok) refreshKbFiles();
+});
+
+document.getElementById("kb-install-btn").addEventListener("click", async () => {
+  if (kbInstalling) return;
+  kbInstalling = true;
+  const btn = document.getElementById("kb-install-btn");
+  const fill = document.getElementById("kb-progress-fill");
+  const label = document.getElementById("kb-progress-label");
+  btn.disabled = true;
+  btn.textContent = "Installation…";
+  fill.style.width = "0%";
+  window.anomia.onKbModsProgress(({ file, done, total }) => {
+    fill.style.width = total ? `${Math.round((done / total) * 100)}%` : "0%";
+    label.textContent = file ? `${file} (${done}/${total})` : "";
+  });
+  const result = await window.anomia.installKbMods();
+  kbInstalling = false;
+  if (result && result.ok) {
+    fill.style.width = "100%";
+    label.textContent = `Terminé : ${result.downloaded} téléchargé(s), ${result.upToDate} déjà à jour${result.removed ? `, ${result.removed} ancien(s) retiré(s)` : ""}.`;
+  } else {
+    label.textContent = "";
+    await showInfo("Installation impossible", `<p>${escapeHtml((result && result.error) || "Erreur inconnue.")}</p>`);
+  }
+  refreshKbFiles();
+});
+
+// --- KannibAventure : carte d'exploration (global / personnelle) ---
+// Zoom : molette quand la souris est sur la carte. Déplacement : clic gauche maintenu + mouvement.
+let kbMapMode = "global";
+const kbMap = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, inited: false };
+const KB_MAP_MIN = 0.2;
+const KB_MAP_MAX = 8;
+
+function kbMapApply() {
+  const world = document.getElementById("kb-map-world");
+  world.style.transform = `translate(${kbMap.x}px, ${kbMap.y}px) scale(${kbMap.scale})`;
+  document.getElementById("kb-map-zoomlabel").textContent = `${Math.round(kbMap.scale * 100)}%`;
+}
+
+function kbMapReset() {
+  const stage = document.getElementById("kb-map-stage");
+  kbMap.scale = 1;
+  kbMap.x = stage.clientWidth / 2;
+  kbMap.y = stage.clientHeight / 2;
+  kbMapApply();
+}
+
+// Zoom centré sur un point de la carte (cx, cy en pixels, relatifs à la zone d'affichage)
+function kbMapZoomAt(factor, cx, cy) {
+  const next = Math.min(KB_MAP_MAX, Math.max(KB_MAP_MIN, kbMap.scale * factor));
+  const ratio = next / kbMap.scale;
+  kbMap.x = cx - (cx - kbMap.x) * ratio;
+  kbMap.y = cy - (cy - kbMap.y) * ratio;
+  kbMap.scale = next;
+  kbMapApply();
+}
+
+function initKbMap() {
+  document.getElementById("kb-map-hint").textContent = kbMapMode === "global"
+    ? "Zones découvertes par toute la communauté"
+    : "Zones que tu as découvertes toi-même";
+  if (!kbMap.inited) {
+    kbMap.inited = true;
+    const stage = document.getElementById("kb-map-stage");
+
+    stage.addEventListener("wheel", (e) => {
+      e.preventDefault(); // la molette zoome la carte au lieu de faire défiler la page
+      const rect = stage.getBoundingClientRect();
+      kbMapZoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top);
+    }, { passive: false });
+
+    stage.addEventListener("mousedown", (e) => {
+      if (e.button !== 0 || e.target.closest(".kb-map-controls")) return;
+      kbMap.dragging = true;
+      kbMap.startX = e.clientX - kbMap.x;
+      kbMap.startY = e.clientY - kbMap.y;
+      stage.classList.add("dragging");
+      e.preventDefault();
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!kbMap.dragging) return;
+      kbMap.x = e.clientX - kbMap.startX;
+      kbMap.y = e.clientY - kbMap.startY;
+      kbMapApply();
+    });
+    window.addEventListener("mouseup", () => {
+      kbMap.dragging = false;
+      stage.classList.remove("dragging");
+    });
+
+    const center = () => ({ cx: stage.clientWidth / 2, cy: stage.clientHeight / 2 });
+    document.getElementById("kb-map-zoom-in").addEventListener("click", () => { const c = center(); kbMapZoomAt(1.4, c.cx, c.cy); });
+    document.getElementById("kb-map-zoom-out").addEventListener("click", () => { const c = center(); kbMapZoomAt(1 / 1.4, c.cx, c.cy); });
+    document.getElementById("kb-map-reset").addEventListener("click", kbMapReset);
+  }
+  kbMapReset(); // la vue est visible à ce stade : on peut mesurer la zone et centrer
+}
+document.querySelectorAll("#kb-map-toggle .kb-toggle-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    kbMapMode = btn.dataset.mode;
+    document.querySelectorAll("#kb-map-toggle .kb-toggle-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    document.getElementById("kb-map-hint").textContent = kbMapMode === "global"
+      ? "Zones découvertes par toute la communauté"
+      : "Zones que tu as découvertes toi-même";
+  });
+});
+
+document.getElementById("kb-discord").addEventListener("click", () => {
+  const srv = getServer("kannibaventure");
+  if (srv && srv.discordInvite) {
+    window.anomia.openExternal(srv.discordInvite);
+  } else {
+    showInfo("Discord KannibAventure", "<p>Le lien du Discord sera disponible très bientôt.</p>");
+  }
 });
 
 // --- Discord ---
@@ -116,7 +461,7 @@ document.getElementById("btn-connect").addEventListener("click", async (e) => {
   if (discordRequired && !discordProfile) {
     await showInfo(
       "Connexion Discord requise",
-      `<p>Tu dois te connecter avec Discord avant de pouvoir te connecter au serveur. Utilise le bouton "Se connecter avec Discord" dans la barre latérale.</p>`
+      `<p>Tu dois te connecter avec Discord avant de pouvoir te connecter au serveur. Utilise le bouton "Se connecter avec Discord" en haut à droite.</p>`
     );
     return;
   }
@@ -154,6 +499,21 @@ let lastServerMaintenance = false;
 
 function updateConnectButtonState() {
   const btn = document.getElementById("btn-connect");
+
+  // Serveur en pause (ex. Anomia jusqu'en 2027) : bouton grisé avec la date, sans connexion possible
+  const anomia = getServer("anomia");
+  if (anomia && anomia.status !== "online") {
+    btn.disabled = true;
+    btn.textContent = `🔒 ${anomia.connectLabel || "Bientôt"}`;
+    const st = document.getElementById("status-text");
+    const sd = document.getElementById("status-dot");
+    const tm = document.getElementById("tm-status");
+    if (st) st.textContent = `En pause · retour en ${anomia.connectLabel || "—"}`;
+    if (sd) sd.className = "status-dot maintenance";
+    if (tm) tm.textContent = "EN PAUSE";
+    return;
+  }
+
   // Le bouton reste utilisable si : le serveur est en ligne ET (pas en
   // maintenance OU l'admin s'est identifié avec le code d'accès staff).
   const canConnect = lastServerOnline && (!lastServerMaintenance || isAdminUnlocked);
@@ -1211,10 +1571,9 @@ setInterval(refreshNextRestart, 5 * 60000); // revérifie la config toutes les 5
 
 // --- Tour guidé (premier lancement uniquement, persiste après une mise à jour) ---
 const ONBOARDING_STEPS = [
-  { selector: '[data-view="home"]', text: "Bienvenue sur le launcher Anomia ! Ici tu retrouves le statut du serveur et le bouton pour te connecter." },
-  { selector: '[data-view="news"]', text: "Les patch-notes du serveur, toujours à jour." },
-  { selector: '[data-view="twitch"]', text: "Vois en un coup d'œil quels streamers de la communauté sont en live." },
-  { selector: '[data-view="staff"]', text: "Découvre l'équipe qui fait tourner Anomia." },
+  { selector: '[data-server="hub"]', text: "Bienvenue sur le B2 Launcher ! L'accueil regroupe les streamers en live et les nouveautés de chaque serveur." },
+  { selector: "#server-bar", text: "Chaque serveur a son logo ici : clique dessus pour accéder à ses pages (actus, succès, règlement...)." },
+  { selector: "#btn-discord-auth, #discord-auth-slot", text: "Connecte-toi avec Discord : c'est obligatoire pour accéder aux serveurs." },
   { selector: "#btn-settings", text: "Personnalise le launcher ici : mode sombre/clair et couleur d'accent." }
 ];
 let onboardingStep = 0;

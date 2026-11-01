@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data:;">
-<title>Anomia Launcher</title>
+<title>B2 Launcher</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,8 +11,8 @@
   <!-- Barre de titre custom (fenêtre frameless) -->
   <header class="titlebar" id="titlebar">
     <div class="titlebar-brand">
-      <img src="../assets/logo.png" alt="Anomia" class="titlebar-logo" />
-      <span class="brand-mark">ANOMIA</span>
+      <img src="../assets/logo.png" alt="B2" class="titlebar-logo" />
+      <span class="brand-mark">B2</span>
       <span class="brand-sub">LAUNCHER</span>
     </div>
     <div class="titlebar-controls">
@@ -24,61 +24,20 @@
 
   <div class="app-shell">
 
-    <!-- Navigation latérale -->
-    <nav class="sidebar">
-      <div class="avatar-slot" aria-hidden="true">
-        <img src="../assets/logo.png" alt="Anomia" class="avatar-logo" />
+    <!-- Barre des serveurs (logos cliquables) -->
+    <header class="topbar">
+      <div class="server-bar" id="server-bar">
+        <!-- injecté par renderer.js depuis config.servers -->
       </div>
-
-      <button class="nav-item active" data-view="home">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
-        <span class="nav-label">Accueil</span>
-      </button>
-      <button class="nav-item" data-view="news">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
-        <span class="nav-label">Actualités</span>
-      </button>
-      <button class="nav-item" data-view="twitch">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="1"/><path d="M8 21h8M12 17v4"/></svg>
-        <span class="nav-label">Twitch</span>
-      </button>
-      <button class="nav-item" data-view="media">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        <span class="nav-label">Media</span>
-      </button>
-      <button class="nav-item" data-view="staff">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span class="nav-label">Staff</span>
-      </button>
-      <button class="nav-item" data-view="achievements">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg>
-        <span class="nav-label">Succès</span>
-      </button>
-      <button class="nav-item" data-view="rules">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <span class="nav-label">Règlement</span>
-      </button>
-      <button class="nav-item" data-view="map">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-        <span class="nav-label">Carte</span>
-      </button>
-      <button class="nav-item" data-view="assets">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"/></svg>
-        <span class="nav-label">Fichiers</span>
-      </button>
-      <button class="nav-item hidden" data-view="admin" id="nav-admin">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"/></svg>
-        <span class="nav-label">Admin</span>
-      </button>
-
-      <div class="discord-auth-slot" id="discord-auth-slot">
+      <div class="topbar-right">
+        <span class="update-status" id="update-status"></span>
+        <span class="version" id="app-version">v…</span>
+        <div class="discord-auth-slot" id="discord-auth-slot">
         <button class="ext-link discord-connect-btn" id="btn-discord-auth">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
           <span class="nav-label">Se connecter avec Discord</span>
         </button>
       </div>
-
-      <div class="sidebar-footer">
         <button class="ext-link" id="btn-discord">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
           <span class="nav-label">Discord</span>
@@ -87,13 +46,18 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span class="nav-label">Réglages</span>
         </button>
-        <span class="version" id="app-version">v…</span>
-        <span class="update-status" id="update-status"></span>
       </div>
+    </header>
+
+    <!-- Onglets du serveur sélectionné -->
+    <nav class="tabbar" id="tabbar">
+      <span class="tabbar-server" id="tabbar-server"></span>
+      <div class="tabbar-tabs" id="tabbar-tabs"></div>
+      <button class="tab-item hidden" data-view="admin" id="nav-admin">Admin</button>
     </nav>
 
     <!-- Contenu principal -->
-    <main class="content">
+    <main class="content" id="content">
 
       <!-- Bannière maintenance serveur -->
       <div class="banner banner-maintenance hidden" id="maintenance-banner">
@@ -113,7 +77,7 @@
 
 
       <!-- VUE ACCUEIL -->
-      <section class="view" id="view-home">
+      <section class="view hidden" id="view-home">
         <div class="home-hero">
           <img src="../assets/hero-bg.jpg" alt="" class="home-hero-bg" />
           <div class="home-hero-shade"></div>
@@ -180,13 +144,99 @@
         </div>
       </section>
 
-      <!-- VUE TWITCH -->
-      <section class="view hidden" id="view-twitch">
-        <span class="section-eyebrow">// LIVE</span>
-        <h1 class="view-title">Streamers Anomia</h1>
+      <!-- VUE ACCUEIL GLOBAL (B2 Launcher) : slider des serveurs + streamers -->
+      <section class="view" id="view-hub">
+        <div class="hub-slider" id="hub-slider">
+          <div class="hub-slides" id="hub-slides"></div>
+          <button class="hub-arrow hub-prev" id="hub-prev" aria-label="Précédent">&#8249;</button>
+          <button class="hub-arrow hub-next" id="hub-next" aria-label="Suivant">&#8250;</button>
+          <div class="hub-dots" id="hub-dots"></div>
+        </div>
+        <div class="section-header">
+          <div>
+            <span class="section-eyebrow">// LIVE</span>
+            <h2>Streamers de la communauté</h2>
+          </div>
+        </div>
         <div class="streamer-grid" id="streamer-grid">
           <!-- injecté par renderer.js -->
         </div>
+      </section>
+
+      <!-- VUES KANNIBAVENTURE -->
+      <section class="view hidden" id="view-kb-home">
+        <div class="kb-hero">
+          <img src="../assets/kannibaventure.png" alt="KannibAventure" class="kb-hero-logo" />
+          <span class="kb-eyebrow">NOUVEAU SERVEUR MINECRAFT</span>
+          <h1 class="kb-title">KannibAventure</h1>
+          <p class="kb-text">Une nouvelle aventure se prépare. Serveur Java avec mods et plugins. Reste connecté, les premières infos arrivent bientôt.</p>
+          <div class="kb-actions">
+            <button class="btn-connect" id="kb-connect" disabled>Prochainement</button>
+            <button class="kb-discord-btn" id="kb-discord">Rejoindre le Discord</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view hidden" id="view-kb-devlog">
+        <span class="section-eyebrow">// DEV</span>
+        <h1 class="view-title">Journal de développement</h1>
+        <div class="news-list" id="kb-devlog-list"></div>
+      </section>
+
+      <section class="view hidden" id="view-kb-map">
+        <span class="section-eyebrow">// EXPLORATION</span>
+        <h1 class="view-title">Carte du monde</h1>
+        <div class="kb-map-toolbar">
+          <div class="kb-toggle" id="kb-map-toggle">
+            <button class="kb-toggle-btn active" data-mode="global">Carte globale</button>
+            <button class="kb-toggle-btn" data-mode="personal">Ma carte</button>
+          </div>
+          <span class="kb-map-hint" id="kb-map-hint"></span>
+        </div>
+        <div class="kb-map-stage" id="kb-map-stage">
+          <!-- Calque déplaçable/zoomable : accueillera les vignettes du monde + le brouillard d'exploration -->
+          <div class="kb-map-world" id="kb-map-world"><span class="kb-map-origin">0, 0</span></div>
+          <div class="kb-map-empty">
+            <strong>La carte se dévoile au fil de l'exploration</strong>
+            <span>Elle sera disponible à l'ouverture du serveur : tout est noir, sauf les zones déjà découvertes.</span>
+          </div>
+          <div class="kb-map-controls">
+            <button class="kb-map-ctl" id="kb-map-zoom-in" aria-label="Zoomer">+</button>
+            <button class="kb-map-ctl" id="kb-map-zoom-out" aria-label="Dézoomer">&#8722;</button>
+            <button class="kb-map-ctl" id="kb-map-reset" aria-label="Recentrer">&#9678;</button>
+          </div>
+          <span class="kb-map-zoomlabel" id="kb-map-zoomlabel">100%</span>
+        </div>
+      </section>
+
+      <section class="view hidden" id="view-kb-files">
+        <span class="section-eyebrow">// MODS</span>
+        <h1 class="view-title">Fichiers &amp; mods</h1>
+        <div class="assets-card glass">
+          <div class="kb-files-meta" id="kb-files-meta"></div>
+          <p id="kb-files-notes" style="color:var(--text-dim);font-size:13px;margin:10px 0 14px;"></p>
+          <div class="kb-folder-row">
+            <span class="kb-folder-label">Dossier mods</span>
+            <code id="kb-folder-path">—</code>
+            <button class="btn-copy" id="kb-folder-change">Changer</button>
+          </div>
+          <div class="kb-mod-list" id="kb-mod-list"></div>
+          <div class="progress-track"><div class="progress-fill" id="kb-progress-fill"></div></div>
+          <div class="progress-label" id="kb-progress-label"></div>
+          <button class="btn-connect" id="kb-install-btn" style="--btn-color:#a855f7;">Installer les mods</button>
+        </div>
+      </section>
+
+      <section class="view hidden" id="view-kb-rules">
+        <span class="section-eyebrow">// RÈGLES</span>
+        <h1 class="view-title">Règlement KannibAventure</h1>
+        <div class="rules-content" id="kb-rules-content"></div>
+      </section>
+
+      <section class="view hidden" id="view-kb-faq">
+        <span class="section-eyebrow">// FAQ</span>
+        <h1 class="view-title">Questions fréquentes</h1>
+        <div class="kb-faq" id="kb-faq-list"></div>
       </section>
 
       <!-- VUE ASSETS -->

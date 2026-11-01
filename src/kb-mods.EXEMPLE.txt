@@ -1,0 +1,19 @@
+Format de kb-mods.json (a modifier sur GitHub, sans republier le launcher) :
+
+{
+  "minecraft": "26.3",
+  "loader": "fabric",            // fabric | forge | neoforge (affiche seulement l'info)
+  "loaderVersion": "0.x.y",
+  "notes": "Texte affiche au joueur",
+  "mods": [
+    {
+      "name": "Nom du mod",
+      "file": "nom-du-mod-1.2.3.jar",      // nom exact du fichier installe dans le dossier mods
+      "url": "https://.../nom-du-mod-1.2.3.jar",   // https obligatoire
+      "sha256": "empreinte sha256 du fichier (obligatoire)",
+      "size": 123456                        // octets (optionnel, pour la barre de progression)
+    }
+  ]
+}
+
+Obtenir le sha256 sous Windows :  certutil -hashfile nom-du-mod.jar SHA256
