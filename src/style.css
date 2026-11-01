@@ -1130,7 +1130,7 @@ body::before {
 .map-wrap {
   position: relative;
   width: 100%;
-  height: calc(100vh - 220px);
+  height: max(320px, calc(100vh - 372px));
   overflow: hidden;
   background: #07050d;
   border: 1px solid var(--border);
@@ -2040,3 +2040,104 @@ button.discord-profile[aria-expanded="true"] .discord-profile-avatar { box-shado
 .pp-actions { display: flex; flex-direction: column; gap: 8px; }
 .pp-actions .btn-copy { width: 100%; }
 .pp-danger { color: #f87171; border-color: rgba(248,113,113,.4); }
+
+/* ===== Barre du haut : logos à gauche + résumé du joueur à côté ===== */
+.topbar { justify-content: flex-start; gap: 26px; }
+.topbar .home-me { position: static; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; margin: 0 250px 0 0; padding: 6px 12px;
+  background: color-mix(in srgb, var(--teal) 7%, transparent); border: 1px solid var(--border); border-radius: 10px; }
+.topbar .home-me-greet { display: flex; flex-direction: column; min-width: 0; margin-right: 6px; }
+.topbar .home-me-greet strong { font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar .home-me-greet .hub-tag { font-size: 9px; }
+.topbar .home-me-stat { display: flex; flex-direction: column; padding: 0 12px; background: none; border-left: 1px solid var(--border); gap: 0; }
+.topbar .home-me-val { font-size: 16px; line-height: 1.2; }
+.topbar .home-me-val.small { font-size: 11px; font-weight: 600; max-width: 230px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar .home-me-lbl { font-size: 8px; }
+.topbar .home-me-stat.wide { flex: 1; min-width: 0; }
+.topbar .home-me-bar { margin-top: 4px; }
+.topbar #home-me-share { margin-left: auto; padding: 5px 12px; font-size: 12px; }
+@media (max-width: 1150px) { .topbar .home-me-stat.wide { display: none; } }
+@media (max-width: 900px) { .topbar .home-me { display: none !important; } }
+
+/* ===== Streamers : rail collé sous la case du streamer choisi ===== */
+.twitch-panel { margin-bottom: 0 !important; border-radius: 6px 6px 0 0; }
+.streamer-rail { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; padding: 10px 14px; background: color-mix(in srgb, var(--teal) 5%, var(--panel-solid)); border: 1px solid var(--border-strong); border-top: 1px dashed var(--border); border-radius: 0 0 6px 6px; }
+.rail-label { font-size: 9px; letter-spacing: .12em; line-height: 1.4; color: var(--text-dim); flex-shrink: 0; }
+.streamer-rail .streamer-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.streamer-rail .streamer-card { flex-direction: row; align-items: center; text-align: left; gap: 8px; padding: 5px 14px 5px 6px; clip-path: none; border-radius: 999px; background: rgba(255,255,255,.04); }
+.streamer-rail .streamer-card:hover { transform: none; border-color: var(--teal); }
+.streamer-rail .streamer-avatar-wrap { width: 32px; height: 32px; padding: 0; flex-shrink: 0; }
+.streamer-rail .streamer-avatar { width: 32px; height: 32px; }
+.streamer-rail .streamer-name { font-size: 13px; }
+.streamer-rail .streamer-status { font-size: 11px; }
+.streamer-rail .streamer-viewers { font-size: 11px; }
+.streamer-rail .streamer-game { display: none; }
+
+/* ===== Transitions douces ===== */
+@keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.twitch-panel.swap .twitch-panel-info,
+.twitch-panel.swap .twitch-panel-logo,
+.twitch-panel.swap .twitch-panel-actions { animation: fadeSwap .35s ease; }
+@keyframes fadeSwap { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.streamer-card { transition: border-color .2s ease, box-shadow .25s ease, background .2s ease, transform .12s ease; }
+@media (prefers-reduced-motion: reduce) { .view-entering, .twitch-panel.swap * { animation: none !important; } }
+
+/* ===== Panneau Twitch : miniature du live en fond ===== */
+.twitch-panel { position: relative; overflow: hidden; }
+.twitch-panel > *:not(.twitch-bg) { position: relative; z-index: 1; }
+.twitch-bg { position: absolute; inset: -20px; z-index: 0; background-size: cover; background-position: center; filter: blur(16px) saturate(1.3); opacity: 0; transition: opacity .6s ease; pointer-events: none; }
+.twitch-bg.on { opacity: .32; }
+.twitch-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--panel-solid) 5%, transparent 70%); }
+
+/* ===== Cartes Discord : logo du serveur ===== */
+.discord-head { display: flex; align-items: center; gap: 12px; }
+.discord-logo { width: 44px; height: 44px; object-fit: contain; border-radius: 10px; background: rgba(255,255,255,.05); padding: 3px; flex-shrink: 0; box-shadow: 0 0 14px color-mix(in srgb, var(--dc) 40%, transparent); }
+
+/* Résumé de la barre du haut : pseudo à gauche, heures à droite, succès dessous */
+.topbar .home-me { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 20px; row-gap: 2px; align-items: center; flex: 0 1 auto; margin: 0; padding: 7px 16px; }
+.topbar .home-me-greet { grid-column: 1; grid-row: 1; margin: 0; }
+.topbar .home-me-stat.hours { grid-column: 2; grid-row: 1 / span 2; border-left: 1px solid var(--border); padding: 0 0 0 18px; }
+.topbar .home-me-stat.hours .home-me-val { font-size: 22px; }
+.topbar .home-me-stat.ach { grid-column: 1; grid-row: 2; flex-direction: row; align-items: baseline; gap: 6px; border: 0; padding: 0; }
+.topbar .home-me-stat.ach .home-me-val { font-size: 13px; }
+
+/* ===== Bandeau tournant (centre de la barre du haut), sans cadre ===== */
+.topbar .home-me { display: none !important; }
+.ticker { position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; width: min(420px, 34%); pointer-events: none; }
+.tk { display: flex; align-items: center; justify-content: center; gap: 14px; animation: tkIn .6s ease; white-space: nowrap; }
+@keyframes tkIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.tk-logo { width: 36px; height: 36px; object-fit: contain; filter: drop-shadow(0 0 8px var(--teal-glow)); }
+.tk-count { display: flex; flex-direction: column; gap: 1px; }
+.tk-count b { font-size: 17px; color: var(--text); }
+.tk small, .tk-count small { font-size: 9px; letter-spacing: .12em; color: var(--text-dim); }
+.tk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; margin-right: 7px; box-shadow: 0 0 8px #4ade80; vertical-align: 1px; }
+.tk-me-left { display: flex; flex-direction: column; gap: 1px; align-items: flex-start; }
+.tk-me-left strong { font-size: 15px; color: var(--text); max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.tk-me-left span { font-size: 12px; color: var(--text-dim); }
+.tk-me-left span b { color: var(--text); }
+.tk-me-hours { display: flex; flex-direction: column; align-items: flex-start; padding-left: 16px; border-left: 1px solid var(--border-strong); }
+.tk-me-hours b { font-size: 22px; color: var(--text); line-height: 1.1; }
+@media (max-width: 980px) { .ticker { display: none; } }
+@media (prefers-reduced-motion: reduce) { .tk { animation: none; } }
+
+/* ===== Actualités : 1re actu en grand, puis 2 colonnes ===== */
+#news-list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+#news-list .news-card:first-child { grid-column: 1 / -1; border-color: var(--border-strong); background: linear-gradient(110deg, color-mix(in srgb, var(--teal) 10%, var(--panel)), var(--panel)); }
+#news-list .news-card:first-child h3 { font-size: 22px; }
+@media (max-width: 900px) { #news-list { grid-template-columns: 1fr; } }
+.news-body.clamped { max-height: var(--clamp, 150px); overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+.news-more { margin-top: 8px; background: none; border: 0; color: var(--teal); cursor: pointer; font-size: 12px; padding: 0; }
+.news-more:hover { text-decoration: underline; }
+
+/* ===== Règlement : chapitres déroulants ===== */
+.rules-toolbar { display: flex; gap: 8px; margin: 18px 0 12px; }
+.rules-toolbar .btn-copy { padding: 6px 12px; font-size: 12px; }
+.rules-chapter { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,.025); overflow: hidden; transition: border-color .2s; }
+.rules-chapter[open] { border-color: var(--border-strong); background: rgba(255,255,255,.04); }
+.rules-chapter summary { list-style: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 12px; user-select: none; }
+.rules-chapter summary::-webkit-details-marker { display: none; }
+.rules-chapter summary::after { content: "›"; margin-left: auto; font-size: 22px; line-height: 1; color: var(--teal); transition: transform .25s ease; }
+.rules-chapter[open] summary::after { transform: rotate(90deg); }
+.rules-chapter summary:hover { background: color-mix(in srgb, var(--teal) 8%, transparent); }
+.rules-chapter-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--teal); }
+.rules-chapter-body { padding: 4px 22px 18px; animation: tkIn .3s ease; }
+.rules-chapter-body > .rules-subsection-title:first-child { margin-top: 6px; }

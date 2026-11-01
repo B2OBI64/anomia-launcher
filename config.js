@@ -79,9 +79,9 @@ module.exports = {
   // --- Discords affichés sur l'accueil (membres en ligne + bouton rejoindre) ---
   // invite = code ou lien d'invitation. Laisse null tant que tu n'as pas le lien : la carte reste masquée.
   discordCommunities: [
-    { name: "Communauté B2", invite: null, color: "#8b5cf6" }, // Discord principal de la chaîne : lien à renseigner
-    { name: "Anomia RP", invite: "https://discord.gg/ECBhuTMw7n", color: "#2dd4bf" },
-    { name: "KannibAventure", invite: "https://discord.gg/fdSjJPRJy4", color: "#a855f7" }
+    { name: "Communauté B2", invite: null, color: "#8b5cf6", logo: "../assets/logo.png", main: true }, // Discord principal de la chaîne : lien à renseigner
+    { name: "Anomia RP", invite: "https://discord.gg/ECBhuTMw7n", color: "#2dd4bf", logo: "../assets/anomia-logo.png" },
+    { name: "KannibAventure", invite: "https://discord.gg/fdSjJPRJy4", color: "#a855f7", logo: "../assets/kannibaventure.png" }
   ],
 
   // --- Chaîne Twitch affichée sur l'accueil du B2 Launcher ---

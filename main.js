@@ -1091,7 +1091,8 @@ ipcMain.handle("discord:getCommunities", async () => {
     const m = /(?:discord\.gg\/|discord\.com\/invite\/|^)([A-Za-z0-9-]{2,32})$/.exec(String(c.invite || "").trim());
     if (!m) continue; // pas encore d'invitation : carte masquée
     const code = m[1];
-    const entry = { name: c.name, color: c.color || null, url: `https://discord.gg/${code}`, online: null, members: null };
+    const logo = /^\.\.\/assets\/[A-Za-z0-9._-]+\.(png|jpg|jpeg|webp|svg)$/.test(String(c.logo || "")) ? c.logo : null;
+    const entry = { name: c.name, color: c.color || null, logo, main: Boolean(c.main), url: `https://discord.gg/${code}`, online: null, members: null };
     const cached = inviteCache.get(code);
     if (cached && Date.now() - cached.at < 5 * 60 * 1000) {
       Object.assign(entry, cached.data);

@@ -11,8 +11,12 @@ Refonte complète
 - L'accueil présente ta chaîne Twitch B2OBI64 avec un accès direct au live et au Discord.
 - Nouvelle section « Clips de la communauté » sur l'accueil : les clips Twitch faits par les viewers, un clic pour les regarder.
 - Profil joueur : clique sur ton avatar Discord pour ouvrir ton profil (temps de jeu, succès, raretés). Il reste ouvert jusqu'à ce que tu recliques dessus. Tu peux choisir 3 succès à mettre en avant, faire une capture de ton profil et te déconnecter. Le pseudo vient directement de Discord.
-- Streamers : le streamer en live apparaît à la place de la chaîne B2OBI64 quand elle est hors ligne, avec les viewers et la catégorie. Clique sur un streamer pour l'afficher et le regarder.
-- Accueil personnalisé : message de bienvenue (avec une surprise le jour de l'anniversaire d'Anomia), résumé de ton temps de jeu et de tes succès, et ton prochain palier.
+- Carte d'Anomia : elle s'ouvre maintenant cadrée sur toute la carte, avec un bouton « Tout voir ».
+- Actualités : la dernière actu est mise en avant, les autres sont sur 2 colonnes, avec « Lire la suite » pour les longs textes.
+- Règlement : chaque chapitre est un menu déroulant (avec « Tout déplier / Tout replier »).
+- Finitions : fondu doux entre les onglets et quand on change de streamer, logos des serveurs sur les cartes Discord, et miniature du live (floutée) en fond du bloc Twitch quand le streamer est en direct.
+- Streamers : le streamer en live apparaît à la place de la chaîne B2OBI64 quand elle est hors ligne, avec les viewers et la catégorie. Les streamers sont juste sous le bloc : clique sur l'un d'eux pour l'afficher et le regarder.
+- Barre du haut : les logos des serveurs sont à gauche et un bandeau automatique défile au centre : ton résumé (bienvenue, temps de jeu, succès), les connectés sur le Discord, sur Anomia et l'ouverture de KannibAventure.
 - Accueil : cartes Discord de chaque serveur avec le nombre de membres en ligne et un bouton pour rejoindre.
 - Version staff : les modérateurs et admins ont un onglet avec la liste des joueurs en ligne (ID, personnage, métier, ping) mise à jour automatiquement.
 - Réglages : nouveau sélecteur de fond « verre liquide » : soleil (Blanc), lune (Noir violet) ou automatique (suit le thème de Windows).

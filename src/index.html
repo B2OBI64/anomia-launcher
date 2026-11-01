@@ -29,6 +29,7 @@
       <div class="server-bar" id="server-bar">
         <!-- injecté par renderer.js depuis config.servers -->
       </div>
+      <div class="ticker" id="ticker" aria-live="off"></div>
       <div class="topbar-right">
         <span class="update-status" id="update-status"></span>
         <span class="version" id="app-version">v…</span>
@@ -153,6 +154,7 @@
           <div class="hub-dots" id="hub-dots"></div>
         </div>
         <div class="twitch-panel" id="twitch-panel">
+          <div class="twitch-bg" id="twitch-bg"></div>
           <img src="../assets/logo.png" alt="" class="twitch-panel-logo" id="twitch-panel-logo" />
           <div class="twitch-panel-info">
             <span class="hub-tag" id="twitch-panel-tag">// TWITCH</span>
@@ -165,31 +167,9 @@
             <button class="twitch-secondary" id="twitch-discord">Discord de la communauté</button>
           </div>
         </div>
-        <div class="section-header">
-          <div>
-            <span class="section-eyebrow">// LIVE</span>
-            <h2>Streamers de la communauté</h2>
-            <p class="section-hint">Clique sur un streamer pour l'afficher à la place de ma chaîne.</p>
-          </div>
-        </div>
-        <div class="streamer-grid" id="streamer-grid">
+        <div class="streamer-rail" id="streamer-rail"><span class="rail-label">STREAMERS<br>COMMUNAUTÉ</span><div class="streamer-grid" id="streamer-grid">
           <!-- injecté par renderer.js -->
-        </div>
-              <div class="home-me hidden" id="home-me">
-          <div class="home-me-head">
-            <div>
-              <span class="hub-tag">// MON RÉSUMÉ</span>
-              <h2 id="home-me-greeting">Salut !</h2>
-              <p id="home-me-sub"></p>
-            </div>
-            <button class="btn-copy" id="home-me-share">👤 Voir mon profil</button>
-          </div>
-          <div class="home-me-stats">
-            <div class="home-me-stat"><span class="home-me-val" id="home-me-playtime">—</span><span class="home-me-lbl">TEMPS DE JEU</span></div>
-            <div class="home-me-stat"><span class="home-me-val" id="home-me-ach">—</span><span class="home-me-lbl">SUCCÈS</span></div>
-            <div class="home-me-stat wide"><span class="home-me-val small" id="home-me-next">—</span><span class="home-me-lbl">PROCHAIN PALIER</span><div class="home-me-bar"><div id="home-me-bar-fill"></div></div></div>
-          </div>
-        </div>
+        </div></div>
         <div id="discord-section" class="hidden">
           <div class="section-header"><div><span class="section-eyebrow">// DISCORD</span><h2>Rejoindre la communauté</h2></div></div>
           <div class="discord-grid" id="discord-grid"></div>
@@ -354,6 +334,7 @@
 
         <div class="map-toolbar">
           <input type="text" id="map-search" class="map-search-input" placeholder="Rechercher un point d'intérêt…" />
+          <button class="map-filter-btn" id="map-fit" title="Voir toute la carte">⤢ Tout voir</button>
           <div class="map-filters" id="map-filters">
             <!-- injecté par renderer.js -->
           </div>

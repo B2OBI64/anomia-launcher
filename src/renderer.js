@@ -298,6 +298,11 @@ async function loadKbRules() {
   }
   kbRulesLoaded = true;
   container.innerHTML = formatRules(raw);
+  const setAll = (open) => container.querySelectorAll("details.rules-chapter").forEach((d) => { d.open = open; });
+  const openBtn = document.getElementById("rules-open-all");
+  const closeBtn = document.getElementById("rules-close-all");
+  if (openBtn) openBtn.addEventListener("click", () => setAll(true));
+  if (closeBtn) closeBtn.addEventListener("click", () => setAll(false));
 }
 
 let kbFaqLoaded = false;
@@ -540,6 +545,8 @@ window.anomia.onConnectError((message) => {
 let lastJobStats = {};
 let lastAvgPingMs = null;
 let lastServerOnline = false;
+let lastServerClients = 0;
+let lastServerMax = 0;
 let lastServerMaintenance = false;
 
 function updateConnectButtonState() {
@@ -585,6 +592,8 @@ async function refreshStatus() {
 
   const status = await window.anomia.getServerStatus();
   lastServerOnline = Boolean(status.online);
+  lastServerClients = status.clients || 0;
+  lastServerMax = status.maxClients || 0;
   lastServerMaintenance = Boolean(status.maintenance);
 
   if (status.online) {
@@ -779,6 +788,30 @@ async function loadNews() {
 
   news.slice(0, 3).forEach((item) => preview.appendChild(renderNewsCard(item)));
   news.forEach((item) => list.appendChild(renderNewsCard(item)));
+  setupNewsClamp(list);
+}
+
+// Onglet Actualités : la 1re actu est mise en avant (pleine largeur), les autres sont en 2 colonnes.
+// Les textes longs sont repliés avec « Lire la suite ».
+function setupNewsClamp(list) {
+  requestAnimationFrame(() => {
+    list.querySelectorAll(".news-card").forEach((card, i) => {
+      const body = card.querySelector(".news-body");
+      if (!body) return;
+      const limit = i === 0 ? 260 : 150;
+      if (body.scrollHeight <= limit + 24) return;
+      body.style.setProperty("--clamp", limit + "px");
+      body.classList.add("clamped");
+      const btn = document.createElement("button");
+      btn.className = "news-more";
+      btn.textContent = "Lire la suite";
+      btn.addEventListener("click", () => {
+        const open = body.classList.toggle("clamped");
+        btn.textContent = open ? "Lire la suite" : "Réduire";
+      });
+      card.appendChild(btn);
+    });
+  });
 }
 loadNews();
 
@@ -787,6 +820,7 @@ function renderStreamerCard(streamer) {
   const el = document.createElement("div");
   el.className = `streamer-card ${streamer.live ? "live" : ""}`;
   el.dataset.channel = (streamer.channel || "").toLowerCase();
+  el.title = streamer.live ? `${streamer.displayName || streamer.channel} - en live${streamer.game ? " · " + streamer.game : ""}` : (streamer.displayName || streamer.channel);
   const avatar = streamer.avatarUrl || "../assets/logo.png";
   el.innerHTML = `
     <div class="streamer-avatar-wrap">
@@ -890,7 +924,23 @@ function pickFeatured() {
 
 function renderFeatured() {
   const s = pickFeatured();
+  const changed = !featuredNow || (featuredNow.channel || "").toLowerCase() !== (s.channel || "").toLowerCase();
   featuredNow = s;
+  if (changed) { // petit fondu quand on passe d'un streamer à l'autre
+    const panel = document.getElementById("twitch-panel");
+    panel.classList.remove("swap"); void panel.offsetWidth; panel.classList.add("swap");
+  }
+  // Miniature du live en fond (floutée) quand le streamer est en direct
+  const bg = document.getElementById("twitch-bg");
+  const thumb = s.live && typeof s.thumbnailUrl === "string" && /^https:\/\//.test(s.thumbnailUrl) ? s.thumbnailUrl : null;
+  if (thumb) {
+    const url = `${thumb}${thumb.includes("?") ? "&" : "?"}t=${Math.floor(Date.now() / 60000)}`; // se renouvelle chaque minute
+    if (bg.dataset.src !== thumb) { bg.dataset.src = thumb; bg.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`; }
+    bg.classList.add("on");
+  } else {
+    bg.classList.remove("on");
+    bg.dataset.src = "";
+  }
   const isMe = (s.channel || "").toLowerCase() === myChannelKey();
   document.getElementById("twitch-panel-tag").textContent = isMe ? "// TWITCH" : "// EN LIVE SUR LA COMMUNAUTÉ";
   document.getElementById("twitch-panel-name").textContent = s.displayName || s.channel;
@@ -984,9 +1034,6 @@ function getAchData(force) {
 
 // --- Accueil : résumé personnel + message de bienvenue ---
 let homeAchResult = null;
-const PLAYTIME_MILESTONES = [
-  [3600, "1 h"], [36000, "10 h"], [360000, "100 h"], [1800000, "500 h"], [3600000, "1000 h"]
-];
 
 function welcomeMessage(name) {
   const now = new Date();
@@ -996,48 +1043,86 @@ function welcomeMessage(name) {
   return { t: `${hello} ${name} !`, s: "Content de te revoir sur le B2 Launcher." };
 }
 
+// État du résumé (affiché dans le bandeau tournant du haut)
+let meState = null; // { greeting, hours, ach } ou null si pas connecté à Discord
 async function loadHomeMe() {
-  const box = document.getElementById("home-me");
-  if (!discordProfile) { box.classList.add("hidden"); return; }
+  if (!discordProfile) { meState = null; renderTicker(); return; }
   const name = discordProfile.username || "Joueur";
-  const w = welcomeMessage(name);
-  document.getElementById("home-me-greeting").textContent = w.t;
-  document.getElementById("home-me-sub").textContent = w.s;
-  box.classList.remove("hidden");
+  meState = { greeting: welcomeMessage(name).t, hours: "—", ach: "—" };
+  renderTicker();
 
   let r;
   try { r = await getAchData(); } catch (e) { r = null; }
-  if (!r || !r.ok || !r.linked) {
-    homeAchResult = null;
-    document.getElementById("home-me-playtime").textContent = "—";
-    document.getElementById("home-me-ach").textContent = "—";
-    document.getElementById("home-me-next").textContent = r && r.linked === false ? "Connecte-toi une fois en jeu pour activer ton suivi" : "Indisponible pour le moment";
-    document.getElementById("home-me-bar-fill").style.width = "0%";
-    document.getElementById("home-me-share").classList.add("hidden");
-    return;
-  }
-  homeAchResult = r;
-  document.getElementById("home-me-share").classList.remove("hidden");
-  const list = r.list || [];
-  const unlocked = list.filter((d) => r.achievements && r.achievements[d.key]).length;
-  const secs = r.playtimeSeconds || 0;
-  document.getElementById("home-me-playtime").textContent = secs >= 3600 ? `${Math.floor(secs / 3600)} h` : `${Math.floor(secs / 60)} min`;
-  document.getElementById("home-me-ach").textContent = `${unlocked}/${list.length}`;
-
-  const next = PLAYTIME_MILESTONES.find(([s]) => secs < s);
-  const prev = [...PLAYTIME_MILESTONES].reverse().find(([s]) => secs >= s);
-  if (next) {
-    const left = next[0] - secs;
-    const leftTxt = left >= 3600 ? `${Math.ceil(left / 3600)} h` : `${Math.ceil(left / 60)} min`;
-    document.getElementById("home-me-next").textContent = `Succès « ${next[1]} de jeu » : encore ${leftTxt}`;
-    const base = prev ? prev[0] : 0;
-    document.getElementById("home-me-bar-fill").style.width = `${Math.max(2, Math.round(((secs - base) / (next[0] - base)) * 100))}%`;
+  if (r && r.ok && r.linked) {
+    homeAchResult = r;
+    const list = r.list || [];
+    const unlocked = list.filter((d) => r.achievements && r.achievements[d.key]).length;
+    const secs = r.playtimeSeconds || 0;
+    meState.hours = secs >= 3600 ? `${Math.floor(secs / 3600)} h` : `${Math.floor(secs / 60)} min`;
+    meState.ach = `${unlocked}/${list.length}`;
   } else {
-    document.getElementById("home-me-next").textContent = "Tous les paliers de temps de jeu atteints 👑";
-    document.getElementById("home-me-bar-fill").style.width = "100%";
+    homeAchResult = null;
+  }
+  renderTicker();
+}
+
+// --- Bandeau tournant du haut : résumé > Discord > Anomia > KannibAventure > ... ---
+let tickerIndex = -1;
+let tickerComm = []; // communautés Discord (membres en ligne)
+
+async function refreshTickerCommunities() {
+  try { tickerComm = (await window.anomia.getDiscordCommunities()) || []; } catch (e) { tickerComm = []; }
+}
+
+function buildTickerSlides() {
+  const slides = [];
+  if (meState) {
+    slides.push({ key: "me", html: `
+      <div class="tk-me-left"><strong>${escapeHtml(meState.greeting)}</strong><span><b>${escapeHtml(meState.ach)}</b> succès</span></div>
+      <div class="tk-me-hours"><b>${escapeHtml(meState.hours)}</b><small>TEMPS DE JEU</small></div>` });
+  }
+  const main = tickerComm.find((c) => c.main && c.online !== null);
+  if (main) {
+    slides.push({ key: "discord", html: `
+      <img class="tk-logo" src="${escapeHtml(main.logo || "../assets/logo.png")}" alt="" />
+      <div class="tk-count"><b><i class="tk-dot"></i>${Number(main.online)} connecté${main.online > 1 ? "s" : ""}</b><small>SUR LE DISCORD</small></div>` });
+  }
+  const anomia = getServer("anomia");
+  if (anomia) {
+    // Anomia est en pause : on annonce le retour au lieu du nombre de joueurs
+    const body = anomia.status === "online" && lastServerOnline
+      ? `<b><i class="tk-dot"></i>${Number(lastServerClients)}${lastServerMax ? "/" + Number(lastServerMax) : ""} connecté${lastServerClients > 1 ? "s" : ""}</b><small>SUR ANOMIA RP</small>`
+      : `<b>Prévue ${escapeHtml(anomia.connectLabel || "2027")}</b><small>RETOUR D'ANOMIA RP</small>`;
+    slides.push({ key: "anomia", html: `<img class="tk-logo" src="${escapeHtml(anomia.logo || "../assets/anomia-logo.png")}" alt="" /><div class="tk-count">${body}</div>` });
+  }
+  const kb = getServer("kannibaventure");
+  if (kb) {
+    const body = kb.status === "online"
+      ? `<b><i class="tk-dot"></i>Serveur ouvert</b><small>KANNIBAVENTURE</small>`
+      : `<b>${escapeHtml(kb.connectLabel || "Bientôt")}</b><small>OUVERTURE DE KANNIBAVENTURE</small>`;
+    slides.push({ key: "kb", html: `<img class="tk-logo" src="${escapeHtml(kb.logo || "../assets/kannibaventure.png")}" alt="" /><div class="tk-count">${body}</div>` });
+  }
+  return slides;
+}
+
+function renderTicker(advance) {
+  const el = document.getElementById("ticker");
+  if (!el) return;
+  const slides = buildTickerSlides();
+  if (!slides.length) { el.innerHTML = ""; return; }
+  if (advance) tickerIndex = (tickerIndex + 1) % slides.length;
+  else if (tickerIndex < 0 || tickerIndex >= slides.length) tickerIndex = 0;
+  const slide = slides[tickerIndex];
+  if (advance || el.dataset.key !== slide.key) {
+    el.dataset.key = slide.key;
+    el.innerHTML = `<div class="tk">${slide.html}</div>`; // le nouveau bloc rejoue l'animation de fondu
+  } else {
+    el.firstElementChild.innerHTML = slide.html; // même diapo : simple mise à jour des chiffres
   }
 }
-document.getElementById("home-me-share").addEventListener("click", () => { const p = document.getElementById("profile-panel"); if (p.classList.contains("hidden")) toggleProfilePanel(); });
+refreshTickerCommunities().then(() => renderTicker());
+setInterval(refreshTickerCommunities, 5 * 60 * 1000);
+setInterval(() => renderTicker(true), 4500);
 
 // --- Accueil : Discords (membres en ligne + rejoindre) ---
 let discordCommLoaded = false;
@@ -1057,7 +1142,8 @@ async function loadDiscordCommunities() {
     const counts = c.online !== null
       ? `<span class="discord-online"><i></i>${c.online} en ligne</span><span class="discord-members">${c.members !== null ? c.members + " membres" : ""}</span>`
       : `<span class="discord-members">Rejoins le Discord</span>`;
-    el.innerHTML = `<span class="discord-name">${escapeHtml(c.name)}</span><div class="discord-counts">${counts}</div><button class="btn-copy">Rejoindre</button>`;
+    const logoHtml = c.logo ? `<img class="discord-logo" src="${escapeHtml(c.logo)}" alt="" />` : "";
+    el.innerHTML = `<div class="discord-head">${logoHtml}<span class="discord-name">${escapeHtml(c.name)}</span></div><div class="discord-counts">${counts}</div><button class="btn-copy">Rejoindre</button>`;
     el.querySelector("button").addEventListener("click", () => window.anomia.openExternal(c.url));
     grid.appendChild(el);
   });
@@ -2252,14 +2338,11 @@ window.anomia.onCrashDetected(async ({ path: crashPath }) => {
 });
 
 // --- Règlement ---
-function formatRules(raw) {
-  const lines = raw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+function formatRulesLines(lines) {
   let html = "";
   let i = 0;
-
   while (i < lines.length) {
     const line = lines[i];
-
     if (line.startsWith("●")) {
       const bullets = [];
       while (i < lines.length && lines[i].startsWith("●")) {
@@ -2269,29 +2352,45 @@ function formatRules(raw) {
       html += `<ul class="rules-list">${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
       continue;
     }
-
     if (/^\d+\.\d+\s*—/.test(line)) {
       html += `<h3 class="rules-subsection-title">${escapeHtml(line)}</h3>`;
       i++;
       continue;
     }
-
-    if (/^\d+\.\s/.test(line)) {
-      html += `<h2 class="rules-section-title">${escapeHtml(line)}</h2>`;
-      i++;
-      continue;
-    }
-
     if (line.startsWith("📜") || line.startsWith("📌") || line.startsWith("🏛️")) {
       html += `<p class="rules-highlight">${escapeHtml(line)}</p>`;
       i++;
       continue;
     }
-
     html += `<p>${escapeHtml(line)}</p>`;
     i++;
   }
+  return html;
+}
 
+// Chaque chapitre (« 1. TITRE ») devient un menu déroulant ; ce qui précède reste visible en introduction.
+function formatRules(raw) {
+  const lines = raw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  const intro = [];
+  const chapters = [];
+  let current = null;
+  for (const line of lines) {
+    if (/^\d+\.\s/.test(line)) {
+      current = { title: line, lines: [] };
+      chapters.push(current);
+    } else if (current) {
+      current.lines.push(line);
+    } else {
+      intro.push(line);
+    }
+  }
+  let html = formatRulesLines(intro);
+  if (chapters.length) {
+    html += `<div class="rules-toolbar"><button class="btn-copy" id="rules-open-all">Tout déplier</button><button class="btn-copy" id="rules-close-all">Tout replier</button></div>`;
+  }
+  chapters.forEach((c) => {
+    html += `<details class="rules-chapter"><summary><span class="rules-chapter-title">${escapeHtml(c.title)}</span></summary><div class="rules-chapter-body">${formatRulesLines(c.lines)}</div></details>`;
+  });
   return html;
 }
 
@@ -2442,6 +2541,7 @@ async function loadMap() {
   const setupMarkers = () => {
     renderMapFilters(allMapPoints);
     renderMapMarkers(allMapPoints);
+    fitMapToView(); // à l'ouverture : on voit toute la carte
   };
   if (img.complete) setupMarkers();
   else img.addEventListener("load", setupMarkers, { once: true });
@@ -2456,7 +2556,7 @@ async function loadMap() {
     const cursorY = e.clientY - rect.top;
     const prevScale = mapState.scale;
     const delta = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-    const newScale = Math.min(4, Math.max(0.3, prevScale * delta));
+    const newScale = Math.min(4, Math.max(mapMinScale, prevScale * delta));
 
     mapState.x = cursorX - ((cursorX - mapState.x) / prevScale) * newScale;
     mapState.y = cursorY - ((cursorY - mapState.y) / prevScale) * newScale;
@@ -2482,6 +2582,26 @@ async function loadMap() {
   });
 
   applyMapTransform(false);
+  const fitBtn = document.getElementById("map-fit");
+  if (fitBtn) fitBtn.addEventListener("click", () => fitMapToView(true));
+  window.addEventListener("resize", () => { if (!document.getElementById("view-map").classList.contains("hidden")) fitMapToView(); });
+}
+
+// Cadre toute la carte dans la fenêtre (échelle + centrage)
+let mapMinScale = 0.3;
+function fitMapToView(animated) {
+  const wrap = document.getElementById("map-wrap");
+  const img = document.getElementById("map-image");
+  const rect = wrap.getBoundingClientRect();
+  if (!rect.width || !img.naturalWidth) return;
+  const w = 2200; // largeur d'affichage de la carte à l'échelle 1 (voir style.css)
+  const h = (w * img.naturalHeight) / img.naturalWidth;
+  const scale = Math.min(rect.width / w, rect.height / h);
+  mapMinScale = Math.min(0.3, scale * 0.8);
+  mapState.scale = scale;
+  mapState.x = (rect.width - w * scale) / 2;
+  mapState.y = (rect.height - h * scale) / 2;
+  applyMapTransform(Boolean(animated));
 }
 
 // --- Titre de succès (le plus prestigieux débloqué, affiché près du profil) ---
