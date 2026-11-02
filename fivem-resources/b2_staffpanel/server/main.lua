@@ -10,6 +10,7 @@
 --   setr anomia_admin_passphrase "CODE_ADMIN"     (deja utilise par b2_maintenance)
 --   setr anomia_mod_passphrase   "CODE_MODO"
 -- Les modos voient la liste des joueurs. Les admins ont en plus la maintenance.
+--   GET /b2_staffpanel/health   -> sante du serveur (admin uniquement)
 -- Lecture seule : aucune action (kick/ban...) n'est possible depuis le launcher.
 -- ============================================================
 
@@ -46,6 +47,45 @@ local function getCore()
     local ok, core = pcall(function() return exports['qb-core']:GetCoreObject() end)
     if ok then return core end
     return nil
+end
+
+-- Sante du serveur (admin uniquement) : ce que FXServer permet de lire depuis Lua.
+-- La RAM/CPU reels de la machine restent visibles dans txAdmin.
+local startedAt = os.time()
+local recentStops = {} -- derniers arrets de ressources (peuvent trahir un crash)
+
+AddEventHandler("onResourceStop", function(name)
+    table.insert(recentStops, 1, { name = name, at = os.time() })
+    while #recentStops > 8 do table.remove(recentStops) end
+end)
+
+local function buildHealth()
+    local ids = GetPlayers()
+    local sum, max = 0, 0
+    for _, id in ipairs(ids) do
+        local p = GetPlayerPing(id) or 0
+        sum = sum + p
+        if p > max then max = p end
+    end
+    local total, started = GetNumResources(), 0
+    for i = 0, total - 1 do
+        local rname = GetResourceByFindIndex(i)
+        if rname and GetResourceState(rname) == "started" then started = started + 1 end
+    end
+    local stops = {}
+    for _, s in ipairs(recentStops) do
+        table.insert(stops, { name = s.name, secondsAgo = os.time() - s.at })
+    end
+    return {
+        uptimeSeconds = os.time() - startedAt,
+        players = #ids,
+        maxClients = GetConvarInt("sv_maxclients", 0),
+        avgPing = #ids > 0 and math.floor(sum / #ids) or 0,
+        maxPing = max,
+        resourcesStarted = started,
+        resourcesTotal = total,
+        recentStops = stops
+    }
 end
 
 local function buildPlayers()
@@ -92,6 +132,14 @@ SetHttpHandler(function(req, res)
     end
 
     local path = tostring(req.path or "")
+    if path:find("health", 1, true) then
+        if role ~= "admin" then
+            send(res, 403, { error = "admin_only" })
+            return
+        end
+        send(res, 200, { role = role, health = buildHealth() })
+        return
+    end
     if path:find("players", 1, true) then
         send(res, 200, { role = role, players = buildPlayers(), maxClients = GetConvarInt("sv_maxclients", 0) })
     else

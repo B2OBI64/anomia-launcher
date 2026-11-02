@@ -1,46 +1,16 @@
-Nouveau : B2 LAUNCHER (v1.5.1)
+## B2 Launcher 1.7.0 — Le gros bloc de nouveautés
 
-Le launcher change de nom et devient le B2 Launcher : un seul launcher pour tous les serveurs de la communauté B2.
-
-Refonte complète
-- Nouveau nom et nouveau logo : B2 Launcher, avec une nouvelle identité violette aux couleurs de la chaîne Twitch (tu peux changer la couleur dans les réglages).
-- Les serveurs sont maintenant en haut du launcher, représentés par leur logo cliquable : Accueil, Anomia RP et KannibAventure.
-- Chaque serveur a ses propres onglets (actualités, succès, règlement, carte...).
-- Nouvel accueil avec un slider animé qui présente les serveurs.
-- Les streamers de la communauté sont désormais sur l'accueil.
-- L'accueil présente ta chaîne Twitch B2OBI64 avec un accès direct au live et au Discord.
-- Nouvelle section « Clips de la communauté » sur l'accueil : les clips Twitch faits par les viewers, un clic pour les regarder.
-- Profil joueur : clique sur ton avatar Discord pour ouvrir ton profil (temps de jeu, succès, raretés). Il reste ouvert jusqu'à ce que tu recliques dessus. Tu peux choisir 3 succès à mettre en avant, faire une capture de ton profil et te déconnecter. Le pseudo vient directement de Discord.
-- Carte d'Anomia : elle s'ouvre maintenant cadrée sur toute la carte, avec un bouton « Tout voir ».
-- Actualités : la dernière actu est mise en avant, les autres sont sur 2 colonnes, avec « Lire la suite » pour les longs textes.
-- Règlement : chaque chapitre est un menu déroulant (avec « Tout déplier / Tout replier »).
-- Finitions : fondu doux entre les onglets et quand on change de streamer, logos des serveurs sur les cartes Discord, et miniature du live (floutée) en fond du bloc Twitch quand le streamer est en direct.
-- Streamers : le streamer en live apparaît à la place de la chaîne B2OBI64 quand elle est hors ligne, avec les viewers et la catégorie. Les streamers sont juste sous le bloc : clique sur l'un d'eux pour l'afficher et le regarder.
-- Barre du haut : les logos des serveurs sont à gauche et un bandeau automatique défile au centre : ton résumé (bienvenue, temps de jeu, succès), les connectés sur le Discord, sur Anomia et l'ouverture de KannibAventure.
-- Accueil : cartes Discord de chaque serveur avec le nombre de membres en ligne et un bouton pour rejoindre.
-- Version staff : les modérateurs et admins ont un onglet avec la liste des joueurs en ligne (ID, personnage, métier, ping) mise à jour automatiquement.
-- Réglages : nouveau sélecteur de fond « verre liquide » : soleil (Blanc), lune (Noir violet) ou automatique (suit le thème de Windows).
-- L'écran de démarrage (vérification des mises à jour) affiche maintenant B2 Launcher.
-- Ton compte Discord, tes réglages et ton temps de jeu sont conservés.
-
-Rapport d'erreur automatique
-- Si le launcher plante, un rapport est créé automatiquement : l'explorateur de fichiers s'ouvre sur un .zip à envoyer au staff (aucun mot de passe inclus).
-- Un bouton « Créer un rapport d'erreur » est aussi disponible dans les réglages.
-
-Anomia RP
-- Le serveur est en pause et revient en 2027 : la connexion est fermée aux joueurs et le bouton affiche 2027.
-- Tes succès, le règlement, la carte et le staff restent consultables.
-
-KannibAventure (nouveau serveur Minecraft)
-- Première page de présentation du serveur : Minecraft Java avec mods et plugins.
-- Journal de développement, règlement et FAQ pour suivre l'avancement.
-- Onglet Fichiers : un installateur de mods qui télécharge et met à jour les mods du serveur en vérifiant leur intégrité.
-- Onglet Carte : une carte du monde qui se dévoile au fil de l'exploration (carte globale de la communauté ou carte personnelle), disponible à l'ouverture.
-- Ouverture prévue en décembre (date précise à venir) : le bouton de connexion est grisé en attendant.
-
-Succès (Anomia)
-- Correction des succès de kilomètres (100 / 500 / 1000 km).
-- Nouveau système de rareté : Bronze, Argent, Or, et violet pour les succès secrets.
-- Nouveaux succès : Premier K.O., Entre la vie et la mort, Bon contribuable, Légende vivante, Tour du monde, Fidèle au poste et un succès secret d'anniversaire.
-
-Bon jeu à tous !
+- Journal « Quoi de neuf » : toutes les versions du launcher gardées ici, avec une pastille quand une nouvelle version apporte du neuf.
+- Bloc-notes intégré : idées de personnage, coordonnées, listes de courses RP, avec étiquettes Général / Anomia / KannibAventure et recherche. Tes notes restent sur ton PC.
+- Thèmes préfabriqués : B2 Violet, Néon, Minecraft, Rétro (et un thème secret à découvrir…).
+- Fond animé en option (particules) : à activer dans les options.
+- Option « Masquer les streamers hors live » pour ne voir que ceux qui streament.
+- Mode présentation (streamer) : floute ton pseudo et ton avatar à l'écran et sur la carte de profil.
+- Mode hors ligne propre : sans internet, le launcher garde les derniers contenus et affiche une bannière.
+- Reprise automatique : le launcher rouvre le dernier serveur et le dernier onglet utilisés.
+- Carte « Revoir le dernier stream » dans le panneau Twitch quand la chaîne n'est pas en live.
+- « Anomia en chiffres » : heures jouées par la communauté, nombre de joueurs et record de connectés.
+- Profil : ligne « En jeu sur Anomia depuis … » et choix du titre affiché sous ton pseudo (aussi sur la carte exportée).
+- Staff (admin) : bloc « Santé du serveur » (ping moyen, ressources, arrêts récents).
+- Options : possibilité de revenir à une version précédente du launcher si une mise à jour pose problème.
+- Écran de démarrage : astuces et citations qui défilent.

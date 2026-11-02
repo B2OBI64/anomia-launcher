@@ -342,6 +342,23 @@ function fetchJson(url, timeoutMs = 8000) {
   });
 }
 
+// Comme fetchJson, mais garde la dernière réponse réussie sur le disque : si internet coupe
+// (ou si le serveur est éteint), on réaffiche le dernier contenu connu au lieu de rien.
+// À ne PAS utiliser pour des données privées ni pour un statut « en direct ».
+async function fetchJsonCached(url, timeoutMs = 8000) {
+  const key = crypto.createHash("sha1").update(String(url)).digest("hex");
+  const dir = path.join(app.getPath("userData"), "cache");
+  const file = path.join(dir, key + ".json");
+  try {
+    const data = await fetchJson(url, timeoutMs);
+    try { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(file, JSON.stringify(data)); } catch { /* cache non bloquant */ }
+    return data;
+  } catch (err) {
+    try { return JSON.parse(fs.readFileSync(file, "utf-8")); } catch { /* pas de cache */ }
+    throw err;
+  }
+}
+
 // ============================================================
 // Connexion Discord (pré-vérification avant de lancer FiveM)
 // ============================================================
@@ -597,7 +614,7 @@ ipcMain.on("server:connect", (event) => {
 ipcMain.handle("news:get", async () => {
   if (config.news.remoteUrl) {
     try {
-      const remote = await fetchJson(config.news.remoteUrl);
+      const remote = await fetchJsonCached(config.news.remoteUrl);
       if (Array.isArray(remote) && remote.length > 0) return remote;
     } catch (err) {
       // on retombe sur le fichier local ci-dessous
@@ -808,7 +825,7 @@ ipcMain.handle("media:get", async () => {
   let media = [];
   if (config.media.remoteUrl) {
     try {
-      const remote = await fetchJson(config.media.remoteUrl);
+      const remote = await fetchJsonCached(config.media.remoteUrl);
       if (Array.isArray(remote)) media = remote;
     } catch {
       // on retombe sur le fichier local ci-dessous
@@ -1035,6 +1052,17 @@ ipcMain.handle("admin:getPlayers", async () => {
   }
 });
 
+ipcMain.handle("admin:getHealth", async () => {
+  if (cachedStaffRole !== "admin" || !cachedStaffCode) return { ok: false, error: "Réservé aux admins." };
+  try {
+    const r = await staffRequest("health", cachedStaffCode);
+    if (r.status === 200 && r.body && r.body.health) return { ok: true, health: r.body.health };
+    return { ok: false, error: "Réponse inattendue du serveur." };
+  } catch (e) {
+    return { ok: false, error: "Serveur injoignable (éteint ou b2_staffpanel pas à jour)." };
+  }
+});
+
 ipcMain.handle("admin:stats", async () => {
   const stats = {
     players: null,
@@ -1098,7 +1126,7 @@ ipcMain.handle("discord:getCommunities", async () => {
       Object.assign(entry, cached.data);
     } else {
       try {
-        const r = await fetchJson(`https://discord.com/api/v10/invites/${code}?with_counts=true`, 6000);
+        const r = await fetchJsonCached(`https://discord.com/api/v10/invites/${code}?with_counts=true`, 6000);
         const data = {
           online: typeof r.approximate_presence_count === "number" ? r.approximate_presence_count : null,
           members: typeof r.approximate_member_count === "number" ? r.approximate_member_count : null
@@ -1115,7 +1143,7 @@ ipcMain.handle("discord:getCommunities", async () => {
 // Clips Twitch de la communauté (via b2_twitchstatus/clips)
 ipcMain.handle("twitch:getClips", async () => {
   try {
-    const result = await fetchJson(config.server.twitchClipsUrl, 8000);
+    const result = await fetchJsonCached(config.server.twitchClipsUrl, 8000);
     if (Array.isArray(result)) {
       // On ne renvoie que des clips twitch.tv valides (le launcher ouvre l'URL dans le navigateur)
       const clips = result.filter((c) => c && typeof c.url === "string" && /^https:\/\/(www\.)?twitch\.tv\//.test(c.url)).slice(0, 24);
@@ -1243,6 +1271,103 @@ ipcMain.handle("diagnostics:createReport", () => {
   }
 });
 
+// ============================================================
+// Réseau : bandeau « hors ligne »
+// ============================================================
+const { net: electronNet } = require("electron");
+let lastOnline = true;
+function pushNetworkStatus() {
+  let online = true;
+  try { online = electronNet.isOnline(); } catch { online = true; }
+  if (online !== lastOnline) {
+    lastOnline = online;
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("network:status", online);
+  }
+}
+setInterval(pushNetworkStatus, 8000);
+ipcMain.handle("network:isOnline", () => { try { return electronNet.isOnline(); } catch { return true; } });
+
+// ============================================================
+// Jeu en cours (« Tu joues à Anomia depuis 2 h 14 »)
+// ============================================================
+let gameSince = null;
+async function pollGameState() {
+  const running = await isFiveMRunning();
+  if (running && !gameSince) gameSince = Date.now();
+  if (!running) gameSince = null;
+}
+setInterval(pollGameState, 20000);
+setTimeout(pollGameState, 3000);
+ipcMain.handle("game:getState", async () => {
+  await pollGameState();
+  return { running: Boolean(gameSince), since: gameSince, game: "Anomia" };
+});
+
+// ============================================================
+// Bloc-notes (local, sur le PC du joueur uniquement)
+// ============================================================
+const notesPath = () => path.join(app.getPath("userData"), "notes.json");
+ipcMain.handle("notes:get", () => {
+  try { const n = JSON.parse(fs.readFileSync(notesPath(), "utf-8")); return Array.isArray(n) ? n : []; } catch { return []; }
+});
+ipcMain.handle("notes:set", (_e, notes) => {
+  if (!Array.isArray(notes)) return { ok: false };
+  const clean = notes.slice(0, 200).map((n) => ({
+    id: String(n && n.id || "").slice(0, 40),
+    title: String(n && n.title || "").slice(0, 120),
+    tag: ["general", "anomia", "kannibaventure"].includes(n && n.tag) ? n.tag : "general",
+    body: String(n && n.body || "").slice(0, 100000),
+    updatedAt: Number(n && n.updatedAt) || Date.now()
+  })).filter((n) => n.id);
+  try { fs.writeFileSync(notesPath(), JSON.stringify(clean)); return { ok: true }; } catch (err) { return { ok: false, error: err.message }; }
+});
+
+// ============================================================
+// « Quoi de neuf » : historique de toutes les versions (src/changelog.json)
+// ============================================================
+ipcMain.handle("changelog:get", () => {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, "src", "changelog.json"), "utf-8")); } catch { return []; }
+});
+
+// ============================================================
+// Retour à une version précédente : liste des versions publiées sur GitHub
+// ============================================================
+ipcMain.handle("releases:list", async () => {
+  try {
+    const list = await fetchJson("https://api.github.com/repos/B2OBI64/anomia-launcher/releases?per_page=12", 8000);
+    return {
+      ok: true,
+      current: app.getVersion(),
+      releases: (Array.isArray(list) ? list : []).filter((r) => !r.draft).map((r) => {
+        const exe = (r.assets || []).find((a) => /\.exe$/i.test(a.name || ""));
+        return { tag: String(r.tag_name || ""), date: String(r.published_at || "").slice(0, 10), page: r.html_url, installer: exe ? exe.browser_download_url : null };
+      }).filter((r) => r.tag)
+    };
+  } catch (err) {
+    return { ok: false, error: "Impossible de récupérer la liste des versions (hors ligne ?)." };
+  }
+});
+
+// ============================================================
+// Anomia en chiffres (b2_stats) : gardé en cache pour rester visible quand le serveur est éteint
+// ============================================================
+ipcMain.handle("stats:getAnomia", async () => {
+  try {
+    const r = await fetchJsonCached(config.server.statsUrl, 6000);
+    if (r && typeof r === "object" && !r.error) return { ok: true, stats: r };
+  } catch { /* indisponible */ }
+  return { ok: false };
+});
+
+// Dernier stream (VOD) de la chaîne : b2_twitchstatus/videos
+ipcMain.handle("twitch:getLastVideo", async () => {
+  try {
+    const r = await fetchJsonCached(config.server.twitchVideosUrl, 8000);
+    if (r && typeof r.url === "string" && /^https:\/\/(www\.)?twitch\.tv\//.test(r.url)) return { ok: true, video: r };
+  } catch { /* indisponible */ }
+  return { ok: false };
+});
+
 ipcMain.handle("settings:get", () => loadSettings());
 ipcMain.handle("settings:set", (event, patch) => saveSettings(patch));
 
@@ -1336,7 +1461,7 @@ ipcMain.handle("staff:get", async () => {
   let staff = [];
   if (config.staff.remoteUrl) {
     try {
-      const remote = await fetchJson(config.staff.remoteUrl);
+      const remote = await fetchJsonCached(config.staff.remoteUrl);
       if (Array.isArray(remote) && remote.length > 0) staff = remote;
     } catch {
       // on retombe sur le fichier local ci-dessous
@@ -1357,7 +1482,7 @@ ipcMain.handle("rules:get", async () => {
   let content = "";
   if (config.rules.remoteUrl) {
     try {
-      const remote = await fetchJson(config.rules.remoteUrl);
+      const remote = await fetchJsonCached(config.rules.remoteUrl);
       if (remote && remote.content) content = remote.content;
     } catch {
       // on retombe sur le fichier local ci-dessous
@@ -1387,7 +1512,7 @@ ipcMain.handle("kb:getContent", async (_event, name) => {
     catch { return null; }
   };
   try {
-    const remote = await fetchJson(config.kannibaventure.remoteBase + fileName);
+    const remote = await fetchJsonCached(config.kannibaventure.remoteBase + fileName);
     if (remote) return remote;
   } catch {
     // on retombe sur le fichier local
@@ -1556,7 +1681,7 @@ ipcMain.handle("map:getPoints", async () => {
   let points = [];
   if (config.map.remoteUrl) {
     try {
-      const remote = await fetchJson(config.map.remoteUrl);
+      const remote = await fetchJsonCached(config.map.remoteUrl);
       if (Array.isArray(remote)) points = remote;
     } catch {
       // on retombe sur le fichier local ci-dessous

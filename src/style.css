@@ -2141,3 +2141,91 @@ button.discord-profile[aria-expanded="true"] .discord-profile-avatar { box-shado
 .rules-chapter-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--teal); }
 .rules-chapter-body { padding: 4px 22px 18px; animation: tkIn .3s ease; }
 .rules-chapter-body > .rules-subsection-title:first-child { margin-top: 6px; }
+
+.settings-modal { max-height: 90vh; overflow-y: auto; }
+
+/* ===== 1.7.0 : nouveautés ===== */
+#fx-bg{position:fixed;inset:0;z-index:1;pointer-events:none;display:none}
+.offline-banner{background:rgba(245,158,11,.14);border-bottom:1px solid rgba(245,158,11,.4);color:#fbbf24;font-size:12px;text-align:center;padding:5px 10px;letter-spacing:.3px}
+.whatsnew-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#f43f5e;box-shadow:0 0 8px #f43f5e}
+#btn-whatsnew{position:relative}
+/* VOD */
+.vod-card{display:flex;align-items:center;gap:12px;margin:10px 0 0;padding:8px 12px 8px 8px;border:1px solid var(--border);border-radius:12px;background:rgba(0,0,0,.28);cursor:pointer;max-width:420px;transition:border-color .2s,transform .2s;text-decoration:none;color:inherit}
+.vod-card:hover{border-color:var(--teal);transform:translateY(-1px)}
+.vod-thumb{width:84px;height:48px;border-radius:8px;background:#1a1228 center/cover no-repeat;display:flex;align-items:center;justify-content:center;flex:none}
+.vod-thumb i{font-style:normal;color:#fff;background:rgba(0,0,0,.55);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.vod-text{display:flex;flex-direction:column;min-width:0}
+.vod-text b{font-size:13px}
+.vod-text small{font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Anomia en chiffres */
+.anomia-stats{margin:0 0 22px;padding:16px 18px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.02)}
+.as-head h2{margin:2px 0 12px;font-size:20px}
+.as-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.as-item{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid var(--border)}
+.as-item b{font-family:"Display",sans-serif;font-size:30px;color:var(--teal);line-height:1}
+.as-item span{font-size:10px;letter-spacing:1.2px;color:var(--text-dim);font-family:"Mono",monospace}
+.as-note{display:block;margin-top:8px;color:var(--text-dim);font-size:11px}
+/* Santé serveur */
+.health-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:10px}
+.health-item{display:flex;flex-direction:column;gap:3px;padding:10px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid var(--border)}
+.health-item span{font-size:10px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase}
+.health-item b{font-size:18px}
+.health-stops{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--text-dim)}
+.health-stops b{color:var(--text);margin-bottom:2px}
+.health-ok{font-size:12px;color:#4ade80;margin:0}
+/* Profil */
+.pp-game{display:block;margin-top:4px;font-size:12px;color:#4ade80}
+.pp-title-row{display:flex;flex-direction:column;gap:5px;margin:12px 0 4px;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
+.pp-title-row select,.notes-editor-top select{background:#110c1e;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 8px;font-size:13px;text-transform:none;letter-spacing:0}
+/* Options */
+.theme-chips{display:flex;flex-wrap:wrap;gap:6px}
+.theme-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);font-size:12px;cursor:pointer}
+.theme-chip i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.theme-chip.active{border-color:var(--c);box-shadow:0 0 0 1px var(--c) inset}
+.opt-row{display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0;cursor:pointer}
+.opt-row input{accent-color:var(--teal)}
+.code-row{display:flex;gap:6px}
+.code-row input{flex:1;min-width:0;background:#110c1e;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:13px}
+/* Mode présentation */
+.streamer-mode #pp-name,.streamer-mode #pp-avatar,.streamer-mode #discord-auth-slot,.streamer-mode .streamer-sensitive,.streamer-mode #admin-players-table td:first-child,.streamer-mode #staff-players-table td:first-child{filter:blur(7px)}
+.streamer-mode #discord-auth-slot img,.streamer-mode #discord-auth-slot span{filter:blur(7px)}
+/* Streamers hors live masqués */
+body.hide-offline .streamer-card.known:not(.live){display:none}
+/* Bloc-notes */
+.notes-box{width:min(860px,94vw);max-width:none;height:min(560px,86vh);display:flex;flex-direction:column}
+.notes-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.notes-head h3{margin:0}
+.notes-layout{display:flex;gap:14px;flex:1;min-height:0;position:relative}
+.notes-side{width:230px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.notes-list{display:flex;flex-direction:column;gap:5px;overflow-y:auto;flex:1}
+.note-item{text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.note-item.active{border-color:var(--teal);background:rgba(139,92,246,.1)}
+.note-item b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note-item small{font-size:10px;color:var(--text-dim)}
+.note-item small.tag-anomia{color:#a78bfa}.note-item small.tag-kannibaventure{color:#4ade80}
+.notes-editor{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.notes-editor-top{display:flex;gap:8px}
+.notes-editor-top input{flex:1;min-width:0;background:#110c1e;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px}
+.notes-editor textarea{flex:1;resize:none;background:#110c1e;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;line-height:1.5;font-family:inherit}
+.notes-saved{color:var(--text-dim);font-size:11px;min-height:14px}
+.notes-empty{position:absolute;right:0;left:244px;top:40%;text-align:center;color:var(--text-dim);font-size:13px}
+/* Quoi de neuf / versions */
+.whatsnew-box{width:min(620px,94vw);max-width:none;max-height:84vh;overflow-y:auto}
+.wn-version{padding:12px 0;border-bottom:1px solid var(--border)}
+.wn-version:last-child{border:0}
+.wn-head{display:flex;align-items:center;gap:10px}
+.wn-head b{font-family:"Display",sans-serif;font-size:22px;color:var(--teal)}
+.wn-head em{font-style:normal;font-size:10px;background:var(--teal);color:#07050d;border-radius:999px;padding:2px 8px}
+.wn-head span{margin-left:auto;font-size:11px;color:var(--text-dim)}
+.wn-title{font-weight:600;margin:4px 0}
+.wn-version ul{margin:6px 0 0;padding-left:18px;font-size:13px;line-height:1.6;color:var(--text-dim)}
+.versions-list{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto}
+.version-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px}
+.version-row small{color:var(--text-dim)}
+/* Thèmes (sombre uniquement) */
+html[data-theme="neon"]:not([data-mode="light"]){--bg:#04070f;--panel-solid:#08111f}
+html[data-theme="minecraft"]:not([data-mode="light"]){--bg:#0b110b;--panel-solid:#121c12}
+html[data-theme="minecraft"]:not([data-mode="light"]) .glass,html[data-theme="minecraft"]:not([data-mode="light"]) .server-btn,html[data-theme="minecraft"]:not([data-mode="light"]) button{border-radius:2px}
+html[data-theme="retro"]:not([data-mode="light"]){--bg:#120b04;--panel-solid:#1d1208}
+html[data-theme="retro"]:not([data-mode="light"]) body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px)}
+html[data-theme="gold"]:not([data-mode="light"]){--bg:#0d0a03;--panel-solid:#1a1405}

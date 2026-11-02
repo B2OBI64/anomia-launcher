@@ -21,6 +21,7 @@ module.exports = {
       status: "paused",
       connectLabel: "2027",
       discordInvite: "https://discord.gg/ECBhuTMw7n",
+      requiredRoleId: "1434849042319278231",
       tabs: [
         { view: "home", label: "Accueil" },
         { view: "news", label: "Actualités" },
@@ -43,7 +44,7 @@ module.exports = {
       // Discord du serveur Minecraft (le rôle d'accès sera renseigné plus tard) :
       discordInvite: "https://discord.gg/fdSjJPRJy4",
       discordGuildId: "1357757210272469212",
-      requiredRoleId: null,
+      requiredRoleId: "1370879305097154692",
       tabs: [
         { view: "kb-home", label: "Accueil" },
         { view: "kb-devlog", label: "Journal de dev" },
@@ -79,7 +80,7 @@ module.exports = {
   // --- Discords affichés sur l'accueil (membres en ligne + bouton rejoindre) ---
   // invite = code ou lien d'invitation. Laisse null tant que tu n'as pas le lien : la carte reste masquée.
   discordCommunities: [
-    { name: "Communauté B2", invite: null, color: "#8b5cf6", logo: "../assets/logo.png", main: true }, // Discord principal de la chaîne : lien à renseigner
+    { name: "Communauté B2", invite: "https://discord.gg/nABGrX9Hu2", color: "#8b5cf6", logo: "../assets/logo.png", main: true }, // Discord principal (Kannibal Team)
     { name: "Anomia RP", invite: "https://discord.gg/ECBhuTMw7n", color: "#2dd4bf", logo: "../assets/anomia-logo.png" },
     { name: "KannibAventure", invite: "https://discord.gg/fdSjJPRJy4", color: "#a855f7", logo: "../assets/kannibaventure.png" }
   ],
@@ -89,7 +90,7 @@ module.exports = {
     channel: "b2obi64",
     displayName: "B2OBI64",
     url: "https://twitch.tv/b2obi64",
-    discordInvite: "https://discord.gg/ECBhuTMw7n",
+    discordInvite: "https://discord.gg/nABGrX9Hu2", // Discord principal (Kannibal Team)
     // Affichés même si le statut live n'est pas joignable (ex. serveur Anomia arrêté)
     fallbackStreamers: [
       { channel: "b2obi64", displayName: "B2OBI64" },
@@ -125,6 +126,8 @@ module.exports = {
     // Endpoint custom (ressource b2_twitchstatus) qui donne le statut live des streamers Anomia
     twitchStatusUrl: "http://185.44.80.32:30140/b2_twitchstatus/",
     staffPanelUrl: "http://185.44.80.32:30140/b2_staffpanel/",
+    twitchVideosUrl: "http://185.44.80.32:30140/b2_twitchstatus/videos",
+    statsUrl: "http://185.44.80.32:30140/b2_stats/",
     twitchClipsUrl: "http://185.44.80.32:30140/b2_twitchstatus/clips",
     // Endpoint réservé aux admins (protégé par le code d'accès) qui active/désactive
     // la maintenance à distance depuis le launcher, sans passer par la console serveur.
@@ -157,7 +160,12 @@ module.exports = {
 
   // --- Discord ---
   discord: {
-    inviteUrl: "https://discord.gg/ECBhuTMw7n"
+    inviteUrl: "https://discord.gg/nABGrX9Hu2",
+    // Discord principal "Kannibal Team" : id du serveur (les rôles staff/admin viennent de là)
+    mainGuildId: "445112343064477696",
+    // Rôles requis (vérifiés côté serveur FiveM par b2_discordcheck via les convars, voir GUIDE)
+    anomiaRequiredRoleId: "1434849042319278231",
+    minecraftRequiredRoleId: "1370879305097154692"
   },
 
   // --- News / Changelog ---

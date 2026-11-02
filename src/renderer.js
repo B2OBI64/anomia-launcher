@@ -11,6 +11,8 @@ let featuredNow = null;
 const CHANNEL_RE = /^[A-Za-z0-9_]{1,25}$/;
 let profileShowcaseKeys = null; // succès choisis pour le profil (null = automatique : les 3 plus rares)
 let achCache = { at: 0, promise: null };
+let streamerMode = false; // mode présentation : masque pseudo/avatar
+let chosenTitleKey = ""; // titre choisi par le joueur
 let isAdminUnlocked = false; // admin complet (bypass connexion, maintenance)
 let staffRole = null; // "admin" | "mod"
 
@@ -267,7 +269,7 @@ window.anomia.getServers().then((cfg) => {
   initTwitchPanel();
   renderServerBar();
   renderHubSlider();
-  selectServer("hub");
+  if (typeof restoreLast === "function") restoreLast(); else selectServer("hub");
   updateConnectButtonState(); // applique l'état "en pause" d'Anomia si besoin
 });
 
@@ -492,7 +494,7 @@ document.getElementById("kb-discord").addEventListener("click", () => {
 
 // --- Discord ---
 document.getElementById("btn-discord").addEventListener("click", () => {
-  window.anomia.openExternal("https://discord.gg/ECBhuTMw7n");
+  window.anomia.openExternal((TWITCH && TWITCH.discordInvite) || "https://discord.gg/nABGrX9Hu2");
 });
 
 // --- Connexion serveur ---
@@ -818,7 +820,7 @@ loadNews();
 // --- Streamers Twitch ---
 function renderStreamerCard(streamer) {
   const el = document.createElement("div");
-  el.className = `streamer-card ${streamer.live ? "live" : ""}`;
+  el.className = `streamer-card known ${streamer.live ? "live" : ""}`;
   el.dataset.channel = (streamer.channel || "").toLowerCase();
   el.title = streamer.live ? `${streamer.displayName || streamer.channel} - en live${streamer.game ? " · " + streamer.game : ""}` : (streamer.displayName || streamer.channel);
   const avatar = streamer.avatarUrl || "../assets/logo.png";
@@ -1047,7 +1049,7 @@ function welcomeMessage(name) {
 let meState = null; // { greeting, hours, ach } ou null si pas connecté à Discord
 async function loadHomeMe() {
   if (!discordProfile) { meState = null; renderTicker(); return; }
-  const name = discordProfile.username || "Joueur";
+  const name = streamerMode ? "Joueur" : (discordProfile.username || "Joueur");
   meState = { greeting: welcomeMessage(name).t, hours: "—", ach: "—" };
   renderTicker();
 
@@ -1967,7 +1969,7 @@ function renderPpShowcase() {
 }
 
 async function fillProfilePanel() {
-  document.getElementById("pp-name").textContent = (discordProfile && discordProfile.username) || "Joueur";
+  document.getElementById("pp-name").textContent = streamerMode ? "Joueur" : ((discordProfile && discordProfile.username) || "Joueur");
   document.getElementById("pp-avatar").src = (discordProfile && discordProfile.avatar) || "../assets/logo.png";
   let r;
   try { r = await getAchData(); } catch (e) { r = null; }
@@ -2106,7 +2108,7 @@ async function drawProfileCard(result) {
   ctx.strokeStyle = accent; ctx.lineWidth = 4; roundRect(ctx, 14, 14, W - 28, H - 28, 22); ctx.stroke();
 
   // Avatar
-  const avatarUrl = discordProfile && discordProfile.avatar ? discordProfile.avatar.replace("size=64", "size=256") : null;
+  const avatarUrl = !streamerMode && discordProfile && discordProfile.avatar ? discordProfile.avatar.replace("size=64", "size=256") : null;
   const avatar = (avatarUrl && (await loadImageSafe(avatarUrl))) || (await loadImageSafe("../assets/logo.png"));
   const ax = 70, ay = 70, ar = 90;
   ctx.save();
@@ -2119,10 +2121,13 @@ async function drawProfileCard(result) {
   // Nom + titre
   ctx.fillStyle = "#ffffff";
   ctx.font = "800 54px 'Segoe UI', Arial, sans-serif";
-  ctx.fillText(fitText(ctx, (discordProfile && discordProfile.username) || "Joueur", 640), 290, 130);
+  ctx.fillText(fitText(ctx, streamerMode ? "Joueur" : ((discordProfile && discordProfile.username) || "Joueur"), 640), 290, 130);
   ctx.fillStyle = accent;
   ctx.font = "600 26px 'Segoe UI', Arial, sans-serif";
-  ctx.fillText("ANOMIA RP  ·  PROFIL JOUEUR", 292, 175);
+  {
+    const tDef = chosenTitleKey && result.achievements && result.achievements[chosenTitleKey] ? list.find((d) => d.key === chosenTitleKey) : null;
+    ctx.fillText(fitText(ctx, tDef ? `${tDef.label.toUpperCase()}  ·  ANOMIA RP` : "ANOMIA RP  ·  PROFIL JOUEUR", 640), 292, 175);
+  }
 
   // Stats
   const hours = Math.floor((result.playtimeSeconds || 0) / 3600);
@@ -2610,7 +2615,7 @@ async function refreshAchievementTitle() {
   if (!result || !result.ok || !result.linked || !result.achievements) return;
 
   const priority = await window.anomia.getAchievementTitlePriority();
-  const unlockedKey = priority.find((key) => result.achievements[key]);
+  const unlockedKey = (chosenTitleKey && result.achievements[chosenTitleKey]) ? chosenTitleKey : priority.find((key) => result.achievements[key]);
   if (!unlockedKey) return;
 
   const def = (result.list || []).find((d) => d.key === unlockedKey);

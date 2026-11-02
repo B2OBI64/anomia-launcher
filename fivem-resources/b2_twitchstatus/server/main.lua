@@ -261,6 +261,58 @@ local function getClips(cb)
     end)
 end
 
+-- ============================================================
+-- Dernier stream (VOD) -> http://IP:PORT/b2_twitchstatus/videos
+-- ============================================================
+local videoCache = { data = nil, expiresAt = 0 }
+
+local function getLastVideo(cb)
+    if videoCache.data and GetGameTimer() < videoCache.expiresAt then
+        cb(videoCache.data)
+        return
+    end
+    local cfg = getConfig()
+    local channel = GetConvar("anomia_twitch_clips_channel", "")
+    if channel == "" then channel = cfg.channels[1] or "" end
+    if cfg.clientId == "" or cfg.clientSecret == "" or channel == "" then
+        cb(nil, "config_missing")
+        return
+    end
+    getAppAccessToken(cfg, function(token)
+        if not token then cb(nil, "twitch_auth_failed") return end
+        local headers = { ["Client-Id"] = cfg.clientId, ["Authorization"] = "Bearer " .. token }
+
+        local function withId(id)
+            PerformHttpRequest("https://api.twitch.tv/helix/videos?first=1&type=archive&user_id=" .. id, function(status, body)
+                local ok, data = pcall(json.decode, body or "")
+                if status ~= 200 or not ok or not data or not data.data then cb(nil, "twitch_videos_failed") return end
+                local v = data.data[1]
+                if not v then cb(nil, "no_video") return end
+                local result = {
+                    title = v.title or "",
+                    url = v.url,
+                    thumbnailUrl = v.thumbnail_url and v.thumbnail_url:gsub("%%{width}", "480"):gsub("%%{height}", "270") or nil,
+                    duration = v.duration or "",
+                    createdAt = v.created_at,
+                    views = v.view_count or 0
+                }
+                videoCache.data = result
+                videoCache.expiresAt = GetGameTimer() + 5 * 60 * 1000
+                cb(result)
+            end, "GET", "", headers)
+        end
+
+        local key = channel:lower()
+        if broadcasterIdCache[key] then withId(broadcasterIdCache[key]) return end
+        PerformHttpRequest("https://api.twitch.tv/helix/users?login=" .. key, function(status, body)
+            local ok, data = pcall(json.decode, body or "")
+            if status ~= 200 or not ok or not data or not data.data or not data.data[1] then cb(nil, "twitch_user_not_found") return end
+            broadcasterIdCache[key] = data.data[1].id
+            withId(data.data[1].id)
+        end, "GET", "", headers)
+    end)
+end
+
 local function sendJson(res, result, err)
     res.writeHead(200, {
         ['Content-Type'] = 'application/json',
@@ -275,6 +327,10 @@ end
 
 SetHttpHandler(function(req, res)
     local path = tostring(req.path or "")
+    if path:find("videos", 1, true) then
+        getLastVideo(function(result, err) sendJson(res, result, err) end)
+        return
+    end
     if path:find("clips", 1, true) then
         getClips(function(result, err) sendJson(res, result, err) end)
         return
