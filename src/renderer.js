@@ -1520,6 +1520,7 @@ updateRetryBtn.addEventListener("click", async () => {
 document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "a") {
     if (staffRole) { selectServer("anomia"); goToView("admin"); return; }
+    document.getElementById("admin-reason").textContent = discordProfile && lastStaffReason && STAFF_REASONS[lastStaffReason] ? "Accès admin Discord : " + STAFF_REASONS[lastStaffReason] : "";
     document.getElementById("admin-overlay").classList.remove("hidden");
     document.getElementById("admin-passphrase").focus();
   }
@@ -1548,12 +1549,36 @@ function clearStaffRole() {
 }
 
 // Admin : détecté automatiquement via le rôle Discord (Kannibal Team), sans code à taper.
+const STAFF_REASONS = {
+  no_token: "Reconnecte-toi avec Discord (clique ici) pour activer l'accès staff.",
+  token_expired: "Ta session Discord a expiré : reconnecte-toi (clique ici).",
+  bad_token: "Session Discord invalide : reconnecte-toi (clique ici).",
+  server_down: "Serveur Anomia injoignable (éteint ?) : l'accès admin est vérifié par lui.",
+  no_bot_token: "Serveur : anomia_discord_bot_token manquant dans le server.cfg.",
+  bot_error: "Serveur : le bot ne peut pas lire les membres de Kannibal Team (bot absent du serveur ou intent « Server Members » désactivé).",
+  not_in_guild: "Ton compte Discord n'est pas dans le serveur Kannibal Team.",
+  missing_role: "Tu n'as pas le rôle admin sur Kannibal Team.",
+  throttled: "Trop d'essais, réessaie dans une minute."
+};
+let lastStaffReason = null;
+function showStaffReason() {
+  const el = document.getElementById("pp-staff");
+  if (!el) return;
+  const loud = ["no_token", "token_expired", "bad_token", "server_down", "no_bot_token", "bot_error"].includes(lastStaffReason);
+  if (discordProfile && loud) { el.textContent = "⚠ Staff : " + STAFF_REASONS[lastStaffReason]; el.classList.remove("hidden"); }
+  else el.classList.add("hidden");
+}
+document.getElementById("pp-staff").addEventListener("click", () => {
+  if (["no_token", "token_expired", "bad_token"].includes(lastStaffReason)) window.anomia.startDiscordAuth();
+});
 async function autoStaffUnlock() {
-  if (!discordProfile) { clearStaffRole(); return; }
+  if (!discordProfile) { lastStaffReason = null; clearStaffRole(); showStaffReason(); return; }
   try {
     const r = await window.anomia.unlockAdmin("");
-    if (r && r.ok && r.role === "admin") applyStaffRole(r); else if (staffRole === "admin") clearStaffRole();
-  } catch (e) { /* serveur éteint : pas d'accès admin pour le moment */ }
+    if (r && r.ok && r.role === "admin") { lastStaffReason = null; applyStaffRole(r); }
+    else { lastStaffReason = (r && r.reason) || "invalid_code"; if (staffRole === "admin") clearStaffRole(); }
+  } catch (e) { lastStaffReason = "server_down"; }
+  showStaffReason();
 }
 
 async function tryUnlockAdmin() {

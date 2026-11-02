@@ -1004,7 +1004,7 @@ ipcMain.handle("admin:unlock", async (event, passphrase) => {
   // Modo : code modo vérifié par le serveur.
   const mode = code ? code : "discord";
   if (mode === "discord" && !discordToken) {
-    return { ok: false, error: "Connecte-toi d'abord avec Discord pour accéder au mode admin." };
+    return { ok: false, reason: "no_token", error: mode === "discord" ? null : undefined };
   }
   try {
     const r = await staffRequest("role", mode);
@@ -1014,11 +1014,11 @@ ipcMain.handle("admin:unlock", async (event, passphrase) => {
       cachedAdminPassphrase = null;
       return { ok: true, role: r.body.role };
     }
-    if (r.status === 429) return { ok: false, error: "Trop d'essais, réessaie dans une minute." };
+    if (r.status === 429) return { ok: false, reason: "throttled", error: "Trop d'essais, réessaie dans une minute." };
+    return { ok: false, reason: (r.body && r.body.reason) || "invalid_code" };
   } catch (e) {
-    return { ok: false, error: "Impossible de joindre le serveur pour vérifier ton accès (serveur éteint ?)." };
+    return { ok: false, reason: "server_down", error: mode === "discord" ? null : "Impossible de joindre le serveur pour vérifier ton accès (serveur éteint ?)." };
   }
-  return { ok: false, silent: mode === "discord" };
 });
 
 ipcMain.handle("admin:toggleMaintenance", async (event, enable) => {

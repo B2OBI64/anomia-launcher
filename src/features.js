@@ -14,7 +14,8 @@
   const fmtDur = (ms) => { const m = Math.max(0, Math.floor(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`; };
 
   // ---------- Thèmes ----------
-  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15" };
+  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41" };
+  const THEME_LABELS = { gold: "Or", matrix: "Matrix" };
   function applyTheme(name, persist) {
     if (!THEMES[name]) name = "default";
     document.documentElement.setAttribute("data-theme", name);
@@ -23,11 +24,14 @@
     if (cp) cp.value = THEMES[name];
     if (hx) hx.textContent = THEMES[name].toUpperCase();
     document.querySelectorAll(".theme-chip").forEach((c) => c.classList.toggle("active", c.dataset.theme === name));
+    syncFx();
     if (persist) save({ theme: name, accentColor: THEMES[name] });
   }
   function refreshThemeChips() {
-    const gold = $("theme-chips") && $("theme-chips").querySelector('[data-theme="gold"]');
-    if (gold) gold.classList.toggle("hidden", !(S.unlockedThemes || []).includes("gold"));
+    ["gold", "matrix"].forEach((t) => {
+      const chip = $("theme-chips") && $("theme-chips").querySelector(`[data-theme="${t}"]`);
+      if (chip) chip.classList.toggle("hidden", !(S.unlockedThemes || []).includes(t));
+    });
   }
   document.querySelectorAll(".theme-chip").forEach((c) => c.addEventListener("click", () => applyTheme(c.dataset.theme, true)));
   // un accent choisi à la main sort du thème (les couleurs restent libres)
@@ -37,10 +41,31 @@
   const fx = $("fx-bg");
   let fxOn = false, fxRaf = 0, parts = [];
   function fxResize() { fx.width = window.innerWidth; fx.height = window.innerHeight; }
+  const RAIN_CHARS = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ0123456789<>{}[]/=+*;:".split("");
+  let rain = [];
   function fxLoop() {
     if (!fxOn) return;
     const ctx = fx.getContext("2d");
     ctx.clearRect(0, 0, fx.width, fx.height);
+    if (document.documentElement.getAttribute("data-theme") === "matrix") {
+      // Pluie de code façon Matrix : discrète pour ne pas gêner la lecture
+      ctx.font = "14px 'Mono', monospace";
+      rain.forEach((c, i) => {
+        c.y += c.speed;
+        if (c.y - c.len * 16 > fx.height) { c.y = -Math.random() * 300; c.speed = 1.2 + Math.random() * 2.6; c.len = 8 + Math.floor(Math.random() * 14); }
+        if (Math.random() < 0.08) c.glyphs[Math.floor(Math.random() * c.glyphs.length)] = RAIN_CHARS[Math.floor(Math.random() * RAIN_CHARS.length)];
+        for (let k = 0; k < c.len; k++) {
+          const y = c.y - k * 16;
+          if (y < -16 || y > fx.height + 16) continue;
+          ctx.globalAlpha = k === 0 ? 0.55 : Math.max(0.03, 0.3 * (1 - k / c.len));
+          ctx.fillStyle = k === 0 ? "#d6ffe0" : "#00ff41";
+          ctx.fillText(c.glyphs[k % c.glyphs.length], i * 16, y);
+        }
+      });
+      ctx.globalAlpha = 1;
+      fxRaf = requestAnimationFrame(fxLoop);
+      return;
+    }
     const col = (getComputedStyle(document.documentElement).getPropertyValue("--teal") || "#8b5cf6").trim();
     ctx.fillStyle = col;
     parts.forEach((p) => {
@@ -52,11 +77,13 @@
     ctx.globalAlpha = 1;
     fxRaf = requestAnimationFrame(fxLoop);
   }
+  function syncFx() { setAnimatedBg(Boolean(S.animatedBg) || document.documentElement.getAttribute("data-theme") === "matrix"); }
   function setAnimatedBg(on) {
     fxOn = on; fx.style.display = on ? "block" : "none";
     cancelAnimationFrame(fxRaf);
     if (on) {
       fxResize();
+      rain = Array.from({ length: Math.ceil(fx.width / 16) }, () => ({ y: -Math.random() * fx.height, speed: 1.2 + Math.random() * 2.6, len: 8 + Math.floor(Math.random() * 14), glyphs: Array.from({ length: 24 }, () => RAIN_CHARS[Math.floor(Math.random() * RAIN_CHARS.length)]) }));
       parts = Array.from({ length: 55 }, () => ({ x: Math.random() * fx.width, y: Math.random() * fx.height, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, r: 0.8 + Math.random() * 1.8, a: 0.12 + Math.random() * 0.3 }));
       fxLoop();
     }
@@ -72,7 +99,7 @@
     if (typeof loadHomeMe === "function") loadHomeMe();
     if (!$("profile-panel").classList.contains("hidden")) fillProfilePanel();
   }
-  $("opt-animated-bg").addEventListener("change", (e) => { save({ animatedBg: e.target.checked }); setAnimatedBg(e.target.checked); });
+  $("opt-animated-bg").addEventListener("change", (e) => { save({ animatedBg: e.target.checked }); syncFx(); });
   $("opt-hide-offline").addEventListener("change", (e) => { save({ hideOffline: e.target.checked }); applyHideOffline(e.target.checked); });
   $("opt-streamer-mode").addEventListener("change", (e) => { save({ streamerMode: e.target.checked }); applyStreamerMode(e.target.checked); });
 
@@ -83,7 +110,8 @@
   }
   const SECRET_HASHES = {
     "0b1f9e283a118939988d52447fe3bab4bc62ed8fd7acd62fe5796f9e5b376135": "gold",
-    "7fa062c60ccc0f469427e8eecc53250bb252fbf0800503124136fb13f646745c": "gold"
+    "7fa062c60ccc0f469427e8eecc53250bb252fbf0800503124136fb13f646745c": "gold",
+    "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918": "matrix"
   };
   function unlockTheme(name) {
     const list = new Set(S.unlockedThemes || []); const fresh = !list.has(name); list.add(name);
@@ -96,7 +124,7 @@
     if (!code) return;
     try {
       const h = await sha256(code);
-      if (SECRET_HASHES[h]) { const fresh = unlockTheme(SECRET_HASHES[h]); msg.textContent = fresh ? "✨ Thème Or débloqué et appliqué !" : "Thème Or déjà débloqué (réappliqué)."; }
+      if (SECRET_HASHES[h]) { const fresh = unlockTheme(SECRET_HASHES[h]); { const lb = THEME_LABELS[SECRET_HASHES[h]] || "secret"; msg.textContent = fresh ? `✨ Thème ${lb} débloqué et appliqué !` : `Thème ${lb} déjà débloqué (réappliqué).`; } }
       else msg.textContent = "Ce code ne donne rien… pour l'instant.";
     } catch (e) { msg.textContent = "Code impossible à vérifier."; }
   }
@@ -323,7 +351,7 @@
     const theme = THEMES[S.theme] ? S.theme : (S.theme === "custom" ? "custom" : "default");
     if (theme === "custom") { document.documentElement.setAttribute("data-theme", "custom"); } else applyTheme(theme, false);
     refreshThemeChips();
-    $("opt-animated-bg").checked = Boolean(S.animatedBg); setAnimatedBg(Boolean(S.animatedBg));
+    $("opt-animated-bg").checked = Boolean(S.animatedBg); syncFx();
     $("opt-hide-offline").checked = Boolean(S.hideOffline); applyHideOffline(Boolean(S.hideOffline));
     $("opt-streamer-mode").checked = Boolean(S.streamerMode); streamerMode = Boolean(S.streamerMode);
     document.body.classList.toggle("streamer-mode", streamerMode);

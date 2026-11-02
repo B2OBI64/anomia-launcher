@@ -30,3 +30,6 @@
 - Le serveur Anomia doit être allumé pour que l'onglet Admin s'ouvre (la vérification passe par lui). Tu peux le laisser allumé en `/maintenance on`.
 - La maintenance depuis le launcher passe maintenant par b2_staffpanel (b2_maintenance doit rester installé : la commande /maintenance est utilisée).
 - Les gens déjà connectés à Discord dans le launcher doivent se reconnecter une fois (le launcher garde le jeton chiffré pour prouver son identité).
+
+## Si l'onglet Admin n'apparaît pas
+Clique sur ton avatar (profil) : une ligne « ⚠ Staff : … » dit pourquoi. Ctrl+Alt+A l'affiche aussi. Causes possibles : jamais reconnecté à Discord depuis la 1.7.0 (cas le plus courant), serveur éteint, `b2_staffpanel` pas remplacé/redémarré, `anomia_discord_bot_token` absent, bot absent de Kannibal Team ou intent « Server Members » désactivé (portail développeur Discord > Bot), ou rôle manquant. La console du serveur affiche aussi la cause.

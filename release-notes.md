@@ -1,3 +1,3 @@
-## B2 Launcher 1.7.1 — Le gros bloc de nouveautés
+## B2 Launcher 1.7.2 — Le gros bloc de nouveautés
 
-- Corection Du Menu Admin
+- Correction Admin

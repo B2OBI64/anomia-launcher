@@ -34,34 +34,44 @@ local function getModRole(code)
     return nil
 end
 
--- Verifie le role admin Discord : cb("admin" | nil)
+-- Verifie le role admin Discord : cb("admin" | nil, raison)
 local function getDiscordRole(token, cb)
-    if not token or token == "" or #token > 200 then cb(nil) return end
+    if not token or token == "" or #token > 200 then cb(nil, "bad_token") return end
     local cached = roleCache[token]
-    if cached and cached.expires > os.time() then cb(cached.role) return end
+    if cached and cached.expires > os.time() then cb(cached.role, cached.reason) return end
 
     local botToken = GetConvar("anomia_discord_bot_token", "")
     local guildId = GetConvar("anomia_staff_guild_id", STAFF_GUILD_DEFAULT)
     local roleId = GetConvar("anomia_staff_role_id", STAFF_ROLE_DEFAULT)
     if botToken == "" then
         print("[b2_staffpanel] anomia_discord_bot_token manquant : acces admin par role Discord impossible.")
-        cb(nil)
+        cb(nil, "no_bot_token")
         return
     end
 
     PerformHttpRequest("https://discord.com/api/v10/users/@me", function(status, body)
         local ok, user = pcall(json.decode, body or "")
-        if status ~= 200 or not ok or not user or not user.id then cb(nil) return end
+        if status ~= 200 or not ok or not user or not user.id then
+            print(("[b2_staffpanel] Jeton Discord refuse (HTTP %s)."):format(tostring(status)))
+            cb(nil, "token_expired")
+            return
+        end
         PerformHttpRequest(("https://discord.com/api/v10/guilds/%s/members/%s"):format(guildId, tostring(user.id)), function(st2, body2)
             local ok2, member = pcall(json.decode, body2 or "")
-            local role = nil
+            local role, reason = nil, nil
             if st2 == 200 and ok2 and member and member.roles then
+                reason = "missing_role"
                 for _, r in ipairs(member.roles) do
-                    if r == roleId then role = "admin" break end
+                    if r == roleId then role = "admin" reason = nil break end
                 end
+            elseif st2 == 404 then
+                reason = "not_in_guild"
+            else
+                reason = "bot_error" -- bot absent du serveur, token invalide ou intent "Server Members" manquant
+                print(("[b2_staffpanel] Lecture du membre Discord impossible (HTTP %s) : bot present sur le serveur ? Intent membres actif ?"):format(tostring(st2)))
             end
-            roleCache[token] = { role = role, expires = os.time() + 60 }
-            cb(role)
+            roleCache[token] = { role = role, reason = reason, expires = os.time() + 60 }
+            cb(role, reason)
         end, "GET", "", { ["Authorization"] = "Bot " .. botToken })
     end, "GET", "", { ["Authorization"] = "Bearer " .. token })
 end
@@ -72,7 +82,7 @@ local function resolveRole(headers, cb)
         getDiscordRole(token, cb)
         return
     end
-    cb(getModRole(headers["x-staff-code"]))
+    cb(getModRole(headers["x-staff-code"]), "invalid_code")
 end
 
 local function throttled(addr)
@@ -175,10 +185,10 @@ SetHttpHandler(function(req, res)
     end
 
     local headers = req.headers or {}
-    resolveRole(headers, function(role)
+    resolveRole(headers, function(role, reason)
         if not role then
             noteFailure(addr)
-            send(res, 403, { error = "invalid_code" })
+            send(res, 403, { error = "invalid_code", reason = reason or "invalid_code" })
             return
         end
 

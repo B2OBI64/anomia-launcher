@@ -2229,3 +2229,7 @@ html[data-theme="minecraft"]:not([data-mode="light"]) .glass,html[data-theme="mi
 html[data-theme="retro"]:not([data-mode="light"]){--bg:#120b04;--panel-solid:#1d1208}
 html[data-theme="retro"]:not([data-mode="light"]) body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px)}
 html[data-theme="gold"]:not([data-mode="light"]){--bg:#0d0a03;--panel-solid:#1a1405}
+.pp-staff{display:block;margin-top:4px;font-size:11px;color:#fbbf24;cursor:pointer}
+html[data-theme="matrix"]:not([data-mode="light"]){--bg:#010a03;--panel-solid:#04140a}
+html[data-theme="matrix"]:not([data-mode="light"]) body{font-family:"Mono",ui-monospace,monospace}
+html[data-theme="matrix"]:not([data-mode="light"]) .glass{border-radius:2px;box-shadow:0 0 14px rgba(0,255,65,.12)}
