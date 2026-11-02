@@ -19,3 +19,14 @@
 - Rôle requis pour se connecter à Anomia : `1434849042319278231`. Côté serveur FiveM (server.cfg) :
   `setr anomia_discord_guild_id "ID_DU_DISCORD_QUI_CONTIENT_CE_ROLE"` et `setr anomia_discord_role_id "1434849042319278231"`
 - Rôle de connexion Minecraft : `1370879305097154692` (enregistré dans config.js, à utiliser quand le serveur Minecraft vérifiera l'accès).
+
+## Accès admin par rôle Discord (IMPORTANT)
+- Le rôle `1112002757004632215` du Discord Kannibal Team (`445112343064477696`) donne l'accès admin automatiquement dès que la personne est connectée avec Discord dans le launcher. Sans ce rôle : aucun accès admin. Le code admin n'existe plus (ni dans le launcher, ni côté serveur pour le launcher).
+- Le modo garde un code : `setr anomia_mod_passphrase "CODE_MODO"`.
+- Le serveur FiveM vérifie le rôle (b2_staffpanel remplacé, puis `restart b2_staffpanel`). Il faut :
+  1. `setr anomia_discord_bot_token "..."` (déjà là pour b2_discordcheck)
+  2. le bot présent sur le Discord Kannibal Team (droit de lire les membres)
+  3. facultatif : `set anomia_staff_guild_id` / `set anomia_staff_role_id` (valeurs par défaut = celles ci-dessus)
+- Le serveur Anomia doit être allumé pour que l'onglet Admin s'ouvre (la vérification passe par lui). Tu peux le laisser allumé en `/maintenance on`.
+- La maintenance depuis le launcher passe maintenant par b2_staffpanel (b2_maintenance doit rester installé : la commande /maintenance est utilisée).
+- Les gens déjà connectés à Discord dans le launcher doivent se reconnecter une fois (le launcher garde le jeton chiffré pour prouver son identité).

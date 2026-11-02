@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage } = require("electron");
 const path = require("path");
 
 // B2 Launcher : le produit a été renommé (avant : "Anomia Launcher"). On garde l'ancien
@@ -380,7 +380,29 @@ function saveDiscordProfile(profile) {
   }
 }
 
+// Jeton Discord du joueur : sert uniquement à prouver son identité au serveur (rôle admin).
+// Gardé chiffré sur le disque (DPAPI de Windows via safeStorage) et jamais envoyé ailleurs.
+let discordToken = null;
+const discordTokenPath = () => path.join(app.getPath("userData"), "discord-token.bin");
+function persistDiscordToken(token) {
+  discordToken = token || null;
+  try {
+    if (!token) { fs.unlinkSync(discordTokenPath()); return; }
+    if (safeStorage && safeStorage.isEncryptionAvailable()) fs.writeFileSync(discordTokenPath(), safeStorage.encryptString(token));
+  } catch { /* pas grave : le jeton reste en mémoire */ }
+}
+function restoreDiscordToken() {
+  try {
+    if (safeStorage && safeStorage.isEncryptionAvailable() && fs.existsSync(discordTokenPath())) {
+      discordToken = safeStorage.decryptString(fs.readFileSync(discordTokenPath()));
+    }
+  } catch { discordToken = null; }
+}
+app.whenReady().then(restoreDiscordToken);
+
 function clearDiscordProfile() {
+  persistDiscordToken(null);
+  cachedStaffRole = null; cachedStaffCode = null; cachedAdminPassphrase = null;
   try {
     fs.unlinkSync(discordProfilePath());
   } catch {
@@ -423,6 +445,7 @@ async function handleDiscordToken(token) {
     });
 
     if (!profile || !profile.id) return;
+    persistDiscordToken(token);
 
     const allowed = await checkDiscordRole(profile.id);
     const savedProfile = {
@@ -960,7 +983,10 @@ let cachedStaffCode = null; // code staff (admin ou modo), en mémoire uniquemen
 function staffRequest(urlPath, code) {
   return new Promise((resolve, reject) => {
     const url = new URL(urlPath, config.server.staffPanelUrl);
-    const req = http.get(url, { headers: { "x-staff-code": code, "User-Agent": "B2Launcher/1.0" }, timeout: 6000 }, (res) => {
+    const headers = { "User-Agent": "B2Launcher/1.0" };
+    if (code === "discord") headers["x-discord-token"] = discordToken || "";
+    else headers["x-staff-code"] = code;
+    const req = http.get(url, { headers, timeout: 6000 }, (res) => {
       let data = "";
       res.on("data", (c) => (data += c));
       res.on("end", () => {
@@ -973,69 +999,38 @@ function staffRequest(urlPath, code) {
 }
 
 ipcMain.handle("admin:unlock", async (event, passphrase) => {
-  const code = String(passphrase || "");
-  // 1) Code admin local (historique)
-  if (config.admin.passphraseHash) {
-    const hash = crypto.createHash("sha256").update(code).digest("hex");
-    if (hash === config.admin.passphraseHash) {
-      cachedAdminPassphrase = code;
-      cachedStaffCode = code;
-      cachedStaffRole = "admin";
-      return { ok: true, role: "admin" };
-    }
+  const code = String(passphrase || "").trim();
+  // Admin : uniquement via le rôle Discord (Kannibal Team), vérifié par le serveur. Code vide = vérification Discord.
+  // Modo : code modo vérifié par le serveur.
+  const mode = code ? code : "discord";
+  if (mode === "discord" && !discordToken) {
+    return { ok: false, error: "Connecte-toi d'abord avec Discord pour accéder au mode admin." };
   }
-  // 2) Code vérifié par le serveur (admin ou modo)
-  if (code) {
-    try {
-      const r = await staffRequest("role", code);
-      if (r.status === 200 && (r.body.role === "admin" || r.body.role === "mod")) {
-        cachedStaffRole = r.body.role;
-        cachedAdminPassphrase = r.body.role === "admin" ? code : null;
-        cachedStaffCode = code;
-        return { ok: true, role: r.body.role };
-      }
-      if (r.status === 429) return { ok: false, error: "Trop d'essais, réessaie dans une minute." };
-    } catch (e) {
-      return { ok: false, error: "Impossible de joindre le serveur pour vérifier le code (serveur éteint ?)." };
+  try {
+    const r = await staffRequest("role", mode);
+    if (r.status === 200 && (r.body.role === "admin" || r.body.role === "mod")) {
+      cachedStaffRole = r.body.role;
+      cachedStaffCode = mode;
+      cachedAdminPassphrase = null;
+      return { ok: true, role: r.body.role };
     }
+    if (r.status === 429) return { ok: false, error: "Trop d'essais, réessaie dans une minute." };
+  } catch (e) {
+    return { ok: false, error: "Impossible de joindre le serveur pour vérifier ton accès (serveur éteint ?)." };
   }
-  return { ok: false };
+  return { ok: false, silent: mode === "discord" };
 });
 
 ipcMain.handle("admin:toggleMaintenance", async (event, enable) => {
-  if (!cachedAdminPassphrase) {
-    return { ok: false, error: "Session admin expirée, redéverrouille l'onglet Admin." };
+  if (cachedStaffRole !== "admin" || cachedStaffCode !== "discord") {
+    return { ok: false, error: "Session admin expirée, reconnecte-toi avec Discord." };
   }
   try {
-    const payload = JSON.stringify({ state: enable ? "on" : "off" });
-    await new Promise((resolve, reject) => {
-      const url = new URL(config.server.maintenanceToggleUrl);
-      const req = http.request(
-        url,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Content-Length": Buffer.byteLength(payload),
-            "X-Admin-Passphrase": cachedAdminPassphrase
-          }
-        },
-        (res) => {
-          let data = "";
-          res.on("data", (c) => (data += c));
-          res.on("end", () => {
-            if (res.statusCode === 200) resolve();
-            else reject(new Error(data || `HTTP ${res.statusCode}`));
-          });
-        }
-      );
-      req.on("error", reject);
-      req.write(payload);
-      req.end();
-    });
-    return { ok: true };
+    const r = await staffRequest(`maintenance/${enable ? "on" : "off"}`, "discord");
+    if (r.status === 200) return { ok: true };
+    return { ok: false, error: (r.body && r.body.error) || `HTTP ${r.status}` };
   } catch (err) {
-    return { ok: false, error: err.message };
+    return { ok: false, error: "Serveur injoignable." };
   }
 });
 

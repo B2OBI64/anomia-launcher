@@ -1519,6 +1519,7 @@ updateRetryBtn.addEventListener("click", async () => {
 // --- Admin (lecture seule) ---
 document.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "a") {
+    if (staffRole) { selectServer("anomia"); goToView("admin"); return; }
     document.getElementById("admin-overlay").classList.remove("hidden");
     document.getElementById("admin-passphrase").focus();
   }
@@ -1529,6 +1530,32 @@ document.getElementById("admin-cancel").addEventListener("click", () => {
   document.getElementById("admin-passphrase").value = "";
 });
 
+function applyStaffRole(result) {
+  staffRole = result.role || "mod";
+  isAdminUnlocked = staffRole === "admin";
+  document.getElementById("admin-only-block").classList.toggle("hidden", !isAdminUnlocked);
+  document.getElementById("admin-title").textContent = isAdminUnlocked ? "Tableau de bord · Admin" : "Tableau de bord · Modération";
+  document.getElementById("nav-admin").classList.remove("hidden");
+  updateConnectButtonState();
+}
+
+function clearStaffRole() {
+  staffRole = null;
+  isAdminUnlocked = false;
+  document.getElementById("nav-admin").classList.add("hidden");
+  if (currentServerId === "anomia" && !document.getElementById("view-admin").classList.contains("hidden")) goToView("home");
+  updateConnectButtonState();
+}
+
+// Admin : détecté automatiquement via le rôle Discord (Kannibal Team), sans code à taper.
+async function autoStaffUnlock() {
+  if (!discordProfile) { clearStaffRole(); return; }
+  try {
+    const r = await window.anomia.unlockAdmin("");
+    if (r && r.ok && r.role === "admin") applyStaffRole(r); else if (staffRole === "admin") clearStaffRole();
+  } catch (e) { /* serveur éteint : pas d'accès admin pour le moment */ }
+}
+
 async function tryUnlockAdmin() {
   const input = document.getElementById("admin-passphrase");
   const result = await window.anomia.unlockAdmin(input.value);
@@ -1536,12 +1563,7 @@ async function tryUnlockAdmin() {
   document.getElementById("admin-overlay").classList.add("hidden");
 
   if (result.ok) {
-    staffRole = result.role || "admin";
-    isAdminUnlocked = staffRole === "admin";
-    document.getElementById("admin-only-block").classList.toggle("hidden", !isAdminUnlocked);
-    document.getElementById("admin-title").textContent = isAdminUnlocked ? "Tableau de bord · Admin" : "Tableau de bord · Modération";
-    document.getElementById("nav-admin").classList.remove("hidden");
-    updateConnectButtonState();
+    applyStaffRole(result);
     goToView("admin");
   } else if (result.error) {
     await showInfo("Accès staff", `<p>${result.error}</p>`);
@@ -1699,10 +1721,12 @@ async function initDiscordAuth() {
 
   discordProfile = await window.anomia.getDiscordProfile();
   renderDiscordSlot();
+  autoStaffUnlock();
 
   window.anomia.onDiscordConnected((profile) => {
     discordProfile = profile;
     renderDiscordSlot();
+    autoStaffUnlock();
     if (profile.allowed === false) {
       showInfo(
         "Rôle whitelist manquant",
@@ -2050,6 +2074,7 @@ document.getElementById("pp-logout").addEventListener("click", async () => {
   if (!confirmed) return;
   window.anomia.logoutDiscord();
   discordProfile = null;
+  clearStaffRole();
   achCache = { at: 0, promise: null };
   closeProfilePanel();
   closePpEditor();

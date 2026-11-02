@@ -15,6 +15,7 @@
       "Carte « Revoir le dernier stream » dans le panneau Twitch quand la chaîne n'est pas en live.",
       "« Anomia en chiffres » : heures jouées par la communauté, nombre de joueurs et record de connectés.",
       "Profil : ligne « En jeu sur Anomia depuis … » et choix du titre affiché sous ton pseudo (aussi sur la carte exportée).",
+      "Accès admin automatique : le rôle admin du Discord Kannibal Team ouvre l'onglet Admin, sans code à taper. Sans ce rôle, pas d'accès admin.",
       "Staff (admin) : bloc « Santé du serveur » (ping moyen, ressources, arrêts récents).",
       "Options : possibilité de revenir à une version précédente du launcher si une mise à jour pose problème.",
       "Écran de démarrage : astuces et citations qui défilent."

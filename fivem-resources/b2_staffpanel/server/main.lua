@@ -5,24 +5,74 @@
 --   GET /b2_staffpanel/role     -> { role = "admin" | "mod" | nil }
 --   GET /b2_staffpanel/players  -> liste des joueurs connectes (staff uniquement)
 --
--- Authentification : en-tete  x-staff-code  (le code tape dans le launcher).
--- Configure 2 codes dans server.cfg (convars privees, jamais dans le launcher) :
---   setr anomia_admin_passphrase "CODE_ADMIN"     (deja utilise par b2_maintenance)
---   setr anomia_mod_passphrase   "CODE_MODO"
--- Les modos voient la liste des joueurs. Les admins ont en plus la maintenance.
+-- Authentification :
+--   * ADMIN : en-tete x-discord-token (jeton Discord du joueur). Le serveur demande a Discord
+--     qui est le joueur, puis verifie via le bot qu'il a le role admin sur le Discord Kannibal Team.
+--     Sans ce role : aucun acces admin, pas de code de secours.
+--   * MODO  : en-tete x-staff-code (code modo, convar privee).
+-- Convars (server.cfg, jamais dans le launcher) :
+--   setr anomia_discord_bot_token "..."        (deja utilise par b2_discordcheck)
+--   set  anomia_staff_guild_id    "445112343064477696"   (Kannibal Team, valeur par defaut)
+--   set  anomia_staff_role_id     "1112002757004632215"  (role admin, valeur par defaut)
+--   setr anomia_mod_passphrase    "CODE_MODO"
+-- Les modos voient la liste des joueurs. Les admins ont en plus la sante du serveur et la maintenance.
+--   POST/GET /b2_staffpanel/maintenance/on|off -> bascule la maintenance (admin uniquement)
 --   GET /b2_staffpanel/health   -> sante du serveur (admin uniquement)
 -- Lecture seule : aucune action (kick/ban...) n'est possible depuis le launcher.
 -- ============================================================
 
 local failures = {} -- anti brute-force : 8 essais ratés / minute / adresse
 
-local function getRole(code)
+local STAFF_GUILD_DEFAULT = "445112343064477696"
+local STAFF_ROLE_DEFAULT = "1112002757004632215"
+local roleCache = {} -- jeton Discord -> { role, expires } (60 s)
+
+local function getModRole(code)
     if not code or code == "" then return nil end
-    local admin = GetConvar("anomia_admin_passphrase", "")
     local mod = GetConvar("anomia_mod_passphrase", "")
-    if admin ~= "" and code == admin then return "admin" end
     if mod ~= "" and code == mod then return "mod" end
     return nil
+end
+
+-- Verifie le role admin Discord : cb("admin" | nil)
+local function getDiscordRole(token, cb)
+    if not token or token == "" or #token > 200 then cb(nil) return end
+    local cached = roleCache[token]
+    if cached and cached.expires > os.time() then cb(cached.role) return end
+
+    local botToken = GetConvar("anomia_discord_bot_token", "")
+    local guildId = GetConvar("anomia_staff_guild_id", STAFF_GUILD_DEFAULT)
+    local roleId = GetConvar("anomia_staff_role_id", STAFF_ROLE_DEFAULT)
+    if botToken == "" then
+        print("[b2_staffpanel] anomia_discord_bot_token manquant : acces admin par role Discord impossible.")
+        cb(nil)
+        return
+    end
+
+    PerformHttpRequest("https://discord.com/api/v10/users/@me", function(status, body)
+        local ok, user = pcall(json.decode, body or "")
+        if status ~= 200 or not ok or not user or not user.id then cb(nil) return end
+        PerformHttpRequest(("https://discord.com/api/v10/guilds/%s/members/%s"):format(guildId, tostring(user.id)), function(st2, body2)
+            local ok2, member = pcall(json.decode, body2 or "")
+            local role = nil
+            if st2 == 200 and ok2 and member and member.roles then
+                for _, r in ipairs(member.roles) do
+                    if r == roleId then role = "admin" break end
+                end
+            end
+            roleCache[token] = { role = role, expires = os.time() + 60 }
+            cb(role)
+        end, "GET", "", { ["Authorization"] = "Bot " .. botToken })
+    end, "GET", "", { ["Authorization"] = "Bearer " .. token })
+end
+
+local function resolveRole(headers, cb)
+    local token = headers["x-discord-token"]
+    if token and token ~= "" then
+        getDiscordRole(token, cb)
+        return
+    end
+    cb(getModRole(headers["x-staff-code"]))
 end
 
 local function throttled(addr)
@@ -124,27 +174,38 @@ SetHttpHandler(function(req, res)
         return
     end
 
-    local role = getRole(req.headers["x-staff-code"])
-    if not role then
-        noteFailure(addr)
-        send(res, 403, { error = "invalid_code" })
-        return
-    end
-
-    local path = tostring(req.path or "")
-    if path:find("health", 1, true) then
-        if role ~= "admin" then
-            send(res, 403, { error = "admin_only" })
+    local headers = req.headers or {}
+    resolveRole(headers, function(role)
+        if not role then
+            noteFailure(addr)
+            send(res, 403, { error = "invalid_code" })
             return
         end
-        send(res, 200, { role = role, health = buildHealth() })
-        return
-    end
-    if path:find("players", 1, true) then
-        send(res, 200, { role = role, players = buildPlayers(), maxClients = GetConvarInt("sv_maxclients", 0) })
-    else
-        send(res, 200, { role = role })
-    end
+
+        local path = tostring(req.path or "")
+        if path:find("maintenance", 1, true) then
+            if role ~= "admin" then send(res, 403, { error = "admin_only" }) return end
+            local state = path:find("/on", 1, true) and "on" or (path:find("/off", 1, true) and "off" or nil)
+            if not state then send(res, 400, { error = "bad_state" }) return end
+            ExecuteCommand("maintenance " .. state)
+            print(("[b2_staffpanel] Maintenance %s demandee depuis le launcher (role Discord admin)."):format(state:upper()))
+            send(res, 200, { ok = true, maintenance = state == "on" })
+            return
+        end
+        if path:find("health", 1, true) then
+            if role ~= "admin" then
+                send(res, 403, { error = "admin_only" })
+                return
+            end
+            send(res, 200, { role = role, health = buildHealth() })
+            return
+        end
+        if path:find("players", 1, true) then
+            send(res, 200, { role = role, players = buildPlayers(), maxClients = GetConvarInt("sv_maxclients", 0) })
+        else
+            send(res, 200, { role = role })
+        end
+    end)
 end)
 
-print("[b2_staffpanel] Pret. Verifie anomia_admin_passphrase et anomia_mod_passphrase dans server.cfg.")
+print("[b2_staffpanel] Pret. Admin = role Discord (anomia_discord_bot_token requis), modo = anomia_mod_passphrase.")
