@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld("anomia", {
   minimize: () => ipcRenderer.send("window:minimize"),
   maximize: () => ipcRenderer.send("window:maximize"),
   close: () => ipcRenderer.send("window:close"),
+  getKbStatus: () => ipcRenderer.invoke("kb:getStatus"),
+  relaunchApp: () => ipcRenderer.send("app:relaunch"),
 
   // B2 Launcher : serveurs et contenu KannibAventure
   getServers: () => ipcRenderer.invoke("servers:get"),

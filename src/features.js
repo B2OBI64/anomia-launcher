@@ -14,8 +14,8 @@
   const fmtDur = (ms) => { const m = Math.max(0, Math.floor(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`; };
 
   // ---------- Thèmes ----------
-  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41" };
-  const THEME_LABELS = { gold: "Or", matrix: "Matrix" };
+  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41", b2logo: "#a78bfa", anomia: "#2dd4bf", cubic: "#f97316" };
+  const THEME_LABELS = { gold: "Or", matrix: "Matrix", anomia: "Anomia", cubic: "Cubique" };
   function applyTheme(name, persist) {
     if (!THEMES[name]) name = "default";
     document.documentElement.setAttribute("data-theme", name);
@@ -28,7 +28,7 @@
     if (persist) save({ theme: name, accentColor: THEMES[name] });
   }
   function refreshThemeChips() {
-    ["gold", "matrix"].forEach((t) => {
+    ["gold", "matrix", "anomia", "cubic"].forEach((t) => {
       const chip = $("theme-chips") && $("theme-chips").querySelector(`[data-theme="${t}"]`);
       if (chip) chip.classList.toggle("hidden", !(S.unlockedThemes || []).includes(t));
     });
@@ -111,7 +111,8 @@
   const SECRET_HASHES = {
     "0b1f9e283a118939988d52447fe3bab4bc62ed8fd7acd62fe5796f9e5b376135": "gold",
     "7fa062c60ccc0f469427e8eecc53250bb252fbf0800503124136fb13f646745c": "gold",
-    "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918": "matrix"
+    "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918": "matrix",
+    "8f0b49be84aba883a225569f87359227261e79b4d76cff56888ca4ab9c7a15ee": "fx:creeper"
   };
   function unlockTheme(name) {
     const list = new Set(S.unlockedThemes || []); const fresh = !list.has(name); list.add(name);
@@ -124,7 +125,8 @@
     if (!code) return;
     try {
       const h = await sha256(code);
-      if (SECRET_HASHES[h]) { const fresh = unlockTheme(SECRET_HASHES[h]); { const lb = THEME_LABELS[SECRET_HASHES[h]] || "secret"; msg.textContent = fresh ? `✨ Thème ${lb} débloqué et appliqué !` : `Thème ${lb} déjà débloqué (réappliqué).`; } }
+      if (SECRET_HASHES[h] === "fx:creeper") { msg.textContent = "Sssssss…"; creeperBoom(); }
+      else if (SECRET_HASHES[h]) { const fresh = unlockTheme(SECRET_HASHES[h]); { const lb = THEME_LABELS[SECRET_HASHES[h]] || "secret"; msg.textContent = fresh ? `✨ Thème ${lb} débloqué et appliqué !` : `Thème ${lb} déjà débloqué (réappliqué).`; } }
       else msg.textContent = "Ce code ne donne rien… pour l'instant.";
     } catch (e) { msg.textContent = "Code impossible à vérifier."; }
   }
@@ -139,7 +141,112 @@
     if (kpos === KONAMI.length) { kpos = 0; if (unlockTheme("gold") && typeof showInfo === "function") showInfo("Code Konami !", "<p>✨ Tu as débloqué le thème <b>Or</b>. Retrouve-le dans les options, section Ambiance.</p>"); }
   });
 
-  // ---------- Hors ligne ----------
+  // ---------- Easter eggs 1.7.4 ----------
+  function creeperBoom() {
+    const d = document.createElement("div"); d.className = "creeper-boom"; d.textContent = "💥";
+    document.body.appendChild(d); document.body.classList.add("shake");
+    setTimeout(() => { d.remove(); document.body.classList.remove("shake"); }, 1700);
+  }
+  // Séquence ↑ ↓ ← → ↑ ↓ ← → : thème Anomia
+  const ARROWS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+  let apos = 0;
+  document.addEventListener("keydown", (e) => {
+    if (/INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || "")) return;
+    apos = e.key === ARROWS[apos] ? apos + 1 : (e.key === ARROWS[0] ? 1 : 0);
+    if (apos === ARROWS.length) { apos = 0; if (unlockTheme("anomia") && typeof showInfo === "function") showInfo("Combinaison secrète !", "<p>✦ Tu as débloqué le thème <b>Anomia</b>. Retrouve-le dans les options, section Ambiance.</p>"); }
+  });
+  // 10 clics sur le logo B2 : mode arc-en-ciel pendant 10 s
+  let logoClicks = 0, logoTimer = null;
+  const tl = document.querySelector(".titlebar-logo");
+  if (tl) tl.addEventListener("click", () => {
+    logoClicks++; clearTimeout(logoTimer); logoTimer = setTimeout(() => { logoClicks = 0; }, 2500);
+    if (logoClicks >= 10) { logoClicks = 0; document.documentElement.classList.add("rainbow-mode"); setTimeout(() => document.documentElement.classList.remove("rainbow-mode"), 10000); }
+  });
+  function dateEasterEggs() {
+    const now = new Date();
+    if (now.getMonth() === 11 && now.getDate() === 24 && unlockTheme("cubic") && typeof showInfo === "function")
+      showInfo("Joyeux réveillon !", "<p>▣ Un thème <b>Cubique</b> vient d'être débloqué, rien que pour aujourd'hui… et pour toujours. Retrouve-le dans les options.</p>");
+    const h = now.getHours(), key = now.toISOString().slice(0, 10);
+    if (h >= 3 && h < 5 && S.nightSeen !== key) { save({ nightSeen: key }); if (typeof showInfo === "function") showInfo("Il est tard…", "<p>🌙 Il est entre 3 h et 5 h du matin. Même les Creepers dorment à cette heure. Va te reposer !</p>"); }
+  }
+
+  // ---------- Accueil Anomia ----------
+  async function renderAnomiaHome() {
+    const anomia = typeof getServer === "function" ? getServer("anomia") : null;
+    const dBtn = $("ah-discord"), rBtn = $("ah-rules");
+    if (anomia && anomia.discordInvite) dBtn.onclick = () => api.openExternal(anomia.discordInvite); else dBtn.classList.add("hidden");
+    rBtn.onclick = () => goToView("rules");
+    $("ah-me-open").onclick = () => { const p = $("profile-panel"); if (p.classList.contains("hidden")) toggleProfilePanel(); };
+    // Dernière actu
+    try { const news = await api.getNews(); if (Array.isArray(news) && news[0] && news[0].title) $("ah-t-news").textContent = news[0].title; } catch (e) { /* ignore */ }
+    // Discord en ligne
+    try {
+      const comm = await api.getDiscordCommunities();
+      const a = (comm || []).find((c) => /anomia/i.test(c.name || ""));
+      const chip = $("ah-discord-chip");
+      if (a && a.online != null) { chip.textContent = `● ${a.online} en ligne sur Discord`; chip.classList.remove("hidden"); } else chip.classList.add("hidden");
+    } catch (e) { /* ignore */ }
+    // Streamers en live
+    const live = (typeof STREAMER_DATA !== "undefined" ? STREAMER_DATA : []).filter((s) => s.live);
+    const bar = $("ah-livebar"), lchip = $("ah-live-chip");
+    if (live.length) {
+      const s = live[0];
+      lchip.textContent = `● ${s.displayName || s.channel} en live`; lchip.classList.remove("hidden");
+      $("ah-livebar-text").textContent = `● ${s.displayName || s.channel} est en live${s.game ? " sur " + s.game : ""} · ${Number(s.viewers) || 0} viewers`;
+      $("ah-livebar-btn").onclick = () => { selectStreamer(s); selectServer("hub"); };
+      bar.classList.remove("hidden");
+    } else { bar.classList.add("hidden"); lchip.classList.add("hidden"); }
+    // Carte "mon profil"
+    const me = $("ah-me");
+    if (typeof discordProfile !== "undefined" && discordProfile) {
+      $("ah-me-avatar").src = discordProfile.avatar || "../assets/logo.png";
+      $("ah-me-name").textContent = streamerMode ? "Joueur" : (discordProfile.username || "Joueur");
+      me.classList.remove("hidden");
+      let r; try { r = await getAchData(); } catch (e) { r = null; }
+      if (r && r.ok && r.linked) {
+        const list = r.list || [], un = list.filter((d) => r.achievements && r.achievements[d.key]).length, secs = r.playtimeSeconds || 0;
+        $("ah-me-hours").textContent = secs >= 3600 ? `${Math.floor(secs / 3600)} h` : `${Math.floor(secs / 60)} min`;
+        $("ah-me-ach").textContent = `${un}/${list.length}`;
+        $("ah-t-ach").textContent = `${un}/${list.length} débloqués`;
+        $("ah-me-line").textContent = "Ton suivi Anomia";
+      } else { $("ah-me-hours").textContent = "—"; $("ah-me-ach").textContent = "—"; $("ah-me-line").textContent = "Connecte-toi une fois en jeu pour activer ton suivi."; }
+    } else me.classList.add("hidden");
+  }
+
+  // ---------- Admin KannibAventure ----------
+  let kbTimer = null;
+  async function loadKbAdmin() {
+    const msg = $("kbadm-msg"), grid = $("kbadm-grid");
+    let r; try { r = await api.getKbStatus(); } catch (e) { r = { ok: false, error: "Erreur." }; }
+    if (!r.ok) { msg.textContent = r.error || "Indisponible."; msg.classList.remove("hidden"); grid.classList.add("hidden"); return; }
+    $("kbadm-copy").dataset.addr = r.address;
+    if (!r.online) {
+      msg.textContent = `Serveur hors ligne ou injoignable (${r.address}) : ${r.error || "pas de réponse"}. Normal tant qu'il n'est pas ouvert.`;
+      msg.classList.remove("hidden"); grid.classList.add("hidden"); $("kbadm-names").innerHTML = ""; return;
+    }
+    msg.classList.add("hidden"); grid.classList.remove("hidden");
+    grid.innerHTML = [["Adresse", r.address], ["Statut", "En ligne"], ["Joueurs", `${r.players}/${r.maxPlayers}`], ["Latence", `${r.latencyMs} ms`], ["Version", r.version || "?"]]
+      .map(([l, v]) => `<div class="health-item"><span>${l}</span><b>${esc(v)}</b></div>`).join("");
+    $("kbadm-names").innerHTML = r.names && r.names.length ? `<div class="health-stops"><b>Joueurs connectés</b><span>${r.names.map(esc).join(", ")}</span></div>` : "";
+  }
+  $("kbadm-refresh").addEventListener("click", loadKbAdmin);
+  $("kbadm-copy").addEventListener("click", (e) => { const a = e.currentTarget.dataset.addr; if (a && navigator.clipboard) navigator.clipboard.writeText(a).catch(() => {}); e.currentTarget.textContent = "Copié ✓"; setTimeout(() => { $("kbadm-copy").textContent = "Copier l'adresse"; }, 1500); });
+  function refreshKbAdminTab() {
+    const tabs = $("tabbar-tabs");
+    if (!tabs) return;
+    const existing = tabs.querySelector('[data-view="kb-admin"]');
+    if (currentServerId === "kannibaventure" && isAdminUnlocked) {
+      if (!existing) {
+        const btn = document.createElement("button"); btn.className = "tab-item"; btn.dataset.view = "kb-admin"; btn.textContent = "Admin";
+        btn.addEventListener("click", () => goToView("kb-admin")); tabs.appendChild(btn);
+      }
+    } else if (existing) existing.remove();
+  }
+  const _applyStaffRole = applyStaffRole, _clearStaffRole = clearStaffRole;
+  applyStaffRole = function (r) { _applyStaffRole(r); refreshKbAdminTab(); };
+  clearStaffRole = function () { _clearStaffRole(); refreshKbAdminTab(); };
+
+  // ---------- Démarrage ----------
   function setOnline(on) { $("offline-banner").classList.toggle("hidden", on !== false); }
   api.isOnline().then(setOnline).catch(() => {});
   api.onNetworkStatus((on) => { const was = !$("offline-banner").classList.contains("hidden"); setOnline(on); if (on && was) { streamersFetchedAt = 0; if (typeof loadStreamers === "function") loadStreamers(); } });
@@ -147,7 +254,7 @@
   // ---------- Reprendre où tu en étais ----------
   const _selectServer = selectServer, _goToView = goToView;
   let restoring = false;
-  selectServer = function (id) { _selectServer(id); if (!restoring) save({ lastServer: id, lastView: null }); };
+  selectServer = function (id) { _selectServer(id); refreshKbAdminTab(); if (!restoring) save({ lastServer: id, lastView: null }); };
   goToView = function (name) { _goToView(name); if (!restoring && currentServerId !== "hub" && name !== "admin") save({ lastView: name }); onViewShown(name); };
   window.restoreLast = async function () {
     await ready;
@@ -163,7 +270,8 @@
   };
 
   function onViewShown(name) {
-    if (name === "home") loadAnomiaStats();
+    if (name === "home") { loadAnomiaStats(); renderAnomiaHome(); }
+    if (name === "kb-admin") { loadKbAdmin(); clearInterval(kbTimer); kbTimer = setInterval(() => { if (!$("view-kb-admin").classList.contains("hidden")) loadKbAdmin(); }, 15000); } else if (kbTimer) { clearInterval(kbTimer); kbTimer = null; }
     if (name === "admin") { startHealthLoop(); } else stopHealthLoop();
   }
 
@@ -351,6 +459,7 @@
     const theme = THEMES[S.theme] ? S.theme : (S.theme === "custom" ? "custom" : "default");
     if (theme === "custom") { document.documentElement.setAttribute("data-theme", "custom"); } else applyTheme(theme, false);
     refreshThemeChips();
+    dateEasterEggs();
     $("opt-animated-bg").checked = Boolean(S.animatedBg); syncFx();
     $("opt-hide-offline").checked = Boolean(S.hideOffline); applyHideOffline(Boolean(S.hideOffline));
     $("opt-streamer-mode").checked = Boolean(S.streamerMode); streamerMode = Boolean(S.streamerMode);

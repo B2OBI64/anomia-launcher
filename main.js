@@ -1363,6 +1363,57 @@ ipcMain.handle("twitch:getLastVideo", async () => {
   return { ok: false };
 });
 
+// ============================================================
+// KannibAventure : statut du serveur Minecraft (Server List Ping, protocole public).
+// Lecture seule, réservée à l'admin en service dans le launcher.
+// ============================================================
+function writeVarInt(n) { const out = []; do { let b = n & 0x7f; n >>>= 7; if (n) b |= 0x80; out.push(b); } while (n); return Buffer.from(out); }
+function pingMinecraft(host, port, timeoutMs = 4000) {
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const sock = net.connect({ host, port });
+    let buf = Buffer.alloc(0), done = false;
+    const finish = (r) => { if (done) return; done = true; try { sock.destroy(); } catch {} resolve(r); };
+    sock.setTimeout(timeoutMs, () => finish({ online: false, error: "timeout" }));
+    sock.on("error", (e) => finish({ online: false, error: e.code || e.message }));
+    sock.on("connect", () => {
+      const hostBuf = Buffer.from(host, "utf8");
+      const portBuf = Buffer.alloc(2); portBuf.writeUInt16BE(port);
+      const payload = Buffer.concat([writeVarInt(0), writeVarInt(767), writeVarInt(hostBuf.length), hostBuf, portBuf, writeVarInt(1)]);
+      sock.write(Buffer.concat([writeVarInt(payload.length), payload]));
+      sock.write(Buffer.from([0x01, 0x00]));
+    });
+    sock.on("data", (d) => {
+      buf = Buffer.concat([buf, d]);
+      try {
+        let off = 0, shift = 0, len = 0, b;
+        do { b = buf[off++]; len |= (b & 0x7f) << shift; shift += 7; } while (b & 0x80 && off < buf.length);
+        if (buf.length < off + len) return;
+        off += 0; let pid = 0; shift = 0;
+        do { b = buf[off++]; pid |= (b & 0x7f) << shift; shift += 7; } while (b & 0x80);
+        let jl = 0; shift = 0;
+        do { b = buf[off++]; jl |= (b & 0x7f) << shift; shift += 7; } while (b & 0x80);
+        const json = JSON.parse(buf.slice(off, off + jl).toString("utf8"));
+        const motd = typeof json.description === "string" ? json.description : (json.description && (json.description.text || (json.description.extra || []).map((x) => x.text).join(""))) || "";
+        finish({
+          online: true, latencyMs: Date.now() - started,
+          version: json.version && json.version.name, players: json.players ? json.players.online : 0, maxPlayers: json.players ? json.players.max : 0,
+          names: ((json.players && json.players.sample) || []).map((p) => String(p.name || "")).slice(0, 30), motd: String(motd).replace(/§./g, "").slice(0, 120)
+        });
+      } catch { /* paquet incomplet : on attend la suite */ }
+    });
+  });
+}
+ipcMain.handle("kb:getStatus", async () => {
+  if (cachedStaffRole !== "admin") return { ok: false, error: "Réservé aux admins." };
+  const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
+  if (!kb.serverAddress) return { ok: false, error: "Adresse du serveur non configurée." };
+  const r = await pingMinecraft(kb.serverAddress, kb.serverPort || 25565);
+  return { ok: true, address: `${kb.serverAddress}:${kb.serverPort || 25565}`, ...r };
+});
+
+ipcMain.on("app:relaunch", () => { app.relaunch(); app.exit(0); });
+
 ipcMain.handle("settings:get", () => loadSettings());
 ipcMain.handle("settings:set", (event, patch) => saveSettings(patch));
 

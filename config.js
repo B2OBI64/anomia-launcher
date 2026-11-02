@@ -45,6 +45,8 @@ module.exports = {
       discordInvite: "https://discord.gg/fdSjJPRJy4",
       discordGuildId: "1357757210272469212",
       requiredRoleId: "1370879305097154692",
+      serverAddress: "185.44.80.33",
+      serverPort: 25615,
       tabs: [
         { view: "kb-home", label: "Accueil" },
         { view: "kb-devlog", label: "Journal de dev" },

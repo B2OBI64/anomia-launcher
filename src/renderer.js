@@ -553,6 +553,13 @@ let lastServerMaintenance = false;
 
 function updateConnectButtonState() {
   const btn = document.getElementById("btn-connect");
+  const heroEl = document.getElementById("ah-hero");
+  const anomiaSrv = getServer("anomia");
+  if (heroEl && anomiaSrv) {
+    heroEl.classList.toggle("paused", anomiaSrv.status !== "online");
+    const pc = document.getElementById("ah-paused-chip");
+    if (pc) pc.textContent = `🗓 Retour prévu en ${anomiaSrv.connectLabel || "2027"}`;
+  }
 
   // Serveur en pause (ex. Anomia jusqu'en 2027) : bouton grisé avec la date, sans connexion possible
   const anomia = getServer("anomia");
@@ -1188,45 +1195,7 @@ async function loadClips() {
   section.classList.remove("hidden");
 }
 
-// --- Assets ---
-const assetsStatus = document.getElementById("assets-status");
-const progressFill = document.getElementById("progress-fill");
-const progressLabel = document.getElementById("progress-label");
-const btnCheckAssets = document.getElementById("btn-check-assets");
-
-window.anomia.onAssetsProgress(({ fileName, fileProgress, done, total }) => {
-  const overall = total ? (done + fileProgress) / total : 0;
-  progressFill.style.width = `${Math.round(overall * 100)}%`;
-  progressLabel.textContent = `${fileName} — ${done}/${total} fichiers`;
-});
-
-btnCheckAssets.addEventListener("click", async () => {
-  btnCheckAssets.disabled = true;
-  assetsStatus.textContent = "Vérification en cours…";
-  progressFill.style.width = "0%";
-  progressLabel.textContent = "";
-
-  try {
-    const result = await window.anomia.checkAssets();
-
-    if (result.ok) {
-      assetsStatus.textContent =
-        result.updated > 0
-          ? `${result.updated} fichier(s) mis à jour sur ${result.total}. Tout est prêt.`
-          : "Tous les fichiers sont déjà à jour.";
-      progressFill.style.width = "100%";
-    } else if (result.notConfigured) {
-      assetsStatus.textContent = result.error;
-      progressFill.style.width = "0%";
-    } else {
-      assetsStatus.textContent = `Erreur : ${result.error}`;
-    }
-  } catch (err) {
-    assetsStatus.textContent = `Erreur inattendue : ${err.message}`;
-  } finally {
-    btnCheckAssets.disabled = false;
-  }
-});
+// --- Assets : la vérification des fichiers custom a été retirée (Anomia n'en a pas) ---
 
 // --- Modale de confirmation custom (pas de window.confirm) ---
 function showConfirm(title, message) {
@@ -1422,7 +1391,7 @@ async function checkFiveM() {
 }
 checkFiveM();
 
-// --- Auto-update (obligatoire, bouton unique télécharger+installer) ---
+// --- Auto-update (facultatif : « Mettre à jour maintenant » ou « Plus tard ») ---
 const updateOverlay = document.getElementById("update-overlay");
 const updateMessage = document.getElementById("update-message");
 const updateChangelog = document.getElementById("update-changelog");
@@ -1446,20 +1415,38 @@ function setUpdateChangelog(notes) {
   }
 }
 
-window.anomia.onUpdateAvailable(({ version, releaseNotes }) => {
+const updateLaterBtn = document.getElementById("update-later-btn");
+let updateDownloading = false;
+window.anomia.onUpdateAvailable(async ({ version, releaseNotes }) => {
   updateFlowActive = true;
   pendingUpdateVersion = version;
-  updateOverlay.classList.remove("hidden");
-  updateMessage.textContent = `Une nouvelle version (v${version}) est disponible. Le serveur nécessite la dernière version pour te connecter.`;
+  updateDownloading = false;
+  document.getElementById("up-to").textContent = `v${version}`;
+  try { document.getElementById("up-from").textContent = `v${await window.anomia.getAppVersion()}`; } catch (e) { /* ignore */ }
+  document.getElementById("update-title").textContent = "Nouvelle version disponible";
+  updateMessage.textContent = "Tu peux mettre à jour maintenant ou plus tard : rien n'est obligatoire.";
   setUpdateChangelog(releaseNotes);
   updateProgressTrack.classList.add("hidden");
   updateProgressLabel.textContent = "";
   updateDownloadBtn.classList.remove("hidden");
   updateDownloadBtn.disabled = false;
-  updateDownloadBtnLabel.textContent = "Télécharger et installer";
+  updateDownloadBtnLabel.textContent = "Mettre à jour maintenant";
   updateRetryBtn.classList.add("hidden");
+  updateLaterBtn.classList.remove("hidden");
   updateStatusLabel.textContent = "Mise à jour dispo";
   updateStatusLabel.classList.remove("checking");
+  updateStatusLabel.classList.add("clickable");
+  // Si le joueur a déjà choisi « Plus tard » pour cette version, on ne rouvre pas la fenêtre (le badge du haut reste cliquable)
+  let st = {}; try { st = (await window.anomia.getSettings()) || {}; } catch (e) { /* ignore */ }
+  if (st.skippedUpdate !== version) updateOverlay.classList.remove("hidden");
+});
+
+updateLaterBtn.addEventListener("click", () => {
+  if (pendingUpdateVersion) window.anomia.setSettings({ skippedUpdate: pendingUpdateVersion });
+  updateOverlay.classList.add("hidden");
+});
+updateStatusLabel.addEventListener("click", () => {
+  if (pendingUpdateVersion && updateFlowActive && !updateDownloading) updateOverlay.classList.remove("hidden");
 });
 
 window.anomia.onUpdateNotAvailable(() => {
@@ -1472,6 +1459,8 @@ window.anomia.onUpdateProgress(({ percent }) => {
   // jour en cours - évite qu'un événement isolé/tardif ne bloque tout le launcher
   // (bug corrigé : ça pouvait rendre l'appli totalement inutilisable).
   if (!updateFlowActive) return;
+  updateDownloading = true;
+  updateLaterBtn.classList.add("hidden");
   updateOverlay.classList.remove("hidden");
   updateProgressTrack.classList.remove("hidden");
   updateProgressFill.style.width = `${Math.round(percent)}%`;
@@ -1500,10 +1489,14 @@ window.anomia.onUpdateError(({ message }) => {
   updateProgressTrack.classList.add("hidden");
   updateDownloadBtn.classList.add("hidden");
   updateRetryBtn.classList.remove("hidden");
+  updateLaterBtn.classList.remove("hidden");
+  updateDownloading = false;
 });
 
 updateDownloadBtn.addEventListener("click", () => {
   updateDownloadBtn.disabled = true;
+  updateDownloading = true;
+  updateLaterBtn.classList.add("hidden");
   updateDownloadBtnLabel.textContent = "Téléchargement en cours…";
   updateMessage.textContent = `Téléchargement de la v${pendingUpdateVersion} en cours…`;
   updateProgressTrack.classList.remove("hidden");
@@ -1562,6 +1555,25 @@ const STAFF_REASONS = {
   throttled: "Trop d'essais, réessaie dans une minute."
 };
 let lastStaffReason = null;
+let adminVerified = false; // rôle admin Discord confirmé par le serveur
+let adminOnDuty = false;   // admin en service : interface admin visible
+function updateDutyButton() {
+  const b = document.getElementById("pp-duty");
+  if (!b) return;
+  b.classList.toggle("hidden", !(discordProfile && adminVerified)); // jamais visible pour un joueur
+  b.textContent = adminOnDuty ? "🟢 En service — se mettre hors service" : "⚪ Hors service — prendre mon service";
+  b.classList.toggle("on", adminOnDuty);
+}
+document.getElementById("pp-duty").addEventListener("click", async () => {
+  if (!adminVerified) return;
+  const next = !adminOnDuty;
+  const ok = await showConfirm(next ? "Prendre ton service" : "Quitter ton service", next
+    ? "Le launcher va redémarrer et afficher l'interface admin."
+    : "Le launcher va redémarrer et reprendre l'affichage normal (joueur).");
+  if (!ok) return;
+  await window.anomia.setSettings({ adminOnDuty: next });
+  window.anomia.relaunchApp();
+});
 function showStaffReason() {
   const el = document.getElementById("pp-staff");
   if (!el) return;
@@ -1576,8 +1588,16 @@ async function autoStaffUnlock() {
   if (!discordProfile) { lastStaffReason = null; clearStaffRole(); showStaffReason(); return; }
   try {
     const r = await window.anomia.unlockAdmin("");
-    if (r && r.ok && r.role === "admin") { lastStaffReason = null; applyStaffRole(r); }
-    else { lastStaffReason = (r && r.reason) || "invalid_code"; if (staffRole === "admin") clearStaffRole(); }
+    if (r && r.ok && r.role === "admin") {
+      lastStaffReason = null;
+      // Admin vérifié : l'interface admin n'apparaît que s'il a pris son service
+      const st = await window.anomia.getSettings();
+      adminVerified = true; adminOnDuty = Boolean(st && st.adminOnDuty);
+      if (adminOnDuty) applyStaffRole(r);
+      updateDutyButton();
+    }
+    else {
+      adminVerified = false; updateDutyButton(); lastStaffReason = (r && r.reason) || "invalid_code"; if (staffRole === "admin") clearStaffRole(); }
   } catch (e) { lastStaffReason = "server_down"; }
   showStaffReason();
 }
@@ -2104,6 +2124,7 @@ document.getElementById("pp-logout").addEventListener("click", async () => {
   if (!confirmed) return;
   window.anomia.logoutDiscord();
   discordProfile = null;
+  adminVerified = false; updateDutyButton();
   clearStaffRole();
   achCache = { at: 0, promise: null };
   closeProfilePanel();

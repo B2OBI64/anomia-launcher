@@ -33,3 +33,7 @@
 
 ## Si l'onglet Admin n'apparaît pas
 Clique sur ton avatar (profil) : une ligne « ⚠ Staff : … » dit pourquoi. Ctrl+Alt+A l'affiche aussi. Causes possibles : jamais reconnecté à Discord depuis la 1.7.0 (cas le plus courant), serveur éteint, `b2_staffpanel` pas remplacé/redémarré, `anomia_discord_bot_token` absent, bot absent de Kannibal Team ou intent « Server Members » désactivé (portail développeur Discord > Bot), ou rôle manquant. La console du serveur affiche aussi la cause.
+
+## 1.7.4
+- KannibAventure : adresse `185.44.80.33:25615` dans config.js (`serverAddress` / `serverPort`). L'onglet Admin du serveur interroge le serveur Minecraft directement (protocole public), sans plugin.
+- Easter eggs (secrets, à ne pas révéler) : code `creeper` (explosion), combinaison ↑ ↓ ← → ↑ ↓ ← → (thème Anomia), 24 décembre (thème Cubique, débloqué à l'ouverture du launcher ce jour-là), 10 clics sur le logo B2 en haut à gauche (mode arc-en-ciel), lancement entre 3 h et 5 h du matin (message). Déjà existants : `admin` (Matrix), `bobi64`/`kannibal` et Konami (Or).
