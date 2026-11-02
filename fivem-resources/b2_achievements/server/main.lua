@@ -41,6 +41,20 @@ local function findCitizenId(discordId, cb)
     )
 end
 
+-- Temps de jeu TOTAL du compte Discord : somme de tous les personnages lies a ce Discord
+-- (avant, seul le personnage le plus recent etait compte, d'ou un total trop bas).
+local function getTotalPlaytime(citizenid, cb)
+    exports.oxmysql:execute("SELECT discord_id, playtime_seconds FROM anomia_discord_links WHERE citizenid = ? LIMIT 1", { citizenid }, function(rows)
+        local own = rows and rows[1]
+        if not own then cb(0) return end
+        local did = tostring(own.discord_id or "")
+        if did == "" then cb(tonumber(own.playtime_seconds) or 0) return end
+        exports.oxmysql:execute("SELECT COALESCE(SUM(playtime_seconds), 0) AS total FROM anomia_discord_links WHERE discord_id = ?", { did }, function(sum)
+            cb((sum and sum[1] and tonumber(sum[1].total)) or tonumber(own.playtime_seconds) or 0)
+        end)
+    end)
+end
+
 local function checkAchievements(citizenid, cb)
     local result = {
         firstCharacter = true, -- vrai dès qu'on a un citizenid, donc toujours vrai ici
@@ -257,9 +271,8 @@ local function checkAchievements(citizenid, cb)
     )
 
     -- temps de jeu cumulé (suivi côté serveur par b2_playerlink, pas par le launcher)
-    exports.oxmysql:execute("SELECT playtime_seconds FROM anomia_discord_links WHERE citizenid = ? LIMIT 1", { citizenid }, function(rows)
-        if rows and rows[1] then
-            local seconds = tonumber(rows[1].playtime_seconds) or 0
+    getTotalPlaytime(citizenid, function(seconds)
+        if seconds then
             if seconds >= 3600 then result.playtime1h = true end
             if seconds >= 36000 then result.playtime10h = true end
             if seconds >= 360000 then result.playtime100h = true end
@@ -395,8 +408,7 @@ SetHttpHandler(function(req, res)
 
         checkAchievements(citizenid, function(achievements)
             recordAndFetchUnlockDates(citizenid, achievements, function(unlockedAt)
-                exports.oxmysql:execute("SELECT playtime_seconds FROM anomia_discord_links WHERE citizenid = ? LIMIT 1", { citizenid }, function(rows)
-                    local playtime = (rows and rows[1] and tonumber(rows[1].playtime_seconds)) or 0
+                getTotalPlaytime(citizenid, function(playtime)
                     res.writeHead(200, { ['Content-Type'] = 'application/json', ['Access-Control-Allow-Origin'] = '*' })
                     res.send(json.encode({ linked = true, achievements = achievements, unlockedAt = unlockedAt, playtimeSeconds = playtime }))
                 end)

@@ -2233,3 +2233,4 @@ html[data-theme="gold"]:not([data-mode="light"]){--bg:#0d0a03;--panel-solid:#1a1
 html[data-theme="matrix"]:not([data-mode="light"]){--bg:#010a03;--panel-solid:#04140a}
 html[data-theme="matrix"]:not([data-mode="light"]) body{font-family:"Mono",ui-monospace,monospace}
 html[data-theme="matrix"]:not([data-mode="light"]) .glass{border-radius:2px;box-shadow:0 0 14px rgba(0,255,65,.12)}
+.pp-servers{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--text-dim);margin:2px 0 8px}.pp-servers i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}

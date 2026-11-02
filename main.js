@@ -1015,7 +1015,7 @@ ipcMain.handle("admin:unlock", async (event, passphrase) => {
       return { ok: true, role: r.body.role };
     }
     if (r.status === 429) return { ok: false, reason: "throttled", error: "Trop d'essais, réessaie dans une minute." };
-    return { ok: false, reason: (r.body && r.body.reason) || "invalid_code" };
+    return { ok: false, reason: (r.body && r.body.reason) || (mode === "discord" ? "server_outdated" : "invalid_code") };
   } catch (e) {
     return { ok: false, reason: "server_down", error: mode === "discord" ? null : "Impossible de joindre le serveur pour vérifier ton accès (serveur éteint ?)." };
   }
@@ -1166,7 +1166,7 @@ ipcMain.handle("achievements:get", async () => {
     if (result.linked === false) {
       return { ok: true, linked: false, list: config.achievements.list };
     }
-    return { ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, playtimeSeconds: result.playtimeSeconds || 0, list: config.achievements.list };
+    return { ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, playtimeSeconds: result.playtimeSeconds || 0, playtimeByServer: { anomia: result.playtimeSeconds || 0 }, list: config.achievements.list };
   } catch (err) {
     return { ok: false, error: "La ressource b2_achievements ne répond pas (pas encore installée, ou serveur hors ligne).", list: config.achievements.list };
   }

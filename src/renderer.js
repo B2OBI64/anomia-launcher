@@ -1558,13 +1558,14 @@ const STAFF_REASONS = {
   bot_error: "Serveur : le bot ne peut pas lire les membres de Kannibal Team (bot absent du serveur ou intent « Server Members » désactivé).",
   not_in_guild: "Ton compte Discord n'est pas dans le serveur Kannibal Team.",
   missing_role: "Tu n'as pas le rôle admin sur Kannibal Team.",
+  server_outdated: "Le serveur n'a pas la nouvelle version de b2_staffpanel (remplace la ressource puis restart b2_staffpanel).",
   throttled: "Trop d'essais, réessaie dans une minute."
 };
 let lastStaffReason = null;
 function showStaffReason() {
   const el = document.getElementById("pp-staff");
   if (!el) return;
-  const loud = ["no_token", "token_expired", "bad_token", "server_down", "no_bot_token", "bot_error"].includes(lastStaffReason);
+  const loud = ["no_token", "token_expired", "bad_token", "server_down", "no_bot_token", "bot_error", "server_outdated"].includes(lastStaffReason);
   if (discordProfile && loud) { el.textContent = "⚠ Staff : " + STAFF_REASONS[lastStaffReason]; el.classList.remove("hidden"); }
   else el.classList.add("hidden");
 }
@@ -2042,6 +2043,10 @@ async function fillProfilePanel() {
   unlocked.forEach((d) => { counts[RARITY_COLORS[d.rarity] ? d.rarity : "bronze"]++; });
   const secs = r.playtimeSeconds || 0;
   document.getElementById("pp-playtime").textContent = secs >= 3600 ? `${Math.floor(secs / 3600)} h` : `${Math.floor(secs / 60)} min`;
+  // Détail par serveur : chaque serveur a ses propres données, le total est leur somme
+  const fmtH = (n) => (n >= 3600 ? `${Math.floor(n / 3600)} h` : n > 0 ? `${Math.floor(n / 60)} min` : "—");
+  const by = r.playtimeByServer || {};
+  document.getElementById("pp-servers").innerHTML = SERVERS.map((sv) => `<span><i style="background:${sv.color || "var(--teal)"}"></i>${escapeHtml(sv.name)} ${fmtH(Number(by[sv.id]) || 0)}</span>`).join("");
   document.getElementById("pp-ach").textContent = `${unlocked.length}/${list.length}`;
   document.getElementById("pp-gold").textContent = String(counts.gold + counts.secret);
   document.getElementById("pp-rarity").innerHTML = [["bronze", "Bronze"], ["silver", "Argent"], ["gold", "Or"], ["secret", "Secret"]]
