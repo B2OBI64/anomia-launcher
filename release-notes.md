@@ -1,3 +1,4 @@
-# 1.7.9 — Journal de la connexion directe
+# 1.8.0 — Connexion directe KannibAventure corrigée pour NeoForge
 
-- KannibAventure (admins) : le lancement direct écrit un journal (kb-launch.log) pour diagnostiquer les problèmes.
+- Nouveau lanceur compatible NeoForge 26.1.2 : le jeu démarre avec les mods et rejoint directement le serveur (admins).
+- Détail des erreurs dans kb-launch.log, repli automatique sur le mode classique.

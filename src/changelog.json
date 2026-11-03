@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.8.0",
+    "date": "3 novembre 2026",
+    "title": "Connexion directe KannibAventure corrigée pour NeoForge",
+    "items": [
+      "KannibAventure (admins) : nouveau lanceur compatible NeoForge 26.1.2 — le jeu démarre avec tes mods et rejoint directement le serveur.",
+      "En cas de problème, le détail est écrit dans kb-launch.log et le mode classique prend le relais."
+    ]
+  },
+  {
     "version": "1.7.9",
     "date": "3 novembre 2026",
     "title": "Journal de la connexion directe",

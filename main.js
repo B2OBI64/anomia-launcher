@@ -1564,27 +1564,29 @@ ipcMain.handle("kb:launchDirect", async () => {
     if (!xbox) xbox = await auth.launch("electron", { width: 520, height: 700, title: "Connexion Microsoft" });
     const mc = await xbox.getMinecraft();
     writeMsToken(xbox.save());
-    const { Client } = require("minecraft-launcher-core");
-    const launcher = new Client();
-    // Journal du lancement (aide au diagnostic) : %APPDATA%\\<launcher>\\kb-launch.log
+    const { buildLaunch } = require("./kb-launch");
+    const { spawn } = require("child_process");
+    const root = path.join(app.getPath("appData"), ".minecraft");
     const logFile = path.join(app.getPath("userData"), "kb-launch.log");
-    try { fs.writeFileSync(logFile, `# KannibAventure — lancement direct ${new Date().toISOString()}\n# java: ${java}\n# version: ${version} / ${kb.minecraftVersionId}\n`); } catch {}
     const klog = (t) => { try { fs.appendFileSync(logFile, String(t).replace(/(--accessToken\s+)\S+/g, "$1***") + "\n"); } catch {} };
-    launcher.on("debug", klog);
-    launcher.on("data", klog);
-    launcher.on("close", (c) => klog("# Minecraft fermé, code " + c));
-    launcher.on("progress", (e) => { if (e && e.total) send("kb:launchProgress", { step: "download", percent: Math.round((e.task / e.total) * 100) }); });
-    launcher.on("close", () => send("kb:launchProgress", { step: "closed" }));
+    try { fs.writeFileSync(logFile, `# KannibAventure — lancement direct ${new Date().toISOString()}\n# java: ${java}\n# version: ${version} / ${kb.minecraftVersionId}\n`); } catch {}
     send("kb:launchProgress", { step: "start" });
-    const proc = await launcher.launch({
-      authorization: mc.mclc(),
-      root: path.join(app.getPath("appData"), ".minecraft"),
-      javaPath: java,
-      version: { number: version, custom: kb.minecraftVersionId || undefined, type: "release" },
-      memory: { max: "4G", min: "2G" },
-      quickPlay: { type: "multiplayer", identifier: addr }
+    const nativesDir = path.join(root, "bin", "b2-natives");
+    try { fs.mkdirSync(nativesDir, { recursive: true }); } catch {}
+    let plan;
+    try {
+      plan = buildLaunch({ root, versionId: kb.minecraftVersionId || version, auth: mc.mclc(), quickPlay: addr, nativesDir, memory: { max: "4G", min: "2G" } });
+    } catch (e) { return { ok: false, fallback: true, reason: e.message }; }
+    klog("# commande : " + java + " " + plan.args.join(" "));
+    const out = fs.openSync(logFile, "a");
+    const child = spawn(java, plan.args, { cwd: root, detached: true, stdio: ["ignore", out, out], windowsHide: false });
+    const early = await new Promise((resolve) => {
+      const t = setTimeout(() => resolve(null), 8000);
+      child.on("error", (e) => { clearTimeout(t); resolve("Impossible de lancer Java : " + e.message); });
+      child.on("exit", (c) => { clearTimeout(t); resolve(c === 0 ? null : "Minecraft s'est arrêté (code " + c + "), voir kb-launch.log"); });
     });
-    if (!proc) return { ok: false, fallback: true, reason: "Minecraft n'a pas démarré." };
+    if (early) return { ok: false, fallback: true, reason: early };
+    child.unref();
     return { ok: true, direct: true, address: addr, version, player: mc.profile && mc.profile.name };
   } catch (e) {
     return { ok: false, fallback: true, reason: (e && e.message) || "Erreur de connexion Microsoft." };
