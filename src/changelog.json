@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.7.7",
+    "date": "3 novembre 2026",
+    "title": "Correctif connexion directe KannibAventure",
+    "items": [
+      "Correction : la connexion directe (admins) à KannibAventure n'était pas embarquée dans l'installeur 1.7.6."
+    ]
+  },
+  {
     "version": "1.7.6",
     "date": "3 novembre 2026",
     "title": "Accès admin partout et surprises de saison",
