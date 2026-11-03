@@ -1,3 +1,3 @@
-# 1.7.7 — Correctif connexion directe KannibAventure
+# 1.7.9 — Journal de la connexion directe
 
-- Correction : la connexion directe (admins) à KannibAventure n'était pas embarquée dans l'installeur 1.7.6.
+- KannibAventure (admins) : le lancement direct écrit un journal (kb-launch.log) pour diagnostiquer les problèmes.

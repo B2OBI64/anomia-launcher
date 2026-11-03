@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.7.9",
+    "date": "3 novembre 2026",
+    "title": "Journal de la connexion directe",
+    "items": [
+      "KannibAventure (admins) : le lancement direct écrit un journal (kb-launch.log) pour diagnostiquer les problèmes."
+    ]
+  },
+  {
     "version": "1.7.7",
     "date": "3 novembre 2026",
     "title": "Correctif connexion directe KannibAventure",

@@ -1566,6 +1566,13 @@ ipcMain.handle("kb:launchDirect", async () => {
     writeMsToken(xbox.save());
     const { Client } = require("minecraft-launcher-core");
     const launcher = new Client();
+    // Journal du lancement (aide au diagnostic) : %APPDATA%\\<launcher>\\kb-launch.log
+    const logFile = path.join(app.getPath("userData"), "kb-launch.log");
+    try { fs.writeFileSync(logFile, `# KannibAventure — lancement direct ${new Date().toISOString()}\n# java: ${java}\n# version: ${version} / ${kb.minecraftVersionId}\n`); } catch {}
+    const klog = (t) => { try { fs.appendFileSync(logFile, String(t).replace(/(--accessToken\s+)\S+/g, "$1***") + "\n"); } catch {} };
+    launcher.on("debug", klog);
+    launcher.on("data", klog);
+    launcher.on("close", (c) => klog("# Minecraft fermé, code " + c));
     launcher.on("progress", (e) => { if (e && e.total) send("kb:launchProgress", { step: "download", percent: Math.round((e.task / e.total) * 100) }); });
     launcher.on("close", () => send("kb:launchProgress", { step: "closed" }));
     send("kb:launchProgress", { step: "start" });
