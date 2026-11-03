@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.9.0",
+    "date": "3 novembre 2026",
+    "title": "KannibAventure : installation automatique",
+    "items": [
+      "Le bouton « Se connecter » installe tout seul ce qu'il faut : Java 25, NeoForge 26.1.2 et les mods du serveur.",
+      "Les mods sont vérifiés à chaque lancement : ce qui manque est téléchargé, ce qui est en trop est mis de côté.",
+      "Le jeu démarre ensuite directement dans le serveur KannibAventure (connexion Microsoft au premier lancement).",
+      "KannibAventure utilise son propre dossier de jeu pour ne pas toucher à tes autres Minecraft."
+    ]
+  },
+  {
     "version": "1.8.0",
     "date": "3 novembre 2026",
     "title": "Connexion directe KannibAventure corrigée pour NeoForge",

@@ -49,3 +49,11 @@ Clique sur ton avatar (profil) : une ligne « ⚠ Staff : … » dit pourquoi. C
 - Nécessite Java 25 (installé par le Minecraft Launcher officiel ou à part) et NeoForge 26.1.2.122 déjà installé sur le PC (version « neoforge-26.1.2.122 »). Sinon repli automatique sur l'ancien mode (profil + serveur dans la liste).
 - Le téléchargement du jeu au premier lancement peut prendre quelques minutes. Les mods doivent être présents dans le dossier mods.
 - Thème Noël v3 (24 décembre) : gris clair, guirlande lumineuse, bordures bonbon, bonnet, neige, boutons rouges, angles carrés.
+
+## KannibAventure 1.9.0 : installation automatique (tous les joueurs)
+1. Crée un dépôt GitHub public **kannibaventure-mods** (séparé du launcher, pour ne pas gêner les mises à jour du launcher).
+2. Dans ce dépôt : Releases → « Draft a new release » → tag **mods** → publie.
+3. Dans cette release, envoie `kb-modpack.json` (fourni à la racine du projet) et les 61 `.jar` de ton dossier de mods (sans les doublons « (1) »).
+4. Quand tu modifies les mods : `node tools\make-kb-modpack.js "<dossier des mods>"`, puis remplace `kb-modpack.json` et les `.jar` dans la release. Aucune mise à jour du launcher n'est nécessaire.
+- Le dossier de jeu des joueurs : `%APPDATA%\.minecraft\kannibaventure` (les mods en trop sont déplacés dans `mods-extra`).
+- Journal en cas de problème : `kb-launch.log` (dossier de données du launcher).

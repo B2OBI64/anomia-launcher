@@ -255,23 +255,20 @@
     b.onclick = async () => {
       if (typeof discordProfile !== "undefined" && !discordProfile && await api.isDiscordConfigured()) { showInfo("Connexion Discord requise", "<p>Connecte-toi avec Discord avant de rejoindre le serveur.</p>"); return; }
       b.disabled = true; b.textContent = "Lancement de Minecraft…";
-      // Admin : tentative de connexion directe (Minecraft démarre déjà dans le serveur), sinon repli sur le profil officiel
+      // Connexion directe : installe NeoForge + mods si besoin, puis lance Minecraft dans le serveur (repli : mode classique)
       let fallbackReason = null;
-      if (isAdminUnlocked) {
-        api.onKbLaunchProgress((p) => {
-          if (p.step === "auth") b.textContent = "Connexion Microsoft…";
-          else if (p.step === "download") b.textContent = `Préparation ${p.percent}%`;
-          else if (p.step === "start") b.textContent = "Démarrage…";
-        });
-        let d; try { d = await api.launchKannibAventureDirect(); } catch (e) { d = { ok: false, fallback: true, reason: e.message }; }
-        if (d && d.ok) {
-          b.disabled = false; refreshKbConnect();
-          showInfo("Minecraft démarre", `<p>Connexion directe à <b>${esc(d.address)}</b> en version <b>${esc(d.version)}</b>${d.player ? " avec le compte <b>" + esc(d.player) + "</b>" : ""}.</p><p style="margin-top:8px;color:var(--text-dim);font-size:12px;">La première fois, le téléchargement du jeu peut prendre quelques minutes.</p>`);
-          return;
-        }
-        if (d && d.fallback === false) { b.disabled = false; refreshKbConnect(); return; }
-        fallbackReason = (d && d.reason) || "raison inconnue";
+      api.onKbLaunchProgress((p) => {
+        if (!p) return;
+        b.textContent = (p.label || "Préparation…") + (p.percent != null ? ` ${p.percent}%` : "");
+      });
+      let d; try { d = await api.launchKannibAventureDirect(); } catch (e) { d = { ok: false, fallback: true, reason: e.message }; }
+      if (d && d.ok) {
+        b.disabled = false; refreshKbConnect();
+        showInfo("Minecraft démarre", `<p>Connexion directe à <b>${esc(d.address)}</b> en version <b>${esc(d.version)}</b>${d.player ? " avec le compte <b>" + esc(d.player) + "</b>" : ""}.</p>`);
+        return;
       }
+      if (d && d.fallback === false) { b.disabled = false; refreshKbConnect(); return; }
+      fallbackReason = (d && d.reason) || "raison inconnue";
       let r; try { r = await api.launchKannibAventure(); } catch (e) { r = { ok: false, error: e.message }; }
       b.disabled = false; refreshKbConnect();
       if (r && r.address && navigator.clipboard) navigator.clipboard.writeText(r.address).catch(() => {});

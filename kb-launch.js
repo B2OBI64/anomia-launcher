@@ -87,7 +87,7 @@ function buildLaunch(o) {
     auth_xuid: (a.meta && a.meta.xuid) || "", clientid: (a.meta && a.meta.clientId) || a.client_token || "",
     user_type: (a.meta && a.meta.type) || "msa", user_properties: a.user_properties || "{}",
     version_name: o.versionId, version_type: (v.type === "release" ? "release" : v.type) || "release",
-    game_directory: root, assets_root: assetsRoot, game_assets: assetsRoot, assets_index_name: assetId,
+    game_directory: o.gameDir || root, assets_root: assetsRoot, game_assets: assetsRoot, assets_index_name: assetId,
     natives_directory: o.nativesDir, library_directory: libDir, classpath_separator: sep, classpath: cp.join(sep),
     launcher_name: "B2Launcher", launcher_version: "1", quickPlayMultiplayer: o.quickPlay || "",
     quickPlayPath: "", quickPlaySingleplayer: "", quickPlayRealms: "", resolution_width: "854", resolution_height: "480"

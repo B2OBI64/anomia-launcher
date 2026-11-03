@@ -1,7 +1,7 @@
 {
   "name": "anomia-launcher",
   "productName": "B2 Launcher",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "B2 Launcher - le launcher des serveurs B2 (Anomia RP, KannibAventure)",
   "main": "main.js",
   "author": "B2OBI64",
@@ -31,6 +31,7 @@
     "files": [
       "main.js",
       "kb-launch.js",
+      "kb-install.js",
       "config.js",
       "preload.js",
       "diagnostics.js",

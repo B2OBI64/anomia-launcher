@@ -49,6 +49,8 @@ module.exports = {
       serverPort: 25615,
       minecraftVersion: "26.1.2",
       neoForgeVersion: "26.1.2.122",
+      // Hébergement des mods : release GitHub d'un dépôt séparé (contient kb-modpack.json + les .jar)
+      modpack: { owner: "B2OBI64", repo: "kannibaventure-mods", tag: "mods" },
       // Quand le mod loader sera choisi, mets ici l'id de version installé (ex. "fabric-loader-0.16.9-1.21.1") :
       minecraftVersionId: "neoforge-26.1.2.122",
       tabs: [

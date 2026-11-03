@@ -1483,12 +1483,12 @@ function prepareMinecraftProfile(kb) {
       if (!fs.existsSync(prof + ".b2bak")) fs.writeFileSync(prof + ".b2bak", raw);
       j.profiles = j.profiles || {};
       const prev = j.profiles["b2-kannibaventure"] || {};
-      j.profiles["b2-kannibaventure"] = { created: prev.created || new Date().toISOString(), icon: "Grass", name: "KannibAventure", type: "custom", ...prev, lastUsed: new Date().toISOString(), lastVersionId: kb.minecraftVersionId || kb.minecraftVersion || "26.1.2" };
+      j.profiles["b2-kannibaventure"] = { created: prev.created || new Date().toISOString(), icon: "Grass", name: "KannibAventure", type: "custom", ...prev, lastUsed: new Date().toISOString(), lastVersionId: kb.minecraftVersionId || kb.minecraftVersion || "26.1.2", gameDir: path.join(mcDir, "kannibaventure") };
       fs.writeFileSync(prof, JSON.stringify(j, null, 2));
       res.profile = true;
     }
   } catch (e) { console.error("[kb] profil Minecraft :", e.message); }
-  try { if (fs.existsSync(mcDir)) res.server = addServerToServersDat(path.join(mcDir, "servers.dat"), "KannibAventure", addr); }
+  try { if (fs.existsSync(mcDir)) { fs.mkdirSync(path.join(mcDir, "kannibaventure"), { recursive: true }); res.server = addServerToServersDat(path.join(mcDir, "kannibaventure", "servers.dat"), "KannibAventure", addr); } }
   catch (e) { console.error("[kb] servers.dat :", e.message); }
   return res;
 }
@@ -1541,45 +1541,82 @@ function findJava21() {
   return null;
 }
 let kbLaunching = false;
+const kbRoot = () => path.join(app.getPath("appData"), ".minecraft");
+const kbGameDir = () => path.join(kbRoot(), "kannibaventure"); // instance isolée : mods, config, mondes, options
 ipcMain.handle("kb:launchDirect", async () => {
-  if (cachedStaffRole !== "admin") return { ok: false, fallback: true, reason: "Réservé aux admins." };
   if (kbLaunching) return { ok: false, fallback: false, reason: "Lancement déjà en cours." };
   const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
   const addr = `${kb.serverAddress}:${kb.serverPort || 25565}`;
   const version = kb.minecraftVersion || "26.1.2";
+  const versionId = kb.minecraftVersionId || version;
   kbLaunching = true;
   const send = (ch, p) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, p); };
+  const progress = (p) => send("kb:launchProgress", p);
+  const logFile = path.join(app.getPath("userData"), "kb-launch.log");
+  const klog = (t) => { try { fs.appendFileSync(logFile, String(t).replace(/(--accessToken\s+)\S+/g, "$1***") + "\n"); } catch {} };
+  try { fs.writeFileSync(logFile, `# KannibAventure — lancement ${new Date().toISOString()}\n# version: ${version} / ${versionId}\n`); } catch {}
   try {
-    const java = findJava21();
-    if (!java) return { ok: false, fallback: true, reason: "Java 25 introuvable (installe Java 25, ou lance une fois la version " + version + " depuis le Minecraft Launcher officiel)." };
-    if (kb.minecraftVersionId && !fs.existsSync(path.join(app.getPath("appData"), ".minecraft", "versions", kb.minecraftVersionId, kb.minecraftVersionId + ".json")))
-      return { ok: false, fallback: true, reason: "NeoForge " + (kb.neoForgeVersion || "") + " n'est pas installé sur ce PC (version « " + kb.minecraftVersionId + " » introuvable)." };
-    send("kb:launchProgress", { step: "auth" });
-    const { Auth } = require("msmc");
-    const ma = config.microsoftAuth || {};
-    const auth = ma.clientId ? new Auth({ client_id: ma.clientId, redirect: ma.redirect, prompt: "select_account" }) : new Auth("select_account");
-    let xbox = null;
-    const saved = readMsToken();
-    if (saved) { try { xbox = await auth.refresh(saved); } catch { xbox = null; } }
-    if (!xbox) xbox = await auth.launch("electron", { width: 520, height: 700, title: "Connexion Microsoft" });
-    const mc = await xbox.getMinecraft();
-    writeMsToken(xbox.save());
-    const { buildLaunch } = require("./kb-launch");
-    const { spawn } = require("child_process");
-    const root = path.join(app.getPath("appData"), ".minecraft");
-    const logFile = path.join(app.getPath("userData"), "kb-launch.log");
-    const klog = (t) => { try { fs.appendFileSync(logFile, String(t).replace(/(--accessToken\s+)\S+/g, "$1***") + "\n"); } catch {} };
-    try { fs.writeFileSync(logFile, `# KannibAventure — lancement direct ${new Date().toISOString()}\n# java: ${java}\n# version: ${version} / ${kb.minecraftVersionId}\n`); } catch {}
-    send("kb:launchProgress", { step: "start" });
+    const K = require("./kb-install");
+    const { buildLaunch, loadVersion, ruleOk } = require("./kb-launch");
+    const root = kbRoot(), gameDir = kbGameDir();
+    fs.mkdirSync(gameDir, { recursive: true });
+
+    // 1) Java 25 (détecté, sinon téléchargé)
+    let java;
+    try { java = await K.ensureJava({ userData: app.getPath("userData"), findExisting: findJava21, progress, AdmZip: require("adm-zip") }); }
+    catch (e) { return { ok: false, fallback: true, reason: "Java 25 : " + e.message }; }
+    klog("# java : " + java);
+
+    // 2) NeoForge (installé automatiquement la première fois)
+    try {
+      const installer = path.join(__dirname, "assets", "neoforge-installer.jar");
+      await K.ensureNeoForge({ root, java, installerSrc: installer, versionId, tmpDir: path.join(app.getPath("temp"), "b2-launcher"), log: klog, progress });
+    } catch (e) { return { ok: false, fallback: true, reason: e.message }; }
+
+    // 3) Fichiers du jeu manquants (jar, bibliothèques, assets)
+    try { await K.ensureGameFiles({ root, versionId, loadVersion, ruleOk, progress, log: klog }); }
+    catch (e) { return { ok: false, fallback: true, reason: "fichiers du jeu : " + e.message }; }
+
+    // 4) Mods : comparaison avec la liste officielle, téléchargement de ce qui manque
+    const mp = kb.modpack;
+    if (mp && mp.repo) {
+      try {
+        progress({ step: "mods", label: "Vérification des mods", percent: null });
+        const { pack, assets } = await K.loadModpack(mp);
+        await K.syncMods({ gameDir, pack, assets, progress, log: klog });
+      } catch (e) {
+        klog("# mods : " + e.message);
+        const have = fs.existsSync(path.join(gameDir, "mods")) && fs.readdirSync(path.join(gameDir, "mods")).some((f) => /\.jar$/i.test(f));
+        if (!have) return { ok: false, fallback: true, reason: "mods : " + e.message };
+      }
+    }
+
+    // 5) Connexion Microsoft (jeton mémorisé ensuite)
+    progress({ step: "auth", label: "Connexion Microsoft…", percent: null });
+    let mc;
+    try {
+      const { Auth } = require("msmc");
+      const ma = config.microsoftAuth || {};
+      const auth = ma.clientId ? new Auth({ client_id: ma.clientId, redirect: ma.redirect, prompt: "select_account" }) : new Auth("select_account");
+      let xbox = null;
+      const saved = readMsToken();
+      if (saved) { try { xbox = await auth.refresh(saved); } catch { xbox = null; } }
+      if (!xbox) xbox = await auth.launch("electron", { width: 520, height: 700, title: "Connexion Microsoft" });
+      mc = await xbox.getMinecraft();
+      writeMsToken(xbox.save());
+    } catch (e) { return { ok: false, fallback: true, reason: "connexion Microsoft : " + ((e && e.message) || e) }; }
+
+    // 6) Lancement direct dans le serveur
+    progress({ step: "start", label: "Démarrage de Minecraft…", percent: null });
     const nativesDir = path.join(root, "bin", "b2-natives");
     try { fs.mkdirSync(nativesDir, { recursive: true }); } catch {}
     let plan;
-    try {
-      plan = buildLaunch({ root, versionId: kb.minecraftVersionId || version, auth: mc.mclc(), quickPlay: addr, nativesDir, memory: { max: "4G", min: "2G" } });
-    } catch (e) { return { ok: false, fallback: true, reason: e.message }; }
+    try { plan = buildLaunch({ root, gameDir, versionId, auth: mc.mclc(), quickPlay: addr, nativesDir, memory: { max: "4G", min: "2G" } }); }
+    catch (e) { return { ok: false, fallback: true, reason: e.message }; }
     klog("# commande : " + java + " " + plan.args.join(" "));
+    const { spawn } = require("child_process");
     const out = fs.openSync(logFile, "a");
-    const child = spawn(java, plan.args, { cwd: root, detached: true, stdio: ["ignore", out, out], windowsHide: false });
+    const child = spawn(java, plan.args, { cwd: gameDir, detached: true, stdio: ["ignore", out, out] });
     const early = await new Promise((resolve) => {
       const t = setTimeout(() => resolve(null), 8000);
       child.on("error", (e) => { clearTimeout(t); resolve("Impossible de lancer Java : " + e.message); });
@@ -1589,7 +1626,8 @@ ipcMain.handle("kb:launchDirect", async () => {
     child.unref();
     return { ok: true, direct: true, address: addr, version, player: mc.profile && mc.profile.name };
   } catch (e) {
-    return { ok: false, fallback: true, reason: (e && e.message) || "Erreur de connexion Microsoft." };
+    klog("# erreur : " + ((e && e.stack) || e));
+    return { ok: false, fallback: true, reason: (e && e.message) || "Erreur inattendue." };
   } finally { kbLaunching = false; }
 });
 ipcMain.handle("kb:forgetMicrosoft", () => { try { fs.unlinkSync(msTokenPath()); } catch {} return { ok: true }; });
