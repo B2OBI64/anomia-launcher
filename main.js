@@ -1412,6 +1412,179 @@ ipcMain.handle("kb:getStatus", async () => {
   return { ok: true, address: `${kb.serverAddress}:${kb.serverPort || 25565}`, ...r };
 });
 
+// ============================================================
+// KannibAventure : lancement de Minecraft Java dans la bonne version
+// (profil du launcher officiel + serveur ajouté à la liste Multijoueur).
+// ============================================================
+function nbtRead(buf) {
+  let o = 0;
+  const str = () => { const l = buf.readUInt16BE(o); o += 2; const s = buf.toString("utf8", o, o + l); o += l; return s; };
+  const payload = (t) => {
+    const raw = (n) => { const b = buf.slice(o, o + n); o += n; return b; };
+    switch (t) {
+      case 1: return raw(1); case 2: return raw(2); case 3: return raw(4); case 4: return raw(8); case 5: return raw(4); case 6: return raw(8);
+      case 7: { const n = buf.readInt32BE(o); o += 4; return raw(n); }
+      case 8: return str();
+      case 9: { const et = buf[o++]; const n = buf.readInt32BE(o); o += 4; const items = []; for (let i = 0; i < n; i++) items.push(payload(et)); return { et, items }; }
+      case 10: { const m = new Map(); for (;;) { const ct = buf[o++]; if (ct === 0) break; const name = str(); m.set(name, { t: ct, v: payload(ct) }); } return m; }
+      case 11: { const n = buf.readInt32BE(o); o += 4; return raw(n * 4); }
+      case 12: { const n = buf.readInt32BE(o); o += 4; return raw(n * 8); }
+      default: throw new Error("tag NBT inconnu " + t);
+    }
+  };
+  const rt = buf[o++]; if (rt !== 10) throw new Error("racine NBT invalide");
+  const rootName = str();
+  return { rootName, root: payload(10) };
+}
+function nbtWrite({ rootName, root }) {
+  const parts = [];
+  const u16 = (n) => { const b = Buffer.alloc(2); b.writeUInt16BE(n); return b; };
+  const i32 = (n) => { const b = Buffer.alloc(4); b.writeInt32BE(n); return b; };
+  const str = (s) => { const sb = Buffer.from(s, "utf8"); return Buffer.concat([u16(sb.length), sb]); };
+  const payload = (t, v) => {
+    switch (t) {
+      case 1: case 2: case 3: case 4: case 5: case 6: parts.push(v); break;
+      case 7: parts.push(i32(v.length), v); break;
+      case 8: parts.push(str(v)); break;
+      case 9: parts.push(Buffer.from([v.et]), i32(v.items.length)); v.items.forEach((x) => payload(v.et, x)); break;
+      case 10: for (const [k, e] of v) { parts.push(Buffer.from([e.t]), str(k)); payload(e.t, e.v); } parts.push(Buffer.from([0])); break;
+      case 11: parts.push(i32(v.length / 4), v); break;
+      case 12: parts.push(i32(v.length / 8), v); break;
+    }
+  };
+  parts.push(Buffer.from([10]), str(rootName)); payload(10, root);
+  return Buffer.concat(parts);
+}
+// Ajoute le serveur en tête de la liste Multijoueur (sans toucher aux autres). Sauvegarde .b2bak avant d'écrire.
+function addServerToServersDat(file, name, ip) {
+  let data;
+  if (fs.existsSync(file)) {
+    const buf = fs.readFileSync(file);
+    data = nbtRead(buf);
+    const list = data.root.get("servers");
+    if (list && list.v.items.some((c) => c.get("ip") && c.get("ip").v === ip)) return "deja";
+    try { fs.copyFileSync(file, file + ".b2bak"); } catch {}
+  } else data = { rootName: "", root: new Map() };
+  if (!data.root.has("servers")) data.root.set("servers", { t: 9, v: { et: 10, items: [] } });
+  const l = data.root.get("servers").v; if (l.et === 0) l.et = 10;
+  l.items.unshift(new Map([["ip", { t: 8, v: ip }], ["name", { t: 8, v: name }]]));
+  fs.writeFileSync(file, nbtWrite(data));
+  return "ajoute";
+}
+function prepareMinecraftProfile(kb) {
+  const mcDir = path.join(app.getPath("appData"), ".minecraft");
+  const res = { profile: false, server: null };
+  const addr = `${kb.serverAddress}:${kb.serverPort || 25565}`;
+  const prof = path.join(mcDir, "launcher_profiles.json");
+  try {
+    if (fs.existsSync(prof)) {
+      const raw = fs.readFileSync(prof, "utf-8");
+      const j = JSON.parse(raw);
+      if (!fs.existsSync(prof + ".b2bak")) fs.writeFileSync(prof + ".b2bak", raw);
+      j.profiles = j.profiles || {};
+      const prev = j.profiles["b2-kannibaventure"] || {};
+      j.profiles["b2-kannibaventure"] = { created: prev.created || new Date().toISOString(), icon: "Grass", name: "KannibAventure", type: "custom", ...prev, lastUsed: new Date().toISOString(), lastVersionId: kb.minecraftVersionId || kb.minecraftVersion || "26.1.2" };
+      fs.writeFileSync(prof, JSON.stringify(j, null, 2));
+      res.profile = true;
+    }
+  } catch (e) { console.error("[kb] profil Minecraft :", e.message); }
+  try { if (fs.existsSync(mcDir)) res.server = addServerToServersDat(path.join(mcDir, "servers.dat"), "KannibAventure", addr); }
+  catch (e) { console.error("[kb] servers.dat :", e.message); }
+  return res;
+}
+function findMinecraftLauncher() {
+  const c = [process.env["ProgramFiles(x86)"], process.env.ProgramFiles, process.env.LOCALAPPDATA].filter(Boolean)
+    .flatMap((b) => [path.join(b, "Minecraft Launcher", "MinecraftLauncher.exe"), path.join(b, "Programs", "Minecraft Launcher", "MinecraftLauncher.exe")]);
+  return c.find((f) => { try { return fs.existsSync(f); } catch { return false; } }) || null;
+}
+ipcMain.handle("kb:launch", async () => {
+  const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
+  if (!kb.serverAddress) return { ok: false, error: "Adresse du serveur non configurée." };
+  const addr = `${kb.serverAddress}:${kb.serverPort || 25565}`;
+  const prep = prepareMinecraftProfile(kb);
+  const exe = findMinecraftLauncher();
+  try {
+    if (exe) { const { spawn } = require("child_process"); spawn(exe, [], { detached: true, stdio: "ignore" }).unref(); }
+    else if (process.platform === "win32") {
+      const { spawn } = require("child_process");
+      spawn("explorer.exe", ["shell:AppsFolder\\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft"], { detached: true, stdio: "ignore" }).unref();
+    } else return { ok: false, error: "Minecraft Launcher introuvable.", address: addr };
+  } catch (e) { return { ok: false, error: "Impossible de lancer le Minecraft Launcher : " + e.message, address: addr }; }
+  return { ok: true, address: addr, version: kb.minecraftVersionId || kb.minecraftVersion || "26.1.2", ...prep, launcherFound: Boolean(exe) };
+});
+
+// ------------------------------------------------------------------
+// Connexion DIRECTE à KannibAventure (bêta, admins) : le launcher lance Minecraft lui-même
+// (connexion Microsoft une seule fois, puis jeton chiffré), télécharge le jeu si besoin
+// et démarre directement dans le serveur (Quick Play). En cas d'échec : repli sur le profil officiel.
+// ------------------------------------------------------------------
+const msTokenPath = () => path.join(app.getPath("userData"), "ms-auth.bin");
+function readMsToken() {
+  try { if (safeStorage && safeStorage.isEncryptionAvailable() && fs.existsSync(msTokenPath())) return safeStorage.decryptString(fs.readFileSync(msTokenPath())); } catch {}
+  return null;
+}
+function writeMsToken(t) { try { if (t && safeStorage && safeStorage.isEncryptionAvailable()) fs.writeFileSync(msTokenPath(), safeStorage.encryptString(t)); } catch {} }
+function findJava21() {
+  const rt = path.join(app.getPath("appData"), ".minecraft", "runtime");
+  // Minecraft 26.1.x exige Java 25 : runtime « epsilon » du launcher officiel, sinon une installation Java 25 classique
+  const cands = [path.join(rt, "java-runtime-epsilon", "windows-x64", "java-runtime-epsilon", "bin", "java.exe")];
+  for (const base of [process.env.ProgramFiles, process.env["ProgramFiles(x86)"]].filter(Boolean)) {
+    for (const vendor of ["Java", "Eclipse Adoptium", "Microsoft", "Zulu", "BellSoft", "Amazon Corretto"]) {
+      try {
+        const d = path.join(base, vendor);
+        if (fs.existsSync(d)) for (const n of fs.readdirSync(d)) if (/(^|[^0-9])25([^0-9]|$)/.test(n)) cands.push(path.join(d, n, "bin", "java.exe"));
+      } catch {}
+    }
+  }
+  if (process.env.JAVA_HOME) cands.push(path.join(process.env.JAVA_HOME, "bin", "java.exe"));
+  for (const exe of cands) { try { if (fs.existsSync(exe)) return exe; } catch {} }
+  return null;
+}
+let kbLaunching = false;
+ipcMain.handle("kb:launchDirect", async () => {
+  if (cachedStaffRole !== "admin") return { ok: false, fallback: true, reason: "Réservé aux admins." };
+  if (kbLaunching) return { ok: false, fallback: false, reason: "Lancement déjà en cours." };
+  const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
+  const addr = `${kb.serverAddress}:${kb.serverPort || 25565}`;
+  const version = kb.minecraftVersion || "26.1.2";
+  kbLaunching = true;
+  const send = (ch, p) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, p); };
+  try {
+    const java = findJava21();
+    if (!java) return { ok: false, fallback: true, reason: "Java 25 introuvable (installe Java 25, ou lance une fois la version " + version + " depuis le Minecraft Launcher officiel)." };
+    if (kb.minecraftVersionId && !fs.existsSync(path.join(app.getPath("appData"), ".minecraft", "versions", kb.minecraftVersionId, kb.minecraftVersionId + ".json")))
+      return { ok: false, fallback: true, reason: "NeoForge " + (kb.neoForgeVersion || "") + " n'est pas installé sur ce PC (version « " + kb.minecraftVersionId + " » introuvable)." };
+    send("kb:launchProgress", { step: "auth" });
+    const { Auth } = require("msmc");
+    const ma = config.microsoftAuth || {};
+    const auth = ma.clientId ? new Auth({ client_id: ma.clientId, redirect: ma.redirect, prompt: "select_account" }) : new Auth("select_account");
+    let xbox = null;
+    const saved = readMsToken();
+    if (saved) { try { xbox = await auth.refresh(saved); } catch { xbox = null; } }
+    if (!xbox) xbox = await auth.launch("electron", { width: 520, height: 700, title: "Connexion Microsoft" });
+    const mc = await xbox.getMinecraft();
+    writeMsToken(xbox.save());
+    const { Client } = require("minecraft-launcher-core");
+    const launcher = new Client();
+    launcher.on("progress", (e) => { if (e && e.total) send("kb:launchProgress", { step: "download", percent: Math.round((e.task / e.total) * 100) }); });
+    launcher.on("close", () => send("kb:launchProgress", { step: "closed" }));
+    send("kb:launchProgress", { step: "start" });
+    const proc = await launcher.launch({
+      authorization: mc.mclc(),
+      root: path.join(app.getPath("appData"), ".minecraft"),
+      javaPath: java,
+      version: { number: version, custom: kb.minecraftVersionId || undefined, type: "release" },
+      memory: { max: "4G", min: "2G" },
+      quickPlay: { type: "multiplayer", identifier: addr }
+    });
+    if (!proc) return { ok: false, fallback: true, reason: "Minecraft n'a pas démarré." };
+    return { ok: true, direct: true, address: addr, version, player: mc.profile && mc.profile.name };
+  } catch (e) {
+    return { ok: false, fallback: true, reason: (e && e.message) || "Erreur de connexion Microsoft." };
+  } finally { kbLaunching = false; }
+});
+ipcMain.handle("kb:forgetMicrosoft", () => { try { fs.unlinkSync(msTokenPath()); } catch {} return { ok: true }; });
+
 ipcMain.on("app:relaunch", () => { app.relaunch(); app.exit(0); });
 
 ipcMain.handle("settings:get", () => loadSettings());

@@ -518,7 +518,7 @@ document.getElementById("btn-connect").addEventListener("click", async (e) => {
     return;
   }
 
-  if (discordProfile && discordProfile.allowed === false) {
+  if (discordProfile && discordProfile.allowed === false && !isAdminUnlocked) {
     await showInfo(
       "Accès refusé",
       `<p>Tu dois avoir le rôle whitelist sur le Discord d'Anomia pour te connecter. Rejoins-nous et refais une demande d'accès.</p>`

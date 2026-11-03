@@ -36,4 +36,16 @@ Clique sur ton avatar (profil) : une ligne « ⚠ Staff : … » dit pourquoi. C
 
 ## 1.7.4
 - KannibAventure : adresse `185.44.80.33:25615` dans config.js (`serverAddress` / `serverPort`). L'onglet Admin du serveur interroge le serveur Minecraft directement (protocole public), sans plugin.
-- Easter eggs (secrets, à ne pas révéler) : code `creeper` (explosion), combinaison ↑ ↓ ← → ↑ ↓ ← → (thème Anomia), 24 décembre (thème Cubique, débloqué à l'ouverture du launcher ce jour-là), 10 clics sur le logo B2 en haut à gauche (mode arc-en-ciel), lancement entre 3 h et 5 h du matin (message). Déjà existants : `admin` (Matrix), `bobi64`/`kannibal` et Konami (Or).
+- Easter eggs (secrets, à ne pas révéler) : code `creeper` (explosion), combinaison ↑ ↓ ← → ↑ ↓ ← → (thème Anomia), 24 décembre (thème Noël avec neige, débloqué à l'ouverture du launcher ce jour-là), code `cube` (thème Cubique), 10 clics sur le logo B2 en haut à gauche (mode arc-en-ciel), lancement entre 3 h et 5 h du matin (message). Déjà existants : `admin` (Matrix), `bobi64`/`kannibal` et Konami (Or).
+
+## 1.7.6
+- Thème Noël (neige) débloqué le 24 décembre ; le thème Cubique passe sur le code secret `cube`.
+- Admin en service : bouton Se connecter actif même en maintenance / serveur en pause, et « Rejoindre (admin) » sur KannibAventure (copie l'adresse 185.44.80.33:25615). Côté serveur FiveM, b2_maintenance laisse déjà passer les ACE admin ; pour la whitelist Discord, l'admin doit avoir le rôle requis côté b2_discordcheck (ou ajoute-le à son compte).
+- KannibAventure : « Se connecter » crée/met à jour un profil « KannibAventure » (version `minecraftVersion` de config.js, 1.21.1), l'ajoute en tête de la liste Multijoueur (servers.dat, sauvegarde .b2bak) puis ouvre le Minecraft Launcher officiel. Quand tu auras choisi le mod loader, renseigne `minecraftVersionId` dans config.js (ex. fabric-loader-x.y.z-1.21.1). La connexion automatique au serveur n'est pas possible avec le launcher officiel (voir message).
+
+## Connexion directe KannibAventure (admins, bêta)
+- Avant de compiler : lance `npm install` une fois (nouvelles dépendances `minecraft-launcher-core` et `msmc`).
+- Premier clic sur « Se connecter (admin) » : fenêtre de connexion Microsoft (compte Minecraft Java), puis le jeton est mémorisé chiffré.
+- Nécessite Java 25 (installé par le Minecraft Launcher officiel ou à part) et NeoForge 26.1.2.122 déjà installé sur le PC (version « neoforge-26.1.2.122 »). Sinon repli automatique sur l'ancien mode (profil + serveur dans la liste).
+- Le téléchargement du jeu au premier lancement peut prendre quelques minutes. Les mods doivent être présents dans le dossier mods.
+- Thème Noël v3 (24 décembre) : gris clair, guirlande lumineuse, bordures bonbon, bonnet, neige, boutons rouges, angles carrés.

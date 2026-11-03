@@ -1,7 +1,7 @@
 {
   "name": "anomia-launcher",
   "productName": "B2 Launcher",
-  "version": "1.7.4",
+  "version": "1.7.6",
   "description": "B2 Launcher - le launcher des serveurs B2 (Anomia RP, KannibAventure)",
   "main": "main.js",
   "author": "B2OBI64",
@@ -21,7 +21,9 @@
   },
   "dependencies": {
     "electron-updater": "^6.2.1",
-    "adm-zip": "^0.5.16"
+    "adm-zip": "^0.5.16",
+    "minecraft-launcher-core": "^3.18.2",
+    "msmc": "^5.0.5"
   },
   "build": {
     "appId": "tv.twitch.b2obi64.anomia.launcher",

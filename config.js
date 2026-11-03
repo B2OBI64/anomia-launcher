@@ -47,6 +47,10 @@ module.exports = {
       requiredRoleId: "1370879305097154692",
       serverAddress: "185.44.80.33",
       serverPort: 25615,
+      minecraftVersion: "26.1.2",
+      neoForgeVersion: "26.1.2.122",
+      // Quand le mod loader sera choisi, mets ici l'id de version installé (ex. "fabric-loader-0.16.9-1.21.1") :
+      minecraftVersionId: "neoforge-26.1.2.122",
       tabs: [
         { view: "kb-home", label: "Accueil" },
         { view: "kb-devlog", label: "Journal de dev" },
@@ -155,6 +159,9 @@ module.exports = {
   // 3. Toujours dans OAuth2 -> Redirects -> ajoute EXACTEMENT :
   //      http://localhost:47823/oauth-callback.html
   //    (le port doit correspondre pile à discordAuth.redirectPort ci-dessous)
+  // Lancement direct de Minecraft (KannibAventure) : application Azure facultative (sinon msmc utilise son identifiant par défaut)
+  microsoftAuth: { clientId: null, redirect: null },
+
   discordAuth: {
     clientId: "1534918391503257721",
     redirectPort: 47823

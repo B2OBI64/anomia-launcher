@@ -2303,3 +2303,42 @@ html[data-theme="cubic"]:not([data-mode="light"]) *{border-radius:0!important}
 @keyframes shk{0%,100%{transform:translate(0)}20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,-6px)}80%{transform:translate(6px,6px)}}
 .rainbow-mode{animation:rb 2s linear infinite}
 @keyframes rb{to{filter:hue-rotate(360deg)}}
+
+html[data-theme="noel"]:not([data-mode="light"]){--bg:#06120a;--panel-solid:#0d2014}
+html[data-theme="noel"]:not([data-mode="light"]) .glass,html[data-theme="noel"]:not([data-mode="light"]) .ah-hero{box-shadow:0 0 18px rgba(34,197,94,.14)}
+html[data-theme="noel"]:not([data-mode="light"]) .server-btn.active,html[data-theme="noel"]:not([data-mode="light"]) .tab-item.active{box-shadow:0 0 14px rgba(239,68,68,.4)}
+
+/* Noël v2 : fond gris, neige, boutons rouges, tout carré */
+html[data-theme="noel"]:not([data-mode="light"]){--bg:#1b1c1f;--bg-elevated:#232529;--panel:rgba(38,40,44,.9);--panel-solid:#26282c;--border:rgba(255,255,255,.12);--border-strong:rgba(239,68,68,.55)}
+html[data-theme="noel"]:not([data-mode="light"]) *{border-radius:0!important}
+html[data-theme="noel"]:not([data-mode="light"]) .btn-copy,
+html[data-theme="noel"]:not([data-mode="light"]) .ah-secondary,
+html[data-theme="noel"]:not([data-mode="light"]) .twitch-secondary,
+html[data-theme="noel"]:not([data-mode="light"]) .kb-discord-btn,
+html[data-theme="noel"]:not([data-mode="light"]) .hub-cta,
+html[data-theme="noel"]:not([data-mode="light"]) .btn-connect:not(:disabled){background:#b91c1c;border-color:#ef4444;color:#fff}
+html[data-theme="noel"]:not([data-mode="light"]) .btn-copy:hover,
+html[data-theme="noel"]:not([data-mode="light"]) .ah-secondary:hover,
+html[data-theme="noel"]:not([data-mode="light"]) .btn-connect:not(:disabled):hover{background:#dc2626}
+
+/* ===== Noël v3 : gris clair + décors ===== */
+html[data-theme="noel"]:not([data-mode="light"]){--bg:#3a3d44;--bg-elevated:#444851;--panel:rgba(74,78,88,.92);--panel-solid:#4a4e58;--border:rgba(255,255,255,.2);--border-strong:rgba(239,68,68,.7);--violet:#22c55e}
+html[data-theme="noel"]:not([data-mode="light"]) body{background:radial-gradient(ellipse at 50% -10%,#5a5f6b 0%,#3a3d44 60%,#30333a 100%)}
+html[data-theme="noel"]:not([data-mode="light"]) .glass,html[data-theme="noel"]:not([data-mode="light"]) .ah-hero{box-shadow:0 2px 14px rgba(0,0,0,.25);border-image:repeating-linear-gradient(135deg,#dc2626 0 10px,#f8fafc 10px 20px) 3}
+html[data-theme="noel"]:not([data-mode="light"]) .server-btn.active,html[data-theme="noel"]:not([data-mode="light"]) .tab-item.active{box-shadow:0 0 12px rgba(34,197,94,.45)}
+/* guirlande lumineuse sous la barre de titre */
+html[data-theme="noel"]:not([data-mode="light"]) .titlebar{position:relative}
+html[data-theme="noel"]:not([data-mode="light"]) .titlebar::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:10px;z-index:50;pointer-events:none;
+ background:
+  radial-gradient(circle at 10px 5px,#ef4444 0 4px,transparent 5px) 0 0/80px 10px repeat-x,
+  radial-gradient(circle at 30px 5px,#22c55e 0 4px,transparent 5px) 0 0/80px 10px repeat-x,
+  radial-gradient(circle at 50px 5px,#facc15 0 4px,transparent 5px) 0 0/80px 10px repeat-x,
+  radial-gradient(circle at 70px 5px,#60a5fa 0 4px,transparent 5px) 0 0/80px 10px repeat-x;
+ filter:drop-shadow(0 0 4px rgba(255,255,255,.55));animation:noel-blink 1.6s steps(2,jump-none) infinite}
+@keyframes noel-blink{0%{opacity:1}50%{opacity:.55}100%{opacity:1}}
+/* bonnet de Père Noël sur le logo + flocons décoratifs */
+html[data-theme="noel"]:not([data-mode="light"]) .titlebar-brand{position:relative}
+html[data-theme="noel"]:not([data-mode="light"]) .titlebar-brand::before{content:"🎅";position:absolute;left:-2px;top:-9px;font-size:13px;transform:rotate(-18deg);z-index:2}
+html[data-theme="noel"]:not([data-mode="light"]) .ah-hero::after,html[data-theme="noel"]:not([data-mode="light"]) .hub-hero::after{content:"❄ 🎄 ❄";position:absolute;right:14px;top:8px;font-size:18px;letter-spacing:6px;opacity:.85;pointer-events:none}
+html[data-theme="noel"]:not([data-mode="light"]) .ah-hero{position:relative}
+html[data-theme="noel"]:not([data-mode="light"]) ::-webkit-scrollbar-thumb{background:repeating-linear-gradient(45deg,#dc2626 0 6px,#f8fafc 6px 12px)}

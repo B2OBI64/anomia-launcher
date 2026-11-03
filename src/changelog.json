@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.7.6",
+    "date": "3 novembre 2026",
+    "title": "Accès admin partout et surprises de saison",
+    "items": [
+      "Admin en service : peut se connecter à Anomia même en maintenance ou en pause, et rejoindre KannibAventure avant son ouverture au public.",
+      "KannibAventure (admins, bêta) : « Se connecter » lance Minecraft 26.1.2 (NeoForge) et te place directement dans le serveur, sans passer par le menu (connexion Microsoft la première fois). Si ça échoue, repli automatique sur le profil + serveur ajouté à ta liste.",
+      "Un thème de saison est caché dans le launcher… à toi de le trouver au bon moment.",
+      "D'autres surprises sont cachées dans le launcher…"
+    ]
+  },
+  {
     "version": "1.7.4",
     "date": "2 novembre 2026",
     "title": "Accueil Anomia repensé et admin KannibAventure",

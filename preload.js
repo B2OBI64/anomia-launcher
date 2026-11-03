@@ -5,6 +5,10 @@ contextBridge.exposeInMainWorld("anomia", {
   minimize: () => ipcRenderer.send("window:minimize"),
   maximize: () => ipcRenderer.send("window:maximize"),
   close: () => ipcRenderer.send("window:close"),
+  launchKannibAventureDirect: () => ipcRenderer.invoke("kb:launchDirect"),
+  forgetMicrosoft: () => ipcRenderer.invoke("kb:forgetMicrosoft"),
+  onKbLaunchProgress: (cb) => { ipcRenderer.removeAllListeners("kb:launchProgress"); ipcRenderer.on("kb:launchProgress", (e, p) => cb(p)); },
+  launchKannibAventure: () => ipcRenderer.invoke("kb:launch"),
   getKbStatus: () => ipcRenderer.invoke("kb:getStatus"),
   relaunchApp: () => ipcRenderer.send("app:relaunch"),
 

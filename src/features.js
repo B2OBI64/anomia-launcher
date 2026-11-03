@@ -14,8 +14,8 @@
   const fmtDur = (ms) => { const m = Math.max(0, Math.floor(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`; };
 
   // ---------- Thèmes ----------
-  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41", b2logo: "#a78bfa", anomia: "#2dd4bf", cubic: "#f97316" };
-  const THEME_LABELS = { gold: "Or", matrix: "Matrix", anomia: "Anomia", cubic: "Cubique" };
+  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41", b2logo: "#a78bfa", anomia: "#2dd4bf", cubic: "#f97316", noel: "#ef4444" };
+  const THEME_LABELS = { gold: "Or", matrix: "Matrix", anomia: "Anomia", cubic: "Cubique", noel: "Noël" };
   function applyTheme(name, persist) {
     if (!THEMES[name]) name = "default";
     document.documentElement.setAttribute("data-theme", name);
@@ -28,7 +28,7 @@
     if (persist) save({ theme: name, accentColor: THEMES[name] });
   }
   function refreshThemeChips() {
-    ["gold", "matrix", "anomia", "cubic"].forEach((t) => {
+    ["gold", "matrix", "anomia", "cubic", "noel"].forEach((t) => {
       const chip = $("theme-chips") && $("theme-chips").querySelector(`[data-theme="${t}"]`);
       if (chip) chip.classList.toggle("hidden", !(S.unlockedThemes || []).includes(t));
     });
@@ -42,11 +42,23 @@
   let fxOn = false, fxRaf = 0, parts = [];
   function fxResize() { fx.width = window.innerWidth; fx.height = window.innerHeight; }
   const RAIN_CHARS = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ0123456789<>{}[]/=+*;:".split("");
-  let rain = [];
+  let rain = [], snow = [];
   function fxLoop() {
     if (!fxOn) return;
     const ctx = fx.getContext("2d");
     ctx.clearRect(0, 0, fx.width, fx.height);
+    if (document.documentElement.getAttribute("data-theme") === "noel") {
+      // Neige douce
+      ctx.fillStyle = "#ffffff";
+      snow.forEach((f) => {
+        f.y += f.vy; f.x += Math.sin((f.y + f.ph) / 40) * 0.4;
+        if (f.y > fx.height + 6) { f.y = -6; f.x = Math.random() * fx.width; }
+        ctx.globalAlpha = f.a; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.2832); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      fxRaf = requestAnimationFrame(fxLoop);
+      return;
+    }
     if (document.documentElement.getAttribute("data-theme") === "matrix") {
       // Pluie de code façon Matrix : discrète pour ne pas gêner la lecture
       ctx.font = "14px 'Mono', monospace";
@@ -77,12 +89,13 @@
     ctx.globalAlpha = 1;
     fxRaf = requestAnimationFrame(fxLoop);
   }
-  function syncFx() { setAnimatedBg(Boolean(S.animatedBg) || document.documentElement.getAttribute("data-theme") === "matrix"); }
+  function syncFx() { setAnimatedBg(Boolean(S.animatedBg) || ["matrix", "noel"].includes(document.documentElement.getAttribute("data-theme"))); }
   function setAnimatedBg(on) {
     fxOn = on; fx.style.display = on ? "block" : "none";
     cancelAnimationFrame(fxRaf);
     if (on) {
       fxResize();
+      snow = Array.from({ length: 90 }, () => ({ x: Math.random() * fx.width, y: Math.random() * fx.height, vy: 0.5 + Math.random() * 1.2, r: 1 + Math.random() * 2.2, a: 0.25 + Math.random() * 0.5, ph: Math.random() * 100 }));
       rain = Array.from({ length: Math.ceil(fx.width / 16) }, () => ({ y: -Math.random() * fx.height, speed: 1.2 + Math.random() * 2.6, len: 8 + Math.floor(Math.random() * 14), glyphs: Array.from({ length: 24 }, () => RAIN_CHARS[Math.floor(Math.random() * RAIN_CHARS.length)]) }));
       parts = Array.from({ length: 55 }, () => ({ x: Math.random() * fx.width, y: Math.random() * fx.height, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, r: 0.8 + Math.random() * 1.8, a: 0.12 + Math.random() * 0.3 }));
       fxLoop();
@@ -112,7 +125,8 @@
     "0b1f9e283a118939988d52447fe3bab4bc62ed8fd7acd62fe5796f9e5b376135": "gold",
     "7fa062c60ccc0f469427e8eecc53250bb252fbf0800503124136fb13f646745c": "gold",
     "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918": "matrix",
-    "8f0b49be84aba883a225569f87359227261e79b4d76cff56888ca4ab9c7a15ee": "fx:creeper"
+    "8f0b49be84aba883a225569f87359227261e79b4d76cff56888ca4ab9c7a15ee": "fx:creeper",
+    "4f3c4172a4fe308cebc840da665171f534849b1fca101eaf635d68fb453393db": "cubic"
   };
   function unlockTheme(name) {
     const list = new Set(S.unlockedThemes || []); const fresh = !list.has(name); list.add(name);
@@ -164,8 +178,8 @@
   });
   function dateEasterEggs() {
     const now = new Date();
-    if (now.getMonth() === 11 && now.getDate() === 24 && unlockTheme("cubic") && typeof showInfo === "function")
-      showInfo("Joyeux réveillon !", "<p>▣ Un thème <b>Cubique</b> vient d'être débloqué, rien que pour aujourd'hui… et pour toujours. Retrouve-le dans les options.</p>");
+    if (now.getMonth() === 11 && now.getDate() === 24 && unlockTheme("noel") && typeof showInfo === "function")
+      showInfo("Joyeux réveillon ! 🎄", "<p>Le thème <b>Noël</b> vient d'être débloqué (neige incluse). Retrouve-le dans les options, section Ambiance.</p>");
     const h = now.getHours(), key = now.toISOString().slice(0, 10);
     if (h >= 3 && h < 5 && S.nightSeen !== key) { save({ nightSeen: key }); if (typeof showInfo === "function") showInfo("Il est tard…", "<p>🌙 Il est entre 3 h et 5 h du matin. Même les Creepers dorment à cette heure. Va te reposer !</p>"); }
   }
@@ -231,7 +245,42 @@
   }
   $("kbadm-refresh").addEventListener("click", loadKbAdmin);
   $("kbadm-copy").addEventListener("click", (e) => { const a = e.currentTarget.dataset.addr; if (a && navigator.clipboard) navigator.clipboard.writeText(a).catch(() => {}); e.currentTarget.textContent = "Copié ✓"; setTimeout(() => { $("kbadm-copy").textContent = "Copier l'adresse"; }, 1500); });
+  // Admin en service : peut "rejoindre" KannibAventure même avant l'ouverture (copie l'adresse du serveur)
+  function refreshKbConnect() {
+    const b = $("kb-connect"), kb = typeof getServer === "function" ? getServer("kannibaventure") : null;
+    if (!b || !kb) return;
+    const canPlay = (isAdminUnlocked || kb.status === "online") && kb.serverAddress;
+    if (!canPlay) { b.disabled = true; b.textContent = kb.connectLabel || "Bientôt"; b.onclick = null; return; }
+    b.disabled = false; b.textContent = isAdminUnlocked && kb.status !== "online" ? "Se connecter (admin)" : "Se connecter";
+    b.onclick = async () => {
+      if (typeof discordProfile !== "undefined" && !discordProfile && await api.isDiscordConfigured()) { showInfo("Connexion Discord requise", "<p>Connecte-toi avec Discord avant de rejoindre le serveur.</p>"); return; }
+      b.disabled = true; b.textContent = "Lancement de Minecraft…";
+      // Admin : tentative de connexion directe (Minecraft démarre déjà dans le serveur), sinon repli sur le profil officiel
+      let fallbackReason = null;
+      if (isAdminUnlocked) {
+        api.onKbLaunchProgress((p) => {
+          if (p.step === "auth") b.textContent = "Connexion Microsoft…";
+          else if (p.step === "download") b.textContent = `Préparation ${p.percent}%`;
+          else if (p.step === "start") b.textContent = "Démarrage…";
+        });
+        let d; try { d = await api.launchKannibAventureDirect(); } catch (e) { d = { ok: false, fallback: true, reason: e.message }; }
+        if (d && d.ok) {
+          b.disabled = false; refreshKbConnect();
+          showInfo("Minecraft démarre", `<p>Connexion directe à <b>${esc(d.address)}</b> en version <b>${esc(d.version)}</b>${d.player ? " avec le compte <b>" + esc(d.player) + "</b>" : ""}.</p><p style="margin-top:8px;color:var(--text-dim);font-size:12px;">La première fois, le téléchargement du jeu peut prendre quelques minutes.</p>`);
+          return;
+        }
+        if (d && d.fallback === false) { b.disabled = false; refreshKbConnect(); return; }
+        fallbackReason = (d && d.reason) || "raison inconnue";
+      }
+      let r; try { r = await api.launchKannibAventure(); } catch (e) { r = { ok: false, error: e.message }; }
+      b.disabled = false; refreshKbConnect();
+      if (r && r.address && navigator.clipboard) navigator.clipboard.writeText(r.address).catch(() => {});
+      if (!r || !r.ok) { showInfo("Impossible de lancer Minecraft", `<p>${esc((r && r.error) || "Erreur inconnue")}</p><p style="margin-top:8px;color:var(--text-dim);font-size:12px;">Adresse du serveur (copiée) : <b>${esc((r && r.address) || "")}</b>. Installe le Minecraft Launcher officiel puis ajoute ce serveur dans Multijoueur.</p>`); return; }
+      showInfo("Minecraft se lance", `${fallbackReason ? '<p style="color:#fbbf24;font-size:12px;">Connexion directe impossible (' + esc(fallbackReason) + '). Mode classique :</p>' : ""}<p>Profil <b>KannibAventure</b> (version <b>${esc(r.version)}</b>) préparé${r.server === "ajoute" || r.server === "deja" ? ", serveur ajouté à ta liste Multijoueur" : ""}.</p><p style="margin-top:8px;">Dans le Minecraft Launcher : clique sur <b>Jouer</b>, puis Multijoueur → <b>KannibAventure</b>. L'adresse <b>${esc(r.address)}</b> est aussi copiée.</p>${r.profile ? "" : '<p style="margin-top:8px;color:var(--text-dim);font-size:12px;">Profil non créé automatiquement : lance Minecraft une première fois, puis recommence.</p>'}`);
+    };
+  }
   function refreshKbAdminTab() {
+    refreshKbConnect();
     const tabs = $("tabbar-tabs");
     if (!tabs) return;
     const existing = tabs.querySelector('[data-view="kb-admin"]');
