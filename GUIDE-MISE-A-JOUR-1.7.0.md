@@ -57,3 +57,13 @@ Clique sur ton avatar (profil) : une ligne « ⚠ Staff : … » dit pourquoi. C
 4. Quand tu modifies les mods : `node tools\make-kb-modpack.js "<dossier des mods>"`, puis remplace `kb-modpack.json` et les `.jar` dans la release. Aucune mise à jour du launcher n'est nécessaire.
 - Le dossier de jeu des joueurs : `%APPDATA%\.minecraft\kannibaventure` (les mods en trop sont déplacés dans `mods-extra`).
 - Journal en cas de problème : `kb-launch.log` (dossier de données du launcher).
+
+## Options KannibAventure (inclus dans la 1.9.2)
+- Avant de compiler : `npm install` (la bibliothèque inutile `minecraft-launcher-core` a été retirée).
+- Options > KannibAventure : mémoire du jeu, ouvrir le dossier, voir le journal, Réparer (revérifie mods et fichiers du jeu).
+- Le jour de l'ouverture : passer `status` de KannibAventure à `"online"` dans `config.js`.
+
+## Version 1.9.2 : Kannibal Launcher (version de test avant la 2.0.0 publique)
+- Renommage : nom du produit, raccourci et titres. L'identifiant interne et le dossier de données ne changent pas : les joueurs gardent leur connexion et leurs réglages. L'installeur s'appelle maintenant `Kannibal-Launcher-Setup-1.9.2.exe`.
+- IDs Discord Anomia déjà dans `config.js` : serveur 1407312954616975360, rôle modérateur 1434845539094233098 (côté FiveM : convars `anomia_discord_guild_id` et `anomia_mod_role_id`).
+- Temps de jeu KannibAventure : mesuré depuis le lancement par le launcher (fichier `kb-sessions.json`).

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https: data:;">
-<title>B2 Launcher</title>
+<title>Kannibal Launcher</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,8 +11,8 @@
   <!-- Barre de titre custom (fenêtre frameless) -->
   <header class="titlebar" id="titlebar">
     <div class="titlebar-brand">
-      <img src="../assets/logo.png" alt="B2" class="titlebar-logo" />
-      <span class="brand-mark">B2</span>
+      <img src="../assets/logo.png" alt="Kannibal" class="titlebar-logo" />
+      <span class="brand-mark">KANNIBAL</span>
       <span class="brand-sub">LAUNCHER</span>
     </div>
     <div class="titlebar-controls">
@@ -243,6 +243,17 @@
             <button class="kb-discord-btn" id="kb-discord">Rejoindre le Discord</button>
           </div>
         </div>
+        <div class="kb-playtime glass" id="kb-playtime">
+          <span class="kb-eyebrow">MON TEMPS DE JEU SUR KANNIBAVENTURE</span>
+          <div class="kbp-grid">
+            <div><b id="kbp-day">—</b><span>Aujourd'hui</span></div>
+            <div><b id="kbp-week">—</b><span>7 jours</span></div>
+            <div><b id="kbp-month">—</b><span>30 jours</span></div>
+            <div><b id="kbp-year">—</b><span>12 mois</span></div>
+            <div><b id="kbp-total">—</b><span>Total</span></div>
+          </div>
+          <p class="kbp-note">Compte le temps passé en jeu quand tu lances Minecraft depuis le launcher.</p>
+        </div>
       </section>
 
       <section class="view hidden" id="view-kb-admin">
@@ -300,7 +311,7 @@
           <div class="kb-folder-row">
             <span class="kb-folder-label">Dossier mods</span>
             <code id="kb-folder-path">—</code>
-            <button class="btn-copy" id="kb-folder-change">Changer</button>
+            <button class="btn-copy" id="kb-folder-change">Ouvrir</button>
           </div>
           <div class="kb-mod-list" id="kb-mod-list"></div>
           <div class="progress-track"><div class="progress-fill" id="kb-progress-fill"></div></div>
@@ -654,6 +665,18 @@
         <label class="opt-row"><input type="checkbox" id="opt-animated-bg" /><span>Fond animé (particules)</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-hide-offline" /><span>Masquer les streamers hors live</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-streamer-mode" /><span>Mode présentation (cache pseudo, avatar et IP)</span></label>
+      </div>
+
+      <div class="settings-section">
+        <span class="settings-label">KannibAventure</span>
+        <label class="opt-row"><span>Mémoire (RAM) allouée au jeu</span>
+          <select id="opt-kb-mem" style="background:var(--panel-solid);color:var(--text);border:1px solid var(--border);padding:4px 8px;margin-left:auto;"><option value="2">2 Go</option><option value="3">3 Go</option><option value="4">4 Go</option><option value="6">6 Go</option><option value="8">8 Go</option><option value="12">12 Go</option></select></label>
+        <div class="code-row" style="flex-wrap:wrap;gap:8px;margin-top:8px;">
+          <button class="btn-copy" id="kb-open-folder">Ouvrir le dossier du jeu</button>
+          <button class="btn-copy" id="kb-open-log">Voir le journal</button>
+          <button class="btn-copy" id="kb-repair">Réparer</button>
+        </div>
+        <p class="settings-hint" id="kb-opt-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);"></p>
       </div>
 
       <div class="settings-section">

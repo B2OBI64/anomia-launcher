@@ -1,8 +1,8 @@
 {
   "name": "anomia-launcher",
-  "productName": "B2 Launcher",
-  "version": "1.9.1",
-  "description": "B2 Launcher - le launcher des serveurs B2 (Anomia RP, KannibAventure)",
+  "productName": "Kannibal Launcher",
+  "version": "1.9.2",
+  "description": "Kannibal Launcher - le launcher des serveurs Kannibal Team (Anomia RP, KannibAventure)",
   "main": "main.js",
   "author": "B2OBI64",
   "license": "UNLICENSED",
@@ -22,12 +22,11 @@
   "dependencies": {
     "electron-updater": "^6.2.1",
     "adm-zip": "^0.5.16",
-    "minecraft-launcher-core": "^3.18.2",
     "msmc": "^5.0.5"
   },
   "build": {
     "appId": "tv.twitch.b2obi64.anomia.launcher",
-    "productName": "B2 Launcher",
+    "productName": "Kannibal Launcher",
     "files": [
       "main.js",
       "kb-launch.js",
@@ -56,7 +55,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "B2 Launcher"
+      "shortcutName": "Kannibal Launcher"
     },
     "linux": {
       "target": "AppImage",

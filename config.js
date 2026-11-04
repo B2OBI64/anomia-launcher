@@ -174,6 +174,8 @@ module.exports = {
     inviteUrl: "https://discord.gg/nABGrX9Hu2",
     // Discord principal "Kannibal Team" : id du serveur (les rôles staff/admin viennent de là)
     mainGuildId: "445112343064477696",
+    anomiaGuildId: "1407312954616975360",
+    anomiaModRoleId: "1434845539094233098",
     // Rôles requis (vérifiés côté serveur FiveM par b2_discordcheck via les convars, voir GUIDE)
     anomiaRequiredRoleId: "1434849042319278231",
     minecraftRequiredRoleId: "1370879305097154692"

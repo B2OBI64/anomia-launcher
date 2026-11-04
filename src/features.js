@@ -116,6 +116,81 @@
   $("opt-hide-offline").addEventListener("change", (e) => { save({ hideOffline: e.target.checked }); applyHideOffline(e.target.checked); });
   $("opt-streamer-mode").addEventListener("change", (e) => { save({ streamerMode: e.target.checked }); applyStreamerMode(e.target.checked); });
 
+  // KannibAventure : mémoire, dossier, journal, réparation
+  $("opt-kb-mem").addEventListener("change", (e) => save({ kbMemoryGb: Number(e.target.value) }));
+  $("kb-open-folder").addEventListener("click", () => api.openKbFolder());
+  $("kb-open-log").addEventListener("click", async () => { const r = await api.openKbLog(); if (r && !r.ok) { $("kb-opt-msg").textContent = r.reason; } });
+  $("kb-repair").addEventListener("click", async () => {
+    const msg = $("kb-opt-msg"), btn = $("kb-repair");
+    btn.disabled = true; msg.textContent = "Réparation…";
+    api.onKbLaunchProgress((p) => { if (p && p.label) msg.textContent = p.label + (p.percent != null ? ` · ${p.percent}%` : ""); });
+    let r; try { r = await api.repairKannibAventure(); } catch (e) { r = { ok: false, reason: e.message }; }
+    btn.disabled = false;
+    msg.textContent = r && r.ok ? "Tout est en ordre ✓ (mods et fichiers du jeu vérifiés)." : "Échec : " + ((r && r.reason) || "erreur inconnue");
+  });
+
+
+  // ---------- Ordre des serveurs : maintiens le clic sur un logo et déplace-le (comme sur Discord) ----------
+  function applyServerOrder() {
+    const bar = $("server-bar"); if (!bar) return;
+    const order = Array.isArray(S.serverOrder) ? S.serverOrder : [];
+    const logos = [...bar.querySelectorAll(".server-logo")];
+    const rank = (b) => { const i = order.indexOf(b.dataset.server); return i < 0 ? 999 + logos.indexOf(b) : i; };
+    logos.sort((a, b) => rank(a) - rank(b)).forEach((b) => bar.appendChild(b));
+  }
+  let suppressClick = false;
+  function enableServerDrag() {
+    const bar = $("server-bar"); if (!bar || bar.dataset.dragReady) return;
+    bar.dataset.dragReady = "1";
+    bar.addEventListener("dragstart", (e) => e.preventDefault()); // empêche le glisser natif de l'image (qui annule nos événements)
+    bar.addEventListener("click", (e) => { if (suppressClick) { e.stopImmediatePropagation(); e.preventDefault(); suppressClick = false; } }, true);
+    bar.addEventListener("pointerdown", (e) => {
+      const btn = e.target.closest(".server-logo");
+      if (!btn || e.button !== 0) return;
+      const sx = e.clientX, sy = e.clientY;
+      let dragging = false;
+      const timer = setTimeout(() => {
+        dragging = true; btn.classList.add("dragging");
+      }, 250);
+      const cleanup = () => { clearTimeout(timer); document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up); document.removeEventListener("pointercancel", up); };
+      const move = (ev) => {
+        if (!dragging) { if (Math.abs(ev.clientX - sx) > 6 || Math.abs(ev.clientY - sy) > 6) cleanup(); return; }
+        const others = [...bar.querySelectorAll(".server-logo")].filter((b) => b !== btn);
+        let before = null;
+        for (const o of others) { const r = o.getBoundingClientRect(); if (ev.clientX < r.left + r.width / 2) { before = o; break; } }
+        if (before) bar.insertBefore(btn, before); else bar.appendChild(btn);
+        btn.style.transform = "";
+        const r = btn.getBoundingClientRect();
+        btn.style.transform = `translateX(${ev.clientX - (r.left + r.width / 2)}px) scale(1.08)`;
+      };
+      const up = () => {
+        const was = dragging; cleanup();
+        if (!was) return;
+        btn.classList.remove("dragging"); btn.style.transform = "";
+        suppressClick = true; setTimeout(() => { suppressClick = false; }, 300);
+        save({ serverOrder: [...bar.querySelectorAll(".server-logo")].map((b) => b.dataset.server) });
+      };
+      document.addEventListener("pointermove", move); document.addEventListener("pointerup", up); document.addEventListener("pointercancel", up);
+    });
+  }
+  if (typeof renderServerBar === "function") {
+    const _renderServerBar = renderServerBar;
+    renderServerBar = function () { _renderServerBar(); ready.then(() => { applyServerOrder(); enableServerDrag(); }); };
+  }
+  ready.then(() => { applyServerOrder(); enableServerDrag(); }); // si la barre a déjà été dessinée avant le chargement de ce fichier
+
+
+  // ---------- Temps de jeu KannibAventure ----------
+  const fmtSec = (s) => (s >= 3600 ? `${Math.floor(s / 3600)} h ${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}` : s >= 60 ? `${Math.floor(s / 60)} min` : s > 0 ? "< 1 min" : "0");
+  async function loadKbPlaytime() {
+    try {
+      const r = await api.getKbPlaytime();
+      if (!r || !r.ok) return;
+      ["day", "week", "month", "year", "total"].forEach((k) => { const el = $("kbp-" + k); if (el) el.textContent = fmtSec(r[k] || 0); });
+    } catch (e) { /* ignore */ }
+  }
+
+
   // ---------- Codes secrets / Konami ----------
   async function sha256(t) {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
@@ -259,16 +334,18 @@
       let fallbackReason = null;
       api.onKbLaunchProgress((p) => {
         if (!p) return;
-        b.textContent = (p.label || "Préparation…") + (p.percent != null ? ` ${p.percent}%` : "");
+        b.classList.add("kb-loading"); b.style.setProperty("--kb-pct", (p.percent != null ? p.percent : 100) + "%");
+        b.textContent = (p.label || "Préparation…") + (p.percent != null ? ` · ${p.percent}%` : "");
       });
       let d; try { d = await api.launchKannibAventureDirect(); } catch (e) { d = { ok: false, fallback: true, reason: e.message }; }
       if (d && d.ok) {
-        b.disabled = false; refreshKbConnect();
+        b.disabled = false; b.classList.remove("kb-loading"); refreshKbConnect();
         showInfo("Minecraft démarre", `<p>Connexion directe à <b>${esc(d.address)}</b> en version <b>${esc(d.version)}</b>${d.player ? " avec le compte <b>" + esc(d.player) + "</b>" : ""}.</p>`);
         return;
       }
       if (d && d.fallback === false) { b.disabled = false; refreshKbConnect(); return; }
       fallbackReason = (d && d.reason) || "raison inconnue";
+      b.classList.remove("kb-loading");
       let r; try { r = await api.launchKannibAventure(); } catch (e) { r = { ok: false, error: e.message }; }
       b.disabled = false; refreshKbConnect();
       if (r && r.address && navigator.clipboard) navigator.clipboard.writeText(r.address).catch(() => {});
@@ -317,6 +394,7 @@
 
   function onViewShown(name) {
     if (name === "home") { loadAnomiaStats(); renderAnomiaHome(); }
+    if (name === "kb-home") loadKbPlaytime();
     if (name === "kb-admin") { loadKbAdmin(); clearInterval(kbTimer); kbTimer = setInterval(() => { if (!$("view-kb-admin").classList.contains("hidden")) loadKbAdmin(); }, 15000); } else if (kbTimer) { clearInterval(kbTimer); kbTimer = null; }
     if (name === "admin") { startHealthLoop(); } else stopHealthLoop();
   }
@@ -508,6 +586,7 @@
     dateEasterEggs();
     $("opt-animated-bg").checked = Boolean(S.animatedBg); syncFx();
     $("opt-hide-offline").checked = Boolean(S.hideOffline); applyHideOffline(Boolean(S.hideOffline));
+    $("opt-kb-mem").value = String(S.kbMemoryGb || 4);
     $("opt-streamer-mode").checked = Boolean(S.streamerMode); streamerMode = Boolean(S.streamerMode);
     document.body.classList.toggle("streamer-mode", streamerMode);
     // Quoi de neuf : pastille tant que la version n'a pas été vue, ouverture automatique après une mise à jour

@@ -362,20 +362,17 @@ async function refreshKbFiles() {
   const needs = state.mods.filter((m) => m.status !== "ok").length;
   if (!state.mods.length) {
     btn.disabled = true;
-    btn.textContent = "Aucun mod publié";
+    btn.textContent = "Liste des mods indisponible";
   } else if (!needs) {
     btn.disabled = kbInstalling;
-    btn.textContent = "Tout est à jour · Revérifier";
+    btn.textContent = "Tout est à jour · Réparer / revérifier";
   } else {
     btn.disabled = kbInstalling;
     btn.textContent = `Installer / mettre à jour (${needs})`;
   }
 }
 
-document.getElementById("kb-folder-change").addEventListener("click", async () => {
-  const res = await window.anomia.chooseKbModsFolder();
-  if (res && res.ok) refreshKbFiles();
-});
+document.getElementById("kb-folder-change").addEventListener("click", () => { window.anomia.chooseKbModsFolder(); });
 
 document.getElementById("kb-install-btn").addEventListener("click", async () => {
   if (kbInstalling) return;
@@ -386,15 +383,16 @@ document.getElementById("kb-install-btn").addEventListener("click", async () => 
   btn.disabled = true;
   btn.textContent = "Installation…";
   fill.style.width = "0%";
-  window.anomia.onKbModsProgress(({ file, done, total }) => {
-    fill.style.width = total ? `${Math.round((done / total) * 100)}%` : "0%";
-    label.textContent = file ? `${file} (${done}/${total})` : "";
+  window.anomia.onKbModsProgress((p) => {
+    if (!p) return;
+    fill.style.width = p.percent != null ? `${p.percent}%` : "100%";
+    label.textContent = p.label || "";
   });
   const result = await window.anomia.installKbMods();
   kbInstalling = false;
   if (result && result.ok) {
     fill.style.width = "100%";
-    label.textContent = `Terminé : ${result.downloaded} téléchargé(s), ${result.upToDate} déjà à jour${result.removed ? `, ${result.removed} ancien(s) retiré(s)` : ""}.`;
+    label.textContent = result.message || "Terminé.";
   } else {
     label.textContent = "";
     await showInfo("Installation impossible", `<p>${escapeHtml((result && result.error) || "Erreur inconnue.")}</p>`);
@@ -1049,7 +1047,7 @@ function welcomeMessage(name) {
   const h = now.getHours();
   if (now.getDate() === 3 && now.getMonth() === 6) return { t: `Joyeux anniversaire d'Anomia, ${name} ! 🎂`, s: "Connecte-toi en jeu aujourd'hui pour débloquer un succès secret." };
   const hello = h < 6 ? "Encore debout" : h < 18 ? "Salut" : "Bonsoir";
-  return { t: `${hello} ${name} !`, s: "Content de te revoir sur le B2 Launcher." };
+  return { t: `${hello} ${name} !`, s: "Content de te revoir sur le Kannibal Launcher." };
 }
 
 // État du résumé (affiché dans le bandeau tournant du haut)
@@ -1595,6 +1593,10 @@ async function autoStaffUnlock() {
       adminVerified = true; adminOnDuty = Boolean(st && st.adminOnDuty);
       if (adminOnDuty) applyStaffRole(r);
       updateDutyButton();
+    }
+    else if (r && r.ok && r.role === "mod") {
+      // Modérateur reconnu par son rôle Discord (serveur Anomia) : accès à la liste des joueurs, sans système de service
+      lastStaffReason = null; adminVerified = false; updateDutyButton(); applyStaffRole(r);
     }
     else {
       adminVerified = false; updateDutyButton(); lastStaffReason = (r && r.reason) || "invalid_code"; if (staffRole === "admin") clearStaffRole(); }
@@ -2352,7 +2354,7 @@ setInterval(refreshNextRestart, 5 * 60000); // revérifie la config toutes les 5
 
 // --- Tour guidé (premier lancement uniquement, persiste après une mise à jour) ---
 const ONBOARDING_STEPS = [
-  { selector: '[data-server="hub"]', text: "Bienvenue sur le B2 Launcher ! L'accueil regroupe les streamers en live et les nouveautés de chaque serveur." },
+  { selector: '[data-server="hub"]', text: "Bienvenue sur le Kannibal Launcher ! L'accueil regroupe les streamers en live et les nouveautés de chaque serveur." },
   { selector: "#server-bar", text: "Chaque serveur a son logo ici : clique dessus pour accéder à ses pages (actus, succès, règlement...)." },
   { selector: "#btn-discord-auth, #discord-auth-slot", text: "Connecte-toi avec Discord : c'est obligatoire pour accéder aux serveurs." },
   { selector: "#btn-settings", text: "Personnalise le launcher ici : mode sombre/clair et couleur d'accent." }

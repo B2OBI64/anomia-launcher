@@ -8,6 +8,11 @@ const { spawn } = require("child_process");
 const UA = { "User-Agent": "B2-Launcher" };
 const ADOPTIUM_JRE25 = "https://api.adoptium.net/v3/binary/latest/25/ga/windows/x64/jre/hotspot/normal/eclipse";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+function speedMeter() {
+  const t0 = Date.now();
+  return (bytes) => { const s = (Date.now() - t0) / 1000; return s > 0.5 ? bytes / 1048576 / s : 0; };
+}
+const mo = (b) => (b / 1048576).toFixed(b > 10485760 ? 0 : 1);
 const exists = (p) => { try { return fs.existsSync(p); } catch { return false; } };
 
 async function getJson(url) {
@@ -88,8 +93,8 @@ async function ensureJava({ userData, findExisting, progress, AdmZip }) {
   if (have) return have;
   progress({ step: "java", label: "Téléchargement de Java 25", percent: 0 });
   const zip = path.join(userData, "runtime", "java25.zip");
-  let got = 0;
-  await download(ADOPTIUM_JRE25, zip, { onBytes: (n, total) => { got += n; progress({ step: "java", label: "Téléchargement de Java 25", percent: total ? Math.min(99, Math.round((got / total) * 100)) : null }); } });
+  let got = 0; const sp = speedMeter();
+  await download(ADOPTIUM_JRE25, zip, { onBytes: (n, total) => { got += n; progress({ step: "java", label: `Java 25 ${mo(got)}${total ? "/" + mo(total) : ""} Mo · ${sp(got).toFixed(1)} Mo/s`, percent: total ? Math.min(99, Math.round((got / total) * 100)) : null }); } });
   progress({ step: "java", label: "Installation de Java 25", percent: null });
   fs.rmSync(dir, { recursive: true, force: true });
   new AdmZip(zip).extractAllTo(dir, true);
@@ -128,7 +133,8 @@ async function ensureNeoForge({ root, java, installerSrc, versionId, tmpDir, log
 }
 
 // ------------------------------------------------------------------ Fichiers du jeu (vanilla, bibliothèques, assets)
-async function ensureGameFiles({ root, versionId, loadVersion, ruleOk, progress, log }) {
+async function ensureGameFiles({ root, versionId, loadVersion, ruleOk, progress, log, verify = false }) {
+  const bad = (dest, size) => !exists(dest) || (verify && size && (() => { try { return fs.statSync(dest).size !== size; } catch { return true; } })());
   const v0 = loadVersion(root, versionId);
   const mc = v0._parentId || versionId;
   const vdir = path.join(root, "versions", mc), vjson = path.join(vdir, mc + ".json");
@@ -143,14 +149,14 @@ async function ensureGameFiles({ root, versionId, loadVersion, ruleOk, progress,
   const v = loadVersion(root, versionId); // recharge avec le parent présent
   const jar = path.join(vdir, mc + ".jar");
   const todo = [];
-  if (!exists(jar) && v.downloads && v.downloads.client) todo.push({ url: v.downloads.client.url, dest: jar, sha1: v.downloads.client.sha1, size: v.downloads.client.size });
+  if (bad(jar, v.downloads && v.downloads.client && v.downloads.client.size) && v.downloads && v.downloads.client) todo.push({ url: v.downloads.client.url, dest: jar, sha1: v.downloads.client.sha1, size: v.downloads.client.size });
   const features = { has_quick_plays_support: true, is_quick_play_multiplayer: true };
   for (const lib of v.libraries || []) {
     if (!ruleOk(lib.rules, features)) continue;
     const a = lib.downloads && lib.downloads.artifact;
     if (!a || !a.url || !a.path) continue; // les bibliothèques sans URL sont créées par l'installateur NeoForge
     const dest = path.join(root, "libraries", a.path);
-    if (!exists(dest)) todo.push({ url: a.url, dest, sha1: a.sha1, size: a.size });
+    if (bad(dest, a.size)) todo.push({ url: a.url, dest, sha1: a.sha1, size: a.size });
   }
   if (v.assetIndex && v.assetIndex.url) {
     const idx = path.join(root, "assets", "indexes", v.assetIndex.id + ".json");
@@ -158,21 +164,29 @@ async function ensureGameFiles({ root, versionId, loadVersion, ruleOk, progress,
     const objects = JSON.parse(fs.readFileSync(idx, "utf8")).objects || {};
     for (const o of Object.values(objects)) {
       const dest = path.join(root, "assets", "objects", o.hash.slice(0, 2), o.hash);
-      if (!exists(dest)) todo.push({ url: `https://resources.download.minecraft.net/${o.hash.slice(0, 2)}/${o.hash}`, dest, sha1: o.hash, size: o.size });
+      if (bad(dest, o.size)) todo.push({ url: `https://resources.download.minecraft.net/${o.hash.slice(0, 2)}/${o.hash}`, dest, sha1: o.hash, size: o.size });
     }
   }
   if (!todo.length) return 0;
   log && log(`# ${todo.length} fichier(s) du jeu à télécharger`);
-  let done = 0;
+  let done = 0, got = 0; const sp = speedMeter();
+  const totalBytes = todo.reduce((s2, t) => s2 + (t.size || 0), 0) || 1;
+  let lastEmit = 0;
   await pool(todo, 16, async (t) => {
-    await download(t.url, t.dest, { sha1: t.sha1, size: t.size });
+    await download(t.url, t.dest, { sha1: t.sha1, size: t.size, onBytes: (n) => {
+      got += n;
+      const now = Date.now();
+      if (now - lastEmit > 250) { lastEmit = now; progress({ step: "files", label: `Jeu ${mo(got)}/${mo(totalBytes)} Mo · ${sp(got).toFixed(1)} Mo/s`, percent: Math.min(99, Math.round((got / totalBytes) * 100)) }); }
+    } });
     done++;
-    if (done % 10 === 0 || done === todo.length) progress({ step: "files", label: "Téléchargement du jeu", percent: Math.round((done / todo.length) * 100) });
   });
+  progress({ step: "files", label: "Fichiers du jeu à jour", percent: 100 });
   return todo.length;
 }
 
 // ------------------------------------------------------------------ Mods
+const fmtMo = (n) => (n / 1048576).toFixed(n >= 104857600 ? 0 : 1).replace(".", ",");
+function rate(got, t0) { const s = (Date.now() - t0) / 1000; return s > 1 ? ` · ${fmtMo(got / s)} Mo/s` : ""; }
 const normName = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
 
 async function listReleaseAssets({ owner, repo, tag, apiBase = "https://api.github.com" }) {
@@ -227,13 +241,14 @@ async function syncMods({ gameDir, pack, assets, progress, log }) {
   log && log(`# mods : ${pack.mods.length} attendus, ${todo.length} à télécharger, ${removed} déplacé(s) vers mods-extra`);
   if (!todo.length) return { downloaded: 0, removed };
   const totalBytes = todo.reduce((s, m) => s + (m.size || 0), 0) || 1;
-  let got = 0, doneCount = 0;
+  let got = 0, doneCount = 0, lastEmit = 0; const sp = speedMeter();
   await pool(todo, 4, async (m) => {
     const a = findAsset(assets, m);
     if (!a) throw new Error("mod introuvable sur l'hébergement : " + m.file);
     await download(a.browser_download_url, path.join(modsDir, m.file), { sha256: m.sha256, onBytes: (n) => {
       got += n;
-      progress({ step: "mods", label: `Téléchargement des mods (${doneCount}/${todo.length})`, percent: Math.min(99, Math.round((got / totalBytes) * 100)) });
+      const now = Date.now();
+      if (now - lastEmit > 250) { lastEmit = now; progress({ step: "mods", label: `Mods ${doneCount}/${todo.length} · ${mo(got)}/${mo(totalBytes)} Mo · ${sp(got).toFixed(1)} Mo/s`, percent: Math.min(99, Math.round((got / totalBytes) * 100)) }); }
     } });
     doneCount++;
   });

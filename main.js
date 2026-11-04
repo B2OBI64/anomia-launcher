@@ -1166,7 +1166,7 @@ ipcMain.handle("achievements:get", async () => {
     if (result.linked === false) {
       return { ok: true, linked: false, list: config.achievements.list };
     }
-    return { ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, playtimeSeconds: result.playtimeSeconds || 0, playtimeByServer: { anomia: result.playtimeSeconds || 0 }, list: config.achievements.list };
+    return { ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, playtimeSeconds: result.playtimeSeconds || 0, playtimeByServer: { anomia: result.playtimeSeconds || 0, kannibaventure: kbPlaytime().total }, list: config.achievements.list };
   } catch (err) {
     return { ok: false, error: "La ressource b2_achievements ne répond pas (pas encore installée, ou serveur hors ligne).", list: config.achievements.list };
   }
@@ -1541,8 +1541,89 @@ function findJava21() {
   return null;
 }
 let kbLaunching = false;
+// ------------------------------------------------------------------
+// Temps de jeu KannibAventure (sessions lancées depuis le launcher) : jour / semaine / mois / année
+// ------------------------------------------------------------------
+const kbSessionsPath = () => path.join(app.getPath("userData"), "kb-sessions.json");
+function readKbSessions() { try { const a = JSON.parse(fs.readFileSync(kbSessionsPath(), "utf8")); return Array.isArray(a) ? a : []; } catch { return []; } }
+function writeKbSessions(a) { try { fs.writeFileSync(kbSessionsPath(), JSON.stringify(a.slice(-3000))); } catch {} }
+const pidAlive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === "EPERM"; } };
+let kbSessionTimer = null;
+function kbTick() {
+  const a = readKbSessions(); let any = false;
+  for (const s of a) { if (!s.open) continue; if (s.pid && pidAlive(s.pid)) { s.last = Date.now(); any = true; } else s.open = false; }
+  writeKbSessions(a);
+  if (!any && kbSessionTimer) { clearInterval(kbSessionTimer); kbSessionTimer = null; }
+  return any;
+}
+function kbEnsureTimer() { if (!kbSessionTimer) kbSessionTimer = setInterval(kbTick, 30000); }
+function kbTrackStart(pid) { const a = readKbSessions(); a.push({ start: Date.now(), last: Date.now(), pid, open: true }); writeKbSessions(a); kbEnsureTimer(); }
+function kbPlaytime() {
+  const now = Date.now(), d = new Date();
+  const win = { day: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), week: now - 7 * 864e5, month: now - 30 * 864e5, year: now - 365 * 864e5, total: 0 };
+  const out = { day: 0, week: 0, month: 0, year: 0, total: 0 };
+  for (const s of readKbSessions()) {
+    const end = s.open ? now : s.last || s.start;
+    for (const k of Object.keys(win)) out[k] += Math.max(0, Math.round((end - Math.max(s.start, win[k])) / 1000));
+  }
+  return out;
+}
+ipcMain.handle("kb:getPlaytime", () => ({ ok: true, ...kbPlaytime() }));
+app.whenReady().then(() => { if (kbTick()) kbEnsureTimer(); });
+
 const kbRoot = () => path.join(app.getPath("appData"), ".minecraft");
 const kbGameDir = () => path.join(kbRoot(), "kannibaventure"); // instance isolée : mods, config, mondes, options
+// Étapes 1 à 4 : Java 25, NeoForge, fichiers du jeu, mods (partagées entre le lancement et « Réparer »)
+async function kbPrepare({ verify, progress, klog, kb, versionId }) {
+  const K = require("./kb-install");
+  const { loadVersion, ruleOk } = require("./kb-launch");
+  const root = kbRoot(), gameDir = kbGameDir();
+  fs.mkdirSync(gameDir, { recursive: true });
+  let java;
+  try { java = await K.ensureJava({ userData: app.getPath("userData"), findExisting: findJava21, progress, AdmZip: require("adm-zip") }); }
+  catch (e) { throw new Error("Java 25 : " + e.message); }
+  klog("# java : " + java);
+  await K.ensureNeoForge({ root, java, installerSrc: path.join(__dirname, "assets", "neoforge-installer.jar"), versionId, tmpDir: path.join(app.getPath("temp"), "b2-launcher"), log: klog, progress });
+  try { await K.ensureGameFiles({ root, versionId, loadVersion, ruleOk, progress, log: klog, verify }); }
+  catch (e) { throw new Error("fichiers du jeu : " + e.message); }
+  const mp = kb.modpack;
+  if (mp && mp.repo) {
+    try {
+      progress({ step: "mods", label: "Vérification des mods", percent: null });
+      const { pack, assets } = await K.loadModpack(mp);
+      await K.syncMods({ gameDir, pack, assets, progress, log: klog });
+    } catch (e) {
+      klog("# mods : " + e.message);
+      const have = fs.existsSync(path.join(gameDir, "mods")) && fs.readdirSync(path.join(gameDir, "mods")).some((f) => /\.jar$/i.test(f));
+      if (!have) throw new Error("mods : " + e.message);
+    }
+  }
+  return { java, root, gameDir };
+}
+function kbMemory() {
+  const gb = Math.max(2, Math.min(16, Number(loadSettings().kbMemoryGb) || 4));
+  return { max: gb + "G", min: Math.min(2, gb) + "G" };
+}
+ipcMain.handle("kb:repair", async () => {
+  if (kbLaunching) return { ok: false, reason: "Un lancement est déjà en cours." };
+  const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
+  const versionId = kb.minecraftVersionId || kb.minecraftVersion || "26.1.2";
+  kbLaunching = true;
+  const logFile = path.join(app.getPath("userData"), "kb-launch.log");
+  const klog = (t) => { try { fs.appendFileSync(logFile, String(t) + "\n"); } catch {} };
+  try { fs.writeFileSync(logFile, `# KannibAventure — réparation ${new Date().toISOString()}\n`); } catch {}
+  try {
+    await kbPrepare({ verify: true, progress: (p) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("kb:launchProgress", p); }, klog, kb, versionId });
+    return { ok: true };
+  } catch (e) { klog("# erreur : " + e.message); return { ok: false, reason: e.message }; }
+  finally { kbLaunching = false; }
+});
+ipcMain.handle("kb:openFolder", async () => { const d = kbGameDir(); fs.mkdirSync(d, { recursive: true }); await shell.openPath(d); return { ok: true }; });
+ipcMain.handle("kb:openLog", async () => {
+  const f = path.join(app.getPath("userData"), "kb-launch.log");
+  if (fs.existsSync(f)) { shell.showItemInFolder(f); return { ok: true }; }
+  return { ok: false, reason: "Aucun journal pour l'instant (lance KannibAventure une fois)." };
+});
 ipcMain.handle("kb:launchDirect", async () => {
   if (kbLaunching) return { ok: false, fallback: false, reason: "Lancement déjà en cours." };
   const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
@@ -1556,40 +1637,18 @@ ipcMain.handle("kb:launchDirect", async () => {
   const klog = (t) => { try { fs.appendFileSync(logFile, String(t).replace(/(--accessToken\s+)\S+/g, "$1***") + "\n"); } catch {} };
   try { fs.writeFileSync(logFile, `# KannibAventure — lancement ${new Date().toISOString()}\n# version: ${version} / ${versionId}\n`); } catch {}
   try {
-    const K = require("./kb-install");
-    const { buildLaunch, loadVersion, ruleOk } = require("./kb-launch");
+    const { buildLaunch } = require("./kb-launch");
     const root = kbRoot(), gameDir = kbGameDir();
     fs.mkdirSync(gameDir, { recursive: true });
-
-    // 1) Java 25 (détecté, sinon téléchargé)
-    let java;
-    try { java = await K.ensureJava({ userData: app.getPath("userData"), findExisting: findJava21, progress, AdmZip: require("adm-zip") }); }
-    catch (e) { return { ok: false, fallback: true, reason: "Java 25 : " + e.message }; }
-    klog("# java : " + java);
-
-    // 2) NeoForge (installé automatiquement la première fois)
+    // Première fois : reprend tes réglages (touches, vidéo, son) du Minecraft habituel pour ne pas tout reconfigurer
     try {
-      const installer = path.join(__dirname, "assets", "neoforge-installer.jar");
-      await K.ensureNeoForge({ root, java, installerSrc: installer, versionId, tmpDir: path.join(app.getPath("temp"), "b2-launcher"), log: klog, progress });
-    } catch (e) { return { ok: false, fallback: true, reason: e.message }; }
+      const src = path.join(root, "options.txt"), dst = path.join(gameDir, "options.txt");
+      if (!fs.existsSync(dst) && fs.existsSync(src)) { fs.copyFileSync(src, dst); klog("# options.txt copié depuis .minecraft"); }
+    } catch {}
 
-    // 3) Fichiers du jeu manquants (jar, bibliothèques, assets)
-    try { await K.ensureGameFiles({ root, versionId, loadVersion, ruleOk, progress, log: klog }); }
-    catch (e) { return { ok: false, fallback: true, reason: "fichiers du jeu : " + e.message }; }
-
-    // 4) Mods : comparaison avec la liste officielle, téléchargement de ce qui manque
-    const mp = kb.modpack;
-    if (mp && mp.repo) {
-      try {
-        progress({ step: "mods", label: "Vérification des mods", percent: null });
-        const { pack, assets } = await K.loadModpack(mp);
-        await K.syncMods({ gameDir, pack, assets, progress, log: klog });
-      } catch (e) {
-        klog("# mods : " + e.message);
-        const have = fs.existsSync(path.join(gameDir, "mods")) && fs.readdirSync(path.join(gameDir, "mods")).some((f) => /\.jar$/i.test(f));
-        if (!have) return { ok: false, fallback: true, reason: "mods : " + e.message };
-      }
-    }
+    let java;
+    try { java = (await kbPrepare({ verify: false, progress, klog, kb, versionId })).java; }
+    catch (e) { return { ok: false, fallback: true, reason: e.message }; }
 
     // 5) Connexion Microsoft (jeton mémorisé ensuite)
     progress({ step: "auth", label: "Connexion Microsoft…", percent: null });
@@ -1611,7 +1670,7 @@ ipcMain.handle("kb:launchDirect", async () => {
     const nativesDir = path.join(root, "bin", "b2-natives");
     try { fs.mkdirSync(nativesDir, { recursive: true }); } catch {}
     let plan;
-    try { plan = buildLaunch({ root, gameDir, versionId, auth: mc.mclc(), quickPlay: addr, nativesDir, memory: { max: "4G", min: "2G" } }); }
+    try { plan = buildLaunch({ root, gameDir, versionId, auth: mc.mclc(), quickPlay: addr, nativesDir, memory: kbMemory() }); }
     catch (e) { return { ok: false, fallback: true, reason: e.message }; }
     klog("# commande : " + java + " " + plan.args.join(" "));
     const { spawn } = require("child_process");
@@ -1624,6 +1683,7 @@ ipcMain.handle("kb:launchDirect", async () => {
     });
     if (early) return { ok: false, fallback: true, reason: early };
     child.unref();
+    if (child.pid) kbTrackStart(child.pid);
     return { ok: true, direct: true, address: addr, version, player: mc.profile && mc.profile.name };
   } catch (e) {
     klog("# erreur : " + ((e && e.stack) || e));
@@ -1879,68 +1939,34 @@ async function computeKbModsStatus() {
   };
 }
 
-ipcMain.handle("kbmods:getState", () => computeKbModsStatus());
-
-ipcMain.handle("kbmods:chooseFolder", async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    title: "Choisis le dossier mods de Minecraft",
-    defaultPath: path.dirname(defaultMinecraftModsFolder()),
-    properties: ["openDirectory", "createDirectory"]
+ipcMain.handle("kbmods:getState", async () => {
+  const kb = (config.servers || []).find((x) => x.id === "kannibaventure") || {};
+  const modsDir = path.join(kbGameDir(), "mods");
+  const cache = path.join(app.getPath("userData"), "kb-modpack-cache.json");
+  let pack = null, note = "";
+  try { pack = (await require("./kb-install").loadModpack(kb.modpack)).pack; try { fs.writeFileSync(cache, JSON.stringify(pack)); } catch {} }
+  catch (e) { note = "Liste en ligne indisponible (" + e.message + ")."; try { pack = JSON.parse(fs.readFileSync(cache, "utf8")); } catch {} }
+  const mods = ((pack && pack.mods) || []).map((m) => {
+    let status = "missing";
+    try { const st = fs.statSync(path.join(modsDir, m.file)); status = st.size === m.size ? "ok" : "outdated"; } catch {}
+    return { name: m.file.replace(/\.jar$/i, ""), file: m.file, size: m.size, status };
   });
-  if (result.canceled || !result.filePaths[0]) return { ok: false };
-  const state = readKbModsState();
-  state.folder = result.filePaths[0];
-  writeKbModsState(state);
-  return { ok: true };
+  return { minecraft: kb.minecraftVersion || "26.1.2", loader: "NeoForge", loaderVersion: kb.neoForgeVersion || "", notes: note, folder: modsDir, folderExists: fs.existsSync(modsDir), mods };
 });
-
+ipcMain.handle("kbmods:chooseFolder", async () => { await shell.openPath(kbGameDir()); return { ok: false }; });
 ipcMain.handle("kbmods:install", async (event) => {
-  const manifest = await loadKbModsManifest();
-  const state = readKbModsState();
-  const folder = state.folder || defaultMinecraftModsFolder();
-  const wanted = (manifest.mods || []).filter(isSafeMod);
-  if (!wanted.length) return { ok: false, error: "Aucun mod à installer pour le moment." };
-
-  try { fs.mkdirSync(folder, { recursive: true }); } catch (e) { return { ok: false, error: `Dossier inaccessible : ${e.message}` }; }
-
-  // On ne télécharge que ce qui manque ou ne correspond plus à l'empreinte attendue
-  const todo = [];
-  for (const mod of wanted) {
-    const target = path.join(folder, mod.file);
-    const hash = fs.existsSync(target) ? await sha256File(target) : null;
-    if (!hash || hash.toLowerCase() !== mod.sha256.toLowerCase()) todo.push(mod);
-  }
-
-  let done = 0;
-  for (const mod of todo) {
-    const target = path.join(folder, mod.file);
-    event.sender.send("kbmods:progress", { file: mod.name || mod.file, done, total: todo.length });
-    try {
-      await downloadWithRedirects(mod.url, target);
-      const hash = await sha256File(target);
-      if (!hash || hash.toLowerCase() !== mod.sha256.toLowerCase()) {
-        fs.unlink(target, () => {});
-        return { ok: false, error: `Fichier corrompu ou modifié : ${mod.file} (empreinte différente).` };
-      }
-    } catch (e) {
-      return { ok: false, error: `Échec du téléchargement de ${mod.file} : ${e.message}` };
-    }
-    done++;
-  }
-
-  // Retire uniquement les anciens mods que CE launcher avait installés et qui ne sont plus dans la liste
-  const wantedFiles = new Set(wanted.map((m) => m.file));
-  const removed = [];
-  for (const oldFile of state.installed || []) {
-    if (!wantedFiles.has(oldFile) && /^[\w.\-+() ]+\.jar$/i.test(oldFile)) {
-      try { fs.unlinkSync(path.join(folder, oldFile)); removed.push(oldFile); } catch { /* déjà absent */ }
-    }
-  }
-  state.installed = Array.from(wantedFiles);
-  writeKbModsState(state);
-
-  event.sender.send("kbmods:progress", { file: "", done: todo.length, total: todo.length });
-  return { ok: true, downloaded: todo.length, removed: removed.length, upToDate: wanted.length - todo.length };
+  if (kbLaunching) return { ok: false, error: "Un lancement est déjà en cours." };
+  const kb = (config.servers || []).find((x) => x.id === "kannibaventure") || {};
+  const versionId = kb.minecraftVersionId || kb.minecraftVersion || "26.1.2";
+  kbLaunching = true;
+  const logFile = path.join(app.getPath("userData"), "kb-launch.log");
+  const klog = (t) => { try { fs.appendFileSync(logFile, String(t) + "\n"); } catch {} };
+  try { fs.writeFileSync(logFile, `# KannibAventure — vérification ${new Date().toISOString()}\n`); } catch {}
+  try {
+    await kbPrepare({ verify: true, progress: (p) => { try { event.sender.send("kbmods:progress", p); } catch {} }, klog, kb, versionId });
+    return { ok: true, message: "Java, NeoForge, fichiers du jeu et mods sont à jour." };
+  } catch (e) { klog("# erreur : " + e.message); return { ok: false, error: e.message }; }
+  finally { kbLaunching = false; }
 });
 
 ipcMain.handle("map:getPoints", async () => {

@@ -21,14 +21,14 @@
 -- Configure ces 3 convars dans ton server.cfg (ne les mets JAMAIS dans un
 -- fichier versionné publiquement) :
 --   setr anomia_discord_bot_token "TON_TOKEN_BOT"
---   setr anomia_discord_guild_id "ID_DE_TON_SERVEUR_DISCORD"
---   setr anomia_discord_role_id "ID_DU_ROLE_WHITELIST"
+--   setr anomia_discord_guild_id "1407312954616975360"   (serveur Discord Anomia, valeur par defaut)
+--   setr anomia_discord_role_id "1434849042319278231"    (role Citoyens Anomia, valeur par defaut)
 
 local function getConfig()
     return {
         token = GetConvar("anomia_discord_bot_token", ""),
-        guildId = GetConvar("anomia_discord_guild_id", ""),
-        roleId = GetConvar("anomia_discord_role_id", "")
+        guildId = GetConvar("anomia_discord_guild_id", "1407312954616975360"),
+        roleId = GetConvar("anomia_discord_role_id", "1434849042319278231")
     }
 end
 

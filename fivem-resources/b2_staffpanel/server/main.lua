@@ -9,12 +9,14 @@
 --   * ADMIN : en-tete x-discord-token (jeton Discord du joueur). Le serveur demande a Discord
 --     qui est le joueur, puis verifie via le bot qu'il a le role admin sur le Discord Kannibal Team.
 --     Sans ce role : aucun acces admin, pas de code de secours.
---   * MODO  : en-tete x-staff-code (code modo, convar privee).
+--   * MODO  : role Moderateur sur le Discord Anomia (meme en-tete x-discord-token), ou en-tete x-staff-code (code modo, convar privee).
 -- Convars (server.cfg, jamais dans le launcher) :
 --   setr anomia_discord_bot_token "..."        (deja utilise par b2_discordcheck)
 --   set  anomia_staff_guild_id    "445112343064477696"   (Kannibal Team, valeur par defaut)
 --   set  anomia_staff_role_id     "1112002757004632215"  (role admin, valeur par defaut)
---   setr anomia_mod_passphrase    "CODE_MODO"
+--   set  anomia_mod_guild_id      "1407312954616975360"  (serveur Discord Anomia, valeur par defaut)
+--   set  anomia_mod_role_id       "1434845539094233098"  (role Moderateur, valeur par defaut)
+--   setr anomia_mod_passphrase    "CODE_MODO"  (secours, facultatif)
 -- Les modos voient la liste des joueurs. Les admins ont en plus la sante du serveur et la maintenance.
 --   POST/GET /b2_staffpanel/maintenance/on|off -> bascule la maintenance (admin uniquement)
 --   GET /b2_staffpanel/health   -> sante du serveur (admin uniquement)
@@ -25,6 +27,8 @@ local failures = {} -- anti brute-force : 8 essais ratés / minute / adresse
 
 local STAFF_GUILD_DEFAULT = "445112343064477696"
 local STAFF_ROLE_DEFAULT = "1112002757004632215"
+local MOD_GUILD_DEFAULT = "1407312954616975360" -- serveur Discord Anomia
+local MOD_ROLE_DEFAULT = "1434845539094233098"  -- role Modérateur Anomia
 local roleCache = {} -- jeton Discord -> { role, expires } (60 s)
 
 local function getModRole(code)
@@ -34,7 +38,25 @@ local function getModRole(code)
     return nil
 end
 
--- Verifie le role admin Discord : cb("admin" | nil, raison)
+-- Lecture du role d'un membre via le bot : cb(hasRole, status)
+local function memberHasRole(botToken, guildId, roleId, userId, cb)
+    PerformHttpRequest(("https://discord.com/api/v10/guilds/%s/members/%s"):format(guildId, tostring(userId)), function(st, body)
+        local ok, member = pcall(json.decode, body or "")
+        if st == 200 and ok and member and member.roles then
+            for _, r in ipairs(member.roles) do
+                if r == roleId then cb(true, st) return end
+            end
+            cb(false, st)
+            return
+        end
+        if st ~= 404 then
+            print(("[b2_staffpanel] Lecture du membre Discord impossible (HTTP %s) : bot present sur le serveur ? Intent membres actif ?"):format(tostring(st)))
+        end
+        cb(false, st)
+    end, "GET", "", { ["Authorization"] = "Bot " .. botToken })
+end
+
+-- Verifie le role Discord : admin (Kannibal Team) puis modo (serveur Anomia). cb("admin" | "mod" | nil, raison)
 local function getDiscordRole(token, cb)
     if not token or token == "" or #token > 200 then cb(nil, "bad_token") return end
     local cached = roleCache[token]
@@ -43,8 +65,10 @@ local function getDiscordRole(token, cb)
     local botToken = GetConvar("anomia_discord_bot_token", "")
     local guildId = GetConvar("anomia_staff_guild_id", STAFF_GUILD_DEFAULT)
     local roleId = GetConvar("anomia_staff_role_id", STAFF_ROLE_DEFAULT)
+    local modGuildId = GetConvar("anomia_mod_guild_id", MOD_GUILD_DEFAULT)
+    local modRoleId = GetConvar("anomia_mod_role_id", MOD_ROLE_DEFAULT)
     if botToken == "" then
-        print("[b2_staffpanel] anomia_discord_bot_token manquant : acces admin par role Discord impossible.")
+        print("[b2_staffpanel] anomia_discord_bot_token manquant : acces par role Discord impossible.")
         cb(nil, "no_bot_token")
         return
     end
@@ -56,23 +80,18 @@ local function getDiscordRole(token, cb)
             cb(nil, "token_expired")
             return
         end
-        PerformHttpRequest(("https://discord.com/api/v10/guilds/%s/members/%s"):format(guildId, tostring(user.id)), function(st2, body2)
-            local ok2, member = pcall(json.decode, body2 or "")
-            local role, reason = nil, nil
-            if st2 == 200 and ok2 and member and member.roles then
-                reason = "missing_role"
-                for _, r in ipairs(member.roles) do
-                    if r == roleId then role = "admin" reason = nil break end
-                end
-            elseif st2 == 404 then
-                reason = "not_in_guild"
-            else
-                reason = "bot_error" -- bot absent du serveur, token invalide ou intent "Server Members" manquant
-                print(("[b2_staffpanel] Lecture du membre Discord impossible (HTTP %s) : bot present sur le serveur ? Intent membres actif ?"):format(tostring(st2)))
-            end
+        local function finish(role, reason)
             roleCache[token] = { role = role, reason = reason, expires = os.time() + 60 }
             cb(role, reason)
-        end, "GET", "", { ["Authorization"] = "Bot " .. botToken })
+        end
+        memberHasRole(botToken, guildId, roleId, user.id, function(isAdmin, st)
+            if isAdmin then finish("admin", nil) return end
+            local adminReason = (st == 200 and "missing_role") or (st == 404 and "not_in_guild") or "bot_error"
+            -- pas admin : verifie le role modo sur le serveur Anomia
+            memberHasRole(botToken, modGuildId, modRoleId, user.id, function(isMod)
+                if isMod then finish("mod", nil) else finish(nil, adminReason) end
+            end)
+        end)
     end, "GET", "", { ["Authorization"] = "Bearer " .. token })
 end
 

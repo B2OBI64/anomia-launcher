@@ -2342,3 +2342,22 @@ html[data-theme="noel"]:not([data-mode="light"]) .titlebar-brand::before{content
 html[data-theme="noel"]:not([data-mode="light"]) .ah-hero::after,html[data-theme="noel"]:not([data-mode="light"]) .hub-hero::after{content:"❄ 🎄 ❄";position:absolute;right:14px;top:8px;font-size:18px;letter-spacing:6px;opacity:.85;pointer-events:none}
 html[data-theme="noel"]:not([data-mode="light"]) .ah-hero{position:relative}
 html[data-theme="noel"]:not([data-mode="light"]) ::-webkit-scrollbar-thumb{background:repeating-linear-gradient(45deg,#dc2626 0 6px,#f8fafc 6px 12px)}
+
+/* Progression dans le bouton Se connecter (KannibAventure) */
+#kb-connect.kb-loading{background:linear-gradient(90deg,rgba(255,255,255,.3) var(--kb-pct,0%),rgba(0,0,0,0) var(--kb-pct,0%)),var(--btn-color,#7c3aed)!important;white-space:normal;font-size:12px;line-height:1.25;min-height:44px}
+
+/* Glisser-déposer des logos de serveurs */
+.server-btn.dragging{transition:none!important;cursor:grabbing;z-index:30;box-shadow:0 8px 22px rgba(0,0,0,.45);touch-action:none}
+.server-logo{touch-action:none}
+
+/* ===== 2.1 : grilles qui s'étirent en grand format, carte temps de jeu, déplacement des logos ===== */
+.discord-grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))!important}
+.clip-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))!important}
+html[data-theme="b2logo"]:not([data-mode="light"]) body::before,
+html[data-theme="anomia"]:not([data-mode="light"]) body::before{background-size:min(92vh,92vw)!important}
+.kb-playtime{margin-top:18px;padding:16px 18px;border-radius:14px}
+.kbp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin:10px 0 6px}
+.kbp-grid div{display:flex;flex-direction:column;gap:2px}
+.kbp-grid b{font-family:var(--font-display,inherit);font-size:24px;line-height:1.1}
+.kbp-grid span{font-size:12px;color:var(--text-dim)}
+.kbp-note{margin:4px 0 0;font-size:12px;color:var(--text-dim)}

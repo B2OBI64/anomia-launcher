@@ -1,5 +1,5 @@
 // ============================================================
-// B2 Launcher - Rapports d'erreur / diagnostics
+// Kannibal Launcher - Rapports d'erreur / diagnostics
 // - Garde un journal (fichier + mémoire) de tout ce que le launcher écrit en console.
 // - Si le launcher plante (erreur fatale, processus d'affichage mort), génère
 //   automatiquement un ZIP de rapport, ouvre l'explorateur de fichiers dessus
@@ -81,13 +81,13 @@ function initLogging() {
       try { orig(...args); } catch (e) {}
     };
   }
-  pushLine("INFO", [`--- Démarrage B2 Launcher ${appVersionSafe} (${process.platform} ${os.release()}) ---`]);
+  pushLine("INFO", [`--- Démarrage Kannibal Launcher ${appVersionSafe} (${process.platform} ${os.release()}) ---`]);
 }
 
 function reportsDir() {
   let base;
   try { base = app.getPath("documents"); } catch (e) { base = app.getPath("userData"); }
-  return path.join(base, "B2 Launcher - Rapports");
+  return path.join(base, "Kannibal Launcher - Rapports");
 }
 
 function readSettingsSanitized() {
@@ -128,7 +128,7 @@ function writeReport(kind, errorText) {
 
   const files = {
     "LISEZMOI.txt":
-      "Rapport d'erreur du B2 Launcher\n" +
+      "Rapport d'erreur du Kannibal Launcher\n" +
       "================================\n\n" +
       "Envoie ce fichier .zip au staff (ticket Discord ou MP) pour qu'on corrige le problème.\n" +
       "Il ne contient AUCUN mot de passe ni jeton de connexion : seulement des informations\n" +
@@ -179,8 +179,8 @@ function handleFatal(kind, errorText) {
   try {
     dialog.showMessageBoxSync({
       type: "error",
-      title: "B2 Launcher - Erreur",
-      message: "Le B2 Launcher a rencontré un problème et doit se fermer.",
+      title: "Kannibal Launcher - Erreur",
+      message: "Le Kannibal Launcher a rencontré un problème et doit se fermer.",
       detail: target
         ? "Un rapport d'erreur a été créé et son dossier vient de s'ouvrir.\nEnvoie le fichier .zip sélectionné au staff pour qu'on puisse corriger ça.\n\nIl ne contient aucun mot de passe."
         : "Le rapport n'a pas pu être créé. Relance le launcher ; si ça recommence, préviens le staff.",
