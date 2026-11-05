@@ -33,18 +33,17 @@ function darkenHex(hex, amount = 0.35) {
   return rgbToHex(Math.round(r * (1 - amount)), Math.round(g * (1 - amount)), Math.round(b * (1 - amount)));
 }
 
-const GS_MODES = ["light", "dark", "auto"];
-const GS_LABELS = { light: "Blanc", dark: "Noir violet", auto: "Automatique (comme Windows)" };
+const GS_MODES = ["light", "black", "dark"];
+const GS_LABELS = { light: "Fond clair", black: "Fond noir", dark: "Fond noir violet" };
 let currentBgMode = "dark";
 const systemDarkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
 function applyMode(mode) {
-  if (!GS_MODES.includes(mode)) mode = "dark";
+  if (!GS_MODES.includes(mode)) mode = "dark"; // ancien mode « auto » → noir violet
   const previous = currentBgMode;
   currentBgMode = mode;
-  const effective = mode === "auto" ? (systemDarkQuery && !systemDarkQuery.matches ? "light" : "dark") : mode;
-  if (effective === "light") {
-    document.documentElement.setAttribute("data-mode", "light");
+  if (mode === "light" || mode === "black") {
+    document.documentElement.setAttribute("data-mode", mode);
   } else {
     document.documentElement.removeAttribute("data-mode");
   }
@@ -64,9 +63,7 @@ function applyMode(mode) {
   if (cap) cap.textContent = GS_LABELS[mode];
 }
 // Mode automatique : suit le thème de Windows en direct
-if (systemDarkQuery && systemDarkQuery.addEventListener) {
-  systemDarkQuery.addEventListener("change", () => { if (currentBgMode === "auto") applyMode("auto"); });
-}
+
 
 function applyAccentColor(hex) {
   const root = document.documentElement;
@@ -1813,8 +1810,7 @@ document.getElementById("settings-diag").addEventListener("click", async () => {
 
 document.getElementById("settings-replay-tour").addEventListener("click", () => {
   document.getElementById("settings-overlay").classList.add("hidden");
-  onboardingStep = 0;
-  showOnboardingStep();
+  startTour();
 });
 
 document.querySelectorAll(".gs-btn").forEach((btn) => {
@@ -2352,56 +2348,82 @@ async function refreshNextRestart() {
 refreshNextRestart();
 setInterval(refreshNextRestart, 5 * 60000); // revérifie la config toutes les 5 min
 
-// --- Tour guidé (premier lancement uniquement, persiste après une mise à jour) ---
-const ONBOARDING_STEPS = [
-  { selector: '[data-server="hub"]', text: "Bienvenue sur le Kannibal Launcher ! L'accueil regroupe les streamers en live et les nouveautés de chaque serveur." },
-  { selector: "#server-bar", text: "Chaque serveur a son logo ici : clique dessus pour accéder à ses pages (actus, succès, règlement...)." },
-  { selector: "#btn-discord-auth, #discord-auth-slot", text: "Connecte-toi avec Discord : c'est obligatoire pour accéder aux serveurs." },
-  { selector: "#btn-settings", text: "Personnalise le launcher ici : mode sombre/clair et couleur d'accent." }
-];
+// --- Tutoriel guidé (premier lancement + « Revoir le tutoriel ») ---
+// Les étapes sont dans src/tour.json : { title, text, selector?, go?:{server,view}, staff? }.
+// Pour ajouter une explication, il suffit d'ajouter un bloc dans ce fichier.
+let tourSteps = [];
 let onboardingStep = 0;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const isShown = (el) => el && el.getClientRects().length > 0;
 
-function showOnboardingStep() {
+async function startTour() {
+  let all = [];
+  try { all = await window.anomia.getTour(); } catch (e) { all = []; }
+  if (!Array.isArray(all)) all = [];
+  const staff = typeof isAdminUnlocked !== "undefined" && isAdminUnlocked;
+  tourSteps = all.filter((s) => s && s.text && (!s.staff || staff));
+  if (!tourSteps.length) return;
+  onboardingStep = 0;
+  showOnboardingStep(1);
+}
+
+async function showOnboardingStep(dir) {
+  dir = dir || 1;
   const overlay = document.getElementById("onboarding-overlay");
-  const step = ONBOARDING_STEPS[onboardingStep];
-  if (!step) {
-    finishOnboarding();
-    return;
+  let step = tourSteps[onboardingStep];
+  if (!step) { finishOnboarding(); return; }
+  if (step.go) {
+    try {
+      if (step.go.server && currentServerId !== step.go.server) selectServer(step.go.server);
+      if (step.go.view) goToView(step.go.view);
+    } catch (e) { /* ignore */ }
+    await sleep(180);
   }
-  const target = document.querySelector(step.selector);
+  const target = step.selector ? document.querySelector(step.selector) : null;
+  if (step.selector && !isShown(target)) { // cible absente (ex. serveur sans cet onglet) : on passe
+    onboardingStep += dir;
+    if (onboardingStep < 0) onboardingStep = 0;
+    return showOnboardingStep(dir);
+  }
   const tooltip = document.getElementById("onboarding-tooltip");
+  const hl = document.getElementById("onboarding-highlight");
+  document.getElementById("onboarding-title").textContent = step.title || "";
   document.getElementById("onboarding-text").textContent = step.text;
-  document.getElementById("onboarding-progress").textContent = `${onboardingStep + 1}/${ONBOARDING_STEPS.length}`;
-  document.getElementById("onboarding-next").textContent =
-    onboardingStep === ONBOARDING_STEPS.length - 1 ? "Terminer" : "Suivant";
-
+  document.getElementById("onboarding-progress").textContent = `${onboardingStep + 1}/${tourSteps.length}`;
+  document.getElementById("onboarding-next").textContent = onboardingStep === tourSteps.length - 1 ? "Terminer" : "Suivant";
+  document.getElementById("onboarding-prev").classList.toggle("hidden", onboardingStep === 0);
+  overlay.classList.remove("hidden");
   if (target) {
     const rect = target.getBoundingClientRect();
-    document.getElementById("onboarding-highlight").style.cssText = `
-      top:${rect.top - 6}px; left:${rect.left - 6}px; width:${rect.width + 12}px; height:${rect.height + 12}px;
-    `;
-    const tooltipTop = Math.min(rect.bottom + 14, window.innerHeight - 160);
-    tooltip.style.cssText = `top:${tooltipTop}px; left:${Math.max(20, Math.min(rect.left, window.innerWidth - 320))}px;`;
+    hl.classList.remove("none");
+    hl.style.cssText = `top:${rect.top - 6}px; left:${rect.left - 6}px; width:${rect.width + 12}px; height:${rect.height + 12}px;`;
+    tooltip.classList.remove("center");
+    const th = tooltip.offsetHeight || 170;
+    let top = rect.bottom + 14;
+    if (top + th > window.innerHeight - 10) top = Math.max(10, rect.top - th - 14); // pas la place dessous : au-dessus
+    if (top < 10) top = Math.max(10, window.innerHeight - th - 10);
+    tooltip.style.cssText = `top:${top}px; left:${Math.max(20, Math.min(rect.left, window.innerWidth - 340))}px;`;
+  } else {
+    hl.classList.add("none");
+    tooltip.style.cssText = "";
+    tooltip.classList.add("center");
   }
-  overlay.classList.remove("hidden");
 }
 
 function finishOnboarding() {
   document.getElementById("onboarding-overlay").classList.add("hidden");
   window.anomia.setSettings({ onboardingSeen: true });
+  try { selectServer("hub"); } catch (e) { /* ignore */ }
 }
 
-document.getElementById("onboarding-next").addEventListener("click", () => {
-  onboardingStep++;
-  showOnboardingStep();
-});
+document.getElementById("onboarding-next").addEventListener("click", () => { onboardingStep++; showOnboardingStep(1); });
+document.getElementById("onboarding-prev").addEventListener("click", () => { onboardingStep = Math.max(0, onboardingStep - 1); showOnboardingStep(-1); });
 document.getElementById("onboarding-skip").addEventListener("click", finishOnboarding);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.getElementById("onboarding-overlay").classList.contains("hidden")) finishOnboarding(); });
+window.openGuide = startTour;
 
 window.anomia.getSettings().then((settings) => {
-  if (!settings.onboardingSeen) {
-    onboardingStep = 0;
-    setTimeout(showOnboardingStep, 600); // laisse le launcher finir de s'afficher d'abord
-  }
+  if (!settings.onboardingSeen) setTimeout(startTour, 900); // laisse le launcher finir de s'afficher d'abord
 });
 
 // --- Rapports de crash FiveM ---

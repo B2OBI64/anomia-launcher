@@ -1345,7 +1345,7 @@ body::before {
 }
 .onboarding-tooltip {
   position: fixed;
-  width: 300px;
+  width: 340px;
   background: var(--panel-solid);
   border: 1px solid var(--border-strong);
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
@@ -2361,3 +2361,17 @@ html[data-theme="anomia"]:not([data-mode="light"]) body::before{background-size:
 .kbp-grid b{font-family:var(--font-display,inherit);font-size:24px;line-height:1.1}
 .kbp-grid span{font-size:12px;color:var(--text-dim)}
 .kbp-note{margin:4px 0 0;font-size:12px;color:var(--text-dim)}
+
+/* 1.9.3 : la maintenance d'Anomia ne s'affiche que dans Anomia */
+body:not([data-server="anomia"]) #maintenance-banner,body:not([data-server="anomia"]) #restart-banner{display:none!important}
+.state-head{margin:6px 0 10px}.state-head h2{margin:0}
+
+/* Fond noir (pur) */
+[data-mode="black"]{--bg:#000;--bg-elevated:#070707;--panel:rgba(12,12,12,.9);--panel-solid:#0a0a0a;--border:rgba(255,255,255,.1);--border-strong:rgba(255,255,255,.2);--text-dim:#a3a3a3;--text-faint:#6b6b6b}
+
+.onboarding-title{display:block;font-size:15px;margin-bottom:6px;color:var(--text)}
+.onboarding-tooltip.center{top:50%!important;left:50%!important;transform:translate(-50%,-50%)}
+.onboarding-highlight.none{display:none}
+.onboarding-footer{flex-wrap:wrap;gap:10px}
+.onboarding-actions{flex-wrap:wrap;margin-left:auto}
+.onboarding-actions .btn-copy,.onboarding-actions .btn-connect{padding:7px 12px;font-size:12px}

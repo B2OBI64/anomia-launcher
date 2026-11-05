@@ -20,6 +20,8 @@
 -- Les modos voient la liste des joueurs. Les admins ont en plus la sante du serveur et la maintenance.
 --   POST/GET /b2_staffpanel/maintenance/on|off -> bascule la maintenance (admin uniquement)
 --   GET /b2_staffpanel/health   -> sante du serveur (admin uniquement)
+--   GET /b2_staffpanel/kbstatus -> { kbMaintenance } (public) ; /kbmaintenance/on|off (admin) : maintenance KannibAventure
+--   GET /b2_staffpanel/subcheck -> { sub } (en-tete x-discord-token) : role abonne sur Kannibal Team (convar anomia_sub_role_id)
 -- Lecture seule : aucune action (kick/ban...) n'est possible depuis le launcher.
 -- ============================================================
 
@@ -29,7 +31,10 @@ local STAFF_GUILD_DEFAULT = "445112343064477696"
 local STAFF_ROLE_DEFAULT = "1112002757004632215"
 local MOD_GUILD_DEFAULT = "1407312954616975360" -- serveur Discord Anomia
 local MOD_ROLE_DEFAULT = "1434845539094233098"  -- role Modérateur Anomia
+local SUB_ROLE_DEFAULT = "1433850593759465554"   -- role abonne Twitch sur Kannibal Team (theme "pluie de logos")
+local KB_MAINT_KEY = "kb_maintenance"           -- etat de maintenance de KannibAventure (persistant)
 local roleCache = {} -- jeton Discord -> { role, expires } (60 s)
+local subCache = {}  -- jeton Discord -> { sub, expires } (120 s)
 
 local function getModRole(code)
     if not code or code == "" then return nil end
@@ -91,6 +96,23 @@ local function getDiscordRole(token, cb)
             memberHasRole(botToken, modGuildId, modRoleId, user.id, function(isMod)
                 if isMod then finish("mod", nil) else finish(nil, adminReason) end
             end)
+        end)
+    end, "GET", "", { ["Authorization"] = "Bearer " .. token })
+end
+
+-- Role abonne : le joueur a-t-il le role sub sur le Discord Kannibal Team ? cb(true|false)
+local function checkSub(token, cb)
+    if not token or token == "" or #token > 200 then cb(false) return end
+    local cached = subCache[token]
+    if cached and cached.expires > os.time() then cb(cached.sub) return end
+    local botToken = GetConvar("anomia_discord_bot_token", "")
+    if botToken == "" then cb(false) return end
+    PerformHttpRequest("https://discord.com/api/v10/users/@me", function(status, body)
+        local ok, user = pcall(json.decode, body or "")
+        if status ~= 200 or not ok or not user or not user.id then cb(false) return end
+        memberHasRole(botToken, GetConvar("anomia_staff_guild_id", STAFF_GUILD_DEFAULT), GetConvar("anomia_sub_role_id", SUB_ROLE_DEFAULT), user.id, function(has)
+            subCache[token] = { sub = has and true or false, expires = os.time() + 120 }
+            cb(has and true or false)
         end)
     end, "GET", "", { ["Authorization"] = "Bearer " .. token })
 end
@@ -204,6 +226,16 @@ SetHttpHandler(function(req, res)
     end
 
     local headers = req.headers or {}
+    local ppath = tostring(req.path or "")
+    -- Routes publiques (aucun role requis)
+    if ppath:find("kbstatus", 1, true) then
+        send(res, 200, { kbMaintenance = GetResourceKvpString(KB_MAINT_KEY) == "true" })
+        return
+    end
+    if ppath:find("subcheck", 1, true) then
+        checkSub(headers["x-discord-token"], function(has) send(res, 200, { sub = has }) end)
+        return
+    end
     resolveRole(headers, function(role, reason)
         if not role then
             noteFailure(addr)
@@ -212,6 +244,15 @@ SetHttpHandler(function(req, res)
         end
 
         local path = tostring(req.path or "")
+        if path:find("kbmaintenance", 1, true) then
+            if role ~= "admin" then send(res, 403, { error = "admin_only" }) return end
+            local state = path:find("/on", 1, true) and "on" or (path:find("/off", 1, true) and "off" or nil)
+            if not state then send(res, 400, { error = "bad_state" }) return end
+            SetResourceKvp(KB_MAINT_KEY, state == "on" and "true" or "false")
+            print(("[b2_staffpanel] Maintenance KannibAventure %s (role Discord admin)."):format(state:upper()))
+            send(res, 200, { ok = true, kbMaintenance = state == "on" })
+            return
+        end
         if path:find("maintenance", 1, true) then
             if role ~= "admin" then send(res, 403, { error = "admin_only" }) return end
             local state = path:find("/on", 1, true) and "on" or (path:find("/off", 1, true) and "off" or nil)

@@ -58,6 +58,7 @@ module.exports = {
         { view: "kb-devlog", label: "Journal de dev" },
         { view: "kb-map", label: "Carte" },
         { view: "kb-files", label: "Fichiers" },
+        { view: "kb-settings", label: "Paramètres" },
         { view: "kb-rules", label: "Règlement" },
         { view: "kb-faq", label: "FAQ" }
       ]
@@ -88,7 +89,7 @@ module.exports = {
   // --- Discords affichés sur l'accueil (membres en ligne + bouton rejoindre) ---
   // invite = code ou lien d'invitation. Laisse null tant que tu n'as pas le lien : la carte reste masquée.
   discordCommunities: [
-    { name: "Communauté B2", invite: "https://discord.gg/nABGrX9Hu2", color: "#8b5cf6", logo: "../assets/logo.png", main: true }, // Discord principal (Kannibal Team)
+    { name: "Kannibal Team", invite: "https://discord.gg/nABGrX9Hu2", color: "#8b5cf6", logo: "../assets/logo.png", main: true }, // Discord principal (Kannibal Team)
     { name: "Anomia RP", invite: "https://discord.gg/ECBhuTMw7n", color: "#2dd4bf", logo: "../assets/anomia-logo.png" },
     { name: "KannibAventure", invite: "https://discord.gg/fdSjJPRJy4", color: "#a855f7", logo: "../assets/kannibaventure.png" }
   ],

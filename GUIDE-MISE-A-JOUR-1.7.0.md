@@ -67,3 +67,12 @@ Clique sur ton avatar (profil) : une ligne « ⚠ Staff : … » dit pourquoi. C
 - Renommage : nom du produit, raccourci et titres. L'identifiant interne et le dossier de données ne changent pas : les joueurs gardent leur connexion et leurs réglages. L'installeur s'appelle maintenant `Kannibal-Launcher-Setup-1.9.2.exe`.
 - IDs Discord Anomia déjà dans `config.js` : serveur 1407312954616975360, rôle modérateur 1434845539094233098 (côté FiveM : convars `anomia_discord_guild_id` et `anomia_mod_role_id`).
 - Temps de jeu KannibAventure : mesuré depuis le lancement par le launcher (fichier `kb-sessions.json`).
+
+## 1.9.3 — à faire côté serveur FiveM (important)
+
+1. Remplace la ressource `fivem-resources/b2_staffpanel` sur l'hôte FiveM puis `ensure b2_staffpanel` (ou redémarre) : elle ajoute la maintenance de KannibAventure (`kbstatus`, `kbmaintenance`) et la vérification du rôle abonné (`subcheck`).
+2. Convar optionnelle : `set anomia_sub_role_id "1433850593759465554"` (déjà la valeur par défaut). Le bot doit voir le serveur Kannibal Team (même convars que le panel staff).
+3. Tant que l'hôte FiveM est éteint, la maintenance KannibAventure et le thème abonnés ne peuvent pas être vérifiés (le launcher garde le dernier état connu).
+
+### Modifier le tutoriel (1.9.3)
+Les étapes sont dans `src/tour.json`. Pour en ajouter une, copie un bloc : `title`, `text`, `selector` (élément à entourer, facultatif : sans lui la bulle est au centre), `go` (`{"server":"anomia","view":"home"}` pour changer d'espace avant l'étape) et `staff:true` (étape réservée aux admins/modos). Une étape dont la cible n'existe pas est passée automatiquement.

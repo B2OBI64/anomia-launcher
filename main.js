@@ -1405,11 +1405,35 @@ function pingMinecraft(host, port, timeoutMs = 4000) {
   });
 }
 ipcMain.handle("kb:getStatus", async () => {
-  if (cachedStaffRole !== "admin") return { ok: false, error: "Réservé aux admins." };
   const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
   if (!kb.serverAddress) return { ok: false, error: "Adresse du serveur non configurée." };
-  const r = await pingMinecraft(kb.serverAddress, kb.serverPort || 25565);
-  return { ok: true, address: `${kb.serverAddress}:${kb.serverPort || 25565}`, ...r };
+  const isAdmin = cachedStaffRole === "admin";
+  const [r, m] = await Promise.all([
+    pingMinecraft(kb.serverAddress, kb.serverPort || 25565),
+    staffRequest("kbstatus", "public").catch(() => null)
+  ]);
+  const maintenance = !!(m && m.status === 200 && m.body && m.body.kbMaintenance);
+  const out = { ok: true, address: `${kb.serverAddress}:${kb.serverPort || 25565}`, maintenance, maintenanceKnown: !!(m && m.status === 200), ...r };
+  if (!isAdmin) { delete out.names; delete out.motd; }
+  return out;
+});
+ipcMain.handle("admin:toggleKbMaintenance", async (event, enable) => {
+  if (cachedStaffRole !== "admin" || cachedStaffCode !== "discord") {
+    return { ok: false, error: "Session admin expirée, reconnecte-toi avec Discord." };
+  }
+  try {
+    const r = await staffRequest(`kbmaintenance/${enable ? "on" : "off"}`, "discord");
+    if (r.status === 200) return { ok: true };
+    return { ok: false, error: (r.body && r.body.error) || `HTTP ${r.status}` };
+  } catch { return { ok: false, error: "Serveur injoignable (l'hôte FiveM doit être allumé)." }; }
+});
+// Rôle abonné Twitch (Kannibal Team) : vérifié côté serveur avec le jeton Discord de l'utilisateur
+ipcMain.handle("sub:check", async () => {
+  if (!discordToken) return { ok: false, sub: false };
+  try {
+    const r = await staffRequest("subcheck", "discord");
+    return { ok: r.status === 200, sub: !!(r.body && r.body.sub) };
+  } catch { return { ok: false, sub: false, offline: true }; }
 });
 
 // ============================================================
@@ -1695,6 +1719,9 @@ ipcMain.handle("kb:forgetMicrosoft", () => { try { fs.unlinkSync(msTokenPath());
 ipcMain.on("app:relaunch", () => { app.relaunch(); app.exit(0); });
 
 ipcMain.handle("settings:get", () => loadSettings());
+ipcMain.handle("tour:get", () => {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, "src", "tour.json"), "utf8")); } catch { return []; }
+});
 ipcMain.handle("settings:set", (event, patch) => saveSettings(patch));
 
 // ============================================================

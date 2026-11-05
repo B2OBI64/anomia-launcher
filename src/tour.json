@@ -1,0 +1,151 @@
+[
+ {
+  "title": "Bienvenue sur le Kannibal Launcher",
+  "text": "Un seul launcher pour toute la communauté : plusieurs serveurs de jeu, les streamers en live et les actus de chacun. Ce petit tour te montre comment t'y retrouver (tu peux le quitter à tout moment avec « Passer »)."
+ },
+ {
+  "title": "Un logo = un serveur",
+  "selector": "#server-bar",
+  "go": {
+   "server": "hub"
+  },
+  "text": "Chaque serveur a son logo ici : Anomia RP (FiveM), KannibAventure (Minecraft)… et d'autres arriveront. Clique sur un logo pour entrer dans son espace. Astuce : maintiens un logo et déplace-le pour changer l'ordre."
+ },
+ {
+  "title": "L'accueil général",
+  "selector": "[data-server=\"hub\"]",
+  "text": "Le bouton maison te ramène à l'accueil commun : streamers en live, nouveautés de chaque serveur et clips de la communauté."
+ },
+ {
+  "title": "Connexion Discord",
+  "selector": "#btn-discord-auth, #discord-auth-slot",
+  "text": "Connecte-toi avec Discord : c'est obligatoire. Chaque serveur vérifie ton rôle Discord pour t'autoriser à jouer, et ton profil, tes succès et ton temps de jeu y sont liés. Ton mot de passe n'est jamais vu par le launcher."
+ },
+ {
+  "title": "Des onglets propres à chaque serveur",
+  "selector": "#tabbar",
+  "go": {
+   "server": "anomia",
+   "view": "home"
+  },
+  "text": "Une fois dans un serveur, cette barre montre ses pages : actualités, règlement, carte, fichiers… Elles changent d'un serveur à l'autre."
+ },
+ {
+  "title": "Anomia RP : se connecter",
+  "selector": "#btn-connect",
+  "go": {
+   "server": "anomia",
+   "view": "home"
+  },
+  "text": "Pour rejoindre Anomia il faut le rôle « Citoyens Anomia » (whitelist validée sur le Discord d'Anomia). Le bouton lance FiveM et te connecte. Le serveur est actuellement en pause : le bouton indique la date de retour."
+ },
+ {
+  "title": "L'état d'Anomia",
+  "selector": "#view-home .telemetry-strip",
+  "go": {
+   "server": "anomia",
+   "view": "home"
+  },
+  "text": "Statut, joueurs connectés, ping moyen, entreprises ouvertes et temps de jeu. La maintenance d'Anomia n'apparaît que dans l'espace Anomia."
+ },
+ {
+  "title": "Succès et profil Anomia",
+  "selector": ".tab-item[data-view=\"achievements\"]",
+  "go": {
+   "server": "anomia",
+   "view": "home"
+  },
+  "text": "Tes succès et ton temps de jeu sur Anomia sont suivis dès ta première connexion en jeu. Clique sur ton avatar en haut à droite pour voir ton profil."
+ },
+ {
+  "title": "Fichiers et cache FiveM",
+  "selector": ".tab-item[data-view=\"assets\"]",
+  "go": {
+   "server": "anomia",
+   "view": "home"
+  },
+  "text": "Un souci graphique ou des lags ? Vide le cache FiveM ici."
+ },
+ {
+  "title": "KannibAventure : jouer en un clic",
+  "selector": "#kb-connect",
+  "go": {
+   "server": "kannibaventure",
+   "view": "kb-home"
+  },
+  "text": "Il te faut un compte Minecraft Java. Au premier lancement, le launcher installe tout seul Java 25, NeoForge et les mods (environ 240 Mo), puis te demande de te connecter à Microsoft. Ensuite, il vérifie les mods et te place directement dans le serveur."
+ },
+ {
+  "title": "L'état de KannibAventure",
+  "selector": "#kb-state",
+  "go": {
+   "server": "kannibaventure",
+   "view": "kb-home"
+  },
+  "text": "Statut, joueurs, ping, version et ton temps de jeu. KannibAventure a sa propre maintenance, indépendante d'Anomia."
+ },
+ {
+  "title": "Fichiers et mods",
+  "selector": ".tab-item[data-view=\"kb-files\"]",
+  "go": {
+   "server": "kannibaventure",
+   "view": "kb-home"
+  },
+  "text": "L'état de tes mods. Si Minecraft se comporte bizarrement, le bouton Réparer des Paramètres revérifie tout."
+ },
+ {
+  "title": "Paramètres de KannibAventure",
+  "selector": ".tab-item[data-view=\"kb-settings\"]",
+  "go": {
+   "server": "kannibaventure",
+   "view": "kb-home"
+  },
+  "text": "Mémoire (RAM) allouée au jeu, ouverture du dossier du jeu et du journal, et bouton Réparer : tout ce qui concerne Minecraft est ici."
+ },
+ {
+  "title": "Règlement et FAQ",
+  "selector": ".tab-item[data-view=\"kb-rules\"]",
+  "go": {
+   "server": "kannibaventure",
+   "view": "kb-home"
+  },
+  "text": "Chaque serveur a son propre règlement. Lis celui de KannibAventure avant de te connecter, et la FAQ pour les questions courantes."
+ },
+ {
+  "title": "Ton bloc-notes",
+  "selector": "#btn-notes",
+  "go": {
+   "server": "hub"
+  },
+  "text": "Un bloc-notes personnel pour tes coordonnées, idées et rappels, stocké sur ton ordinateur."
+ },
+ {
+  "title": "Quoi de neuf ?",
+  "selector": "#btn-whatsnew",
+  "text": "Les nouveautés de chaque version du launcher. Une pastille t'avertit quand il y a quelque chose à lire."
+ },
+ {
+  "title": "La communauté Kannibal Team",
+  "selector": "#btn-discord",
+  "text": "Ouvre les Discord de la communauté : Kannibal Team et ceux de chaque serveur. C'est aussi là qu'on demande de l'aide."
+ },
+ {
+  "title": "Personnalise ton launcher",
+  "selector": "#btn-settings",
+  "text": "Fond clair, noir ou noir violet, couleur d'accent, thèmes spéciaux (dont « Pluie de logos » pour les abonnés Twitch), fond animé et mode présentation pour tes lives."
+ },
+ {
+  "title": "Outils du staff",
+  "staff": true,
+  "selector": ".tab-item[data-view=\"admin\"]",
+  "go": {
+   "server": "anomia",
+   "view": "home"
+  },
+  "text": "Visible seulement pour les admins et modos en service : liste des joueurs et maintenance (Anomia et KannibAventure séparément)."
+ },
+ {
+  "title": "C'est parti !",
+  "text": "Tu peux relancer ce tutoriel à tout moment depuis Réglages → « Revoir le tutoriel ». Bon jeu !"
+ }
+]

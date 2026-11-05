@@ -124,28 +124,9 @@
           <button class="ah-secondary" id="ah-me-open">Mon profil</button>
         </div>
 
-        <div class="ah-tiles" id="ah-tiles">
-          <button class="ah-tile" data-goto="news"><span class="ah-ico">📰</span><b>Actualités</b><small id="ah-t-news">Les dernières infos</small></button>
-          <button class="ah-tile" data-goto="rules"><span class="ah-ico">📜</span><b>Règlement</b><small>Les règles du serveur</small></button>
-          <button class="ah-tile" data-goto="map"><span class="ah-ico">🗺️</span><b>Carte</b><small>Lieux et points d'intérêt</small></button>
-          <button class="ah-tile" data-goto="achievements"><span class="ah-ico">🏆</span><b>Succès</b><small id="ah-t-ach">Ta progression</small></button>
-          <button class="ah-tile" data-goto="media"><span class="ah-ico">🖼️</span><b>Média</b><small>Captures des joueurs</small></button>
-          <button class="ah-tile" data-goto="staff"><span class="ah-ico">👥</span><b>Équipe</b><small>Le staff d'Anomia</small></button>
-          <button class="ah-tile" data-goto="assets"><span class="ah-ico">🧹</span><b>Fichiers</b><small>Vider le cache FiveM</small></button>
-        </div>
-
         <div class="ah-livebar hidden" id="ah-livebar"><span id="ah-livebar-text"></span><button class="ah-secondary" id="ah-livebar-btn">Voir le live</button></div>
 
-        <div class="anomia-stats hidden" id="anomia-stats">
-          <div class="as-head"><span class="section-eyebrow">// HISTOIRE DU SERVEUR</span><h2>Anomia en chiffres</h2></div>
-          <div class="as-grid">
-            <div class="as-item"><b id="as-hours">—</b><span>HEURES JOUÉES</span></div>
-            <div class="as-item"><b id="as-players">—</b><span>JOUEURS</span></div>
-            <div class="as-item"><b id="as-record">—</b><span id="as-record-label">RECORD DE CONNECTÉS</span></div>
-          </div>
-          <small class="as-note" id="as-note"></small>
-        </div>
-
+        <div class="as-head state-head"><h2>État d'Anomia</h2></div>
         <div class="telemetry-strip">
           <div class="telemetry-item">
             <span class="telemetry-label">Statut</span>
@@ -237,11 +218,20 @@
           <img src="../assets/kannibaventure.png" alt="KannibAventure" class="kb-hero-logo" />
           <span class="kb-eyebrow">NOUVEAU SERVEUR MINECRAFT</span>
           <h1 class="kb-title">KannibAventure</h1>
+          <div class="banner banner-maintenance hidden" id="kb-maintenance-banner" style="margin:10px 0;"><span>🛠️ KannibAventure est actuellement en maintenance — la connexion est temporairement fermée.</span></div>
           <p class="kb-text">Une nouvelle aventure se prépare. Serveur Java avec mods et plugins. Ouverture prévue en décembre (date précise à venir). Reste connecté, les premières infos arrivent bientôt.</p>
           <div class="kb-actions">
             <button class="btn-connect" id="kb-connect" disabled>Décembre</button>
             <button class="kb-discord-btn" id="kb-discord">Rejoindre le Discord</button>
           </div>
+        </div>
+        <div class="as-head state-head"><h2>État de KannibAventure</h2></div>
+        <div class="telemetry-strip" id="kb-state">
+          <div class="telemetry-item"><span class="telemetry-label">Statut</span><span class="telemetry-value" id="kbs-status">—</span></div>
+          <div class="telemetry-item"><span class="telemetry-label">Joueurs</span><span class="telemetry-value" id="kbs-players">—</span></div>
+          <div class="telemetry-item"><span class="telemetry-label">Ping</span><span class="telemetry-value dim" id="kbs-ping">—</span></div>
+          <div class="telemetry-item"><span class="telemetry-label">Version</span><span class="telemetry-value" id="kbs-version">—</span></div>
+          <div class="telemetry-item"><span class="telemetry-label">Mon temps de jeu</span><span class="telemetry-value" id="kbs-time">—</span></div>
         </div>
         <div class="kb-playtime glass" id="kb-playtime">
           <span class="kb-eyebrow">MON TEMPS DE JEU SUR KANNIBAVENTURE</span>
@@ -263,6 +253,10 @@
           <p id="kbadm-msg" style="color:var(--text-dim);">Chargement…</p>
           <div class="health-grid hidden" id="kbadm-grid"></div>
           <div id="kbadm-names"></div>
+          <div style="margin-top:14px;border-top:1px solid var(--border,rgba(255,255,255,.1));padding-top:12px;">
+            <p id="kbadm-maint-status">Maintenance : —</p>
+            <button class="btn-connect" id="kbadm-maint-btn">Activer la maintenance</button>
+          </div>
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
             <button class="btn-copy" id="kbadm-copy">Copier l'adresse</button>
             <button class="btn-copy" id="kbadm-refresh">Actualiser</button>
@@ -317,6 +311,25 @@
           <div class="progress-track"><div class="progress-fill" id="kb-progress-fill"></div></div>
           <div class="progress-label" id="kb-progress-label"></div>
           <button class="btn-connect" id="kb-install-btn" style="--btn-color:#a855f7;">Installer les mods</button>
+        </div>
+      </section>
+
+      <section class="view hidden" id="view-kb-settings">
+        <span class="section-eyebrow">// RÉGLAGES</span>
+        <h1 class="view-title">Paramètres de KannibAventure</h1>
+        <div class="assets-card glass">
+      <div class="settings-section">
+        
+        <label class="opt-row"><span>Mémoire (RAM) allouée au jeu</span>
+          <select id="opt-kb-mem" style="background:var(--panel-solid);color:var(--text);border:1px solid var(--border);padding:4px 8px;margin-left:auto;"><option value="2">2 Go</option><option value="3">3 Go</option><option value="4">4 Go</option><option value="6">6 Go</option><option value="8">8 Go</option><option value="12">12 Go</option></select></label>
+        <div class="code-row" style="flex-wrap:wrap;gap:8px;margin-top:8px;">
+          <button class="btn-copy" id="kb-open-folder">Ouvrir le dossier du jeu</button>
+          <button class="btn-copy" id="kb-open-log">Voir le journal</button>
+          <button class="btn-copy" id="kb-repair">Réparer</button>
+        </div>
+        <p class="settings-hint" id="kb-opt-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);"></p>
+      </div>
+
         </div>
       </section>
 
@@ -596,11 +609,13 @@
   <div class="onboarding-overlay hidden" id="onboarding-overlay">
     <div class="onboarding-highlight" id="onboarding-highlight"></div>
     <div class="onboarding-tooltip" id="onboarding-tooltip">
+      <b id="onboarding-title" class="onboarding-title"></b>
       <p id="onboarding-text"></p>
       <div class="onboarding-footer">
         <span class="onboarding-progress" id="onboarding-progress">1/5</span>
         <div class="onboarding-actions">
           <button class="btn-copy" id="onboarding-skip">Passer</button>
+          <button class="btn-copy" id="onboarding-prev">Précédent</button>
           <button class="btn-connect" id="onboarding-next">Suivant</button>
         </div>
       </div>
@@ -614,19 +629,19 @@
 
       <div class="settings-section">
         <span class="settings-label">Fond</span>
-        <div class="glass-switch" id="bg-options" role="radiogroup" aria-label="Fond" style="--i:1">
+        <div class="glass-switch" id="bg-options" role="radiogroup" aria-label="Fond" style="--i:2">
           <span class="gs-thumb"></span>
-          <button class="gs-btn" data-mode="light" title="Blanc" role="radio" aria-label="Blanc">
+          <button class="gs-btn" data-mode="light" title="Fond clair" role="radio" aria-label="Fond clair">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
           </button>
-          <button class="gs-btn" data-mode="dark" title="Noir violet" role="radio" aria-label="Noir violet">
+          <button class="gs-btn" data-mode="black" title="Fond noir" role="radio" aria-label="Fond noir">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/></svg>
+          </button>
+          <button class="gs-btn" data-mode="dark" title="Fond noir violet" role="radio" aria-label="Fond noir violet">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
           </button>
-          <button class="gs-btn" data-mode="auto" title="Automatique (comme Windows)" role="radio" aria-label="Automatique">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a5 5 0 0 0-10 0M12 9V4M4.2 11.2l1.4 1.4M19.8 11.2l-1.4 1.4M1 18h2M21 18h2M2 22h20"/></svg>
-          </button>
         </div>
-        <span class="gs-caption" id="gs-caption">Noir violet</span>
+        <span class="gs-caption" id="gs-caption">Fond noir violet</span>
       </div>
 
       <div class="settings-section">
@@ -655,6 +670,7 @@
           <button class="theme-chip hidden" data-theme="anomia" style="--c:#2dd4bf"><i></i>Anomia ✦</button>
           <button class="theme-chip hidden" data-theme="cubic" style="--c:#f97316"><i></i>Cubique ▣</button>
           <button class="theme-chip hidden" data-theme="noel" style="--c:#ef4444"><i></i>Noël 🎄</button>
+          <button class="theme-chip hidden" data-theme="logorain" style="--c:#a855f7"><i></i>Pluie de logos 💜</button>
           <button class="theme-chip hidden" data-theme="gold" style="--c:#facc15"><i></i>Or ✨</button>
           <button class="theme-chip hidden" data-theme="matrix" style="--c:#00ff41"><i></i>Matrix ▮</button>
         </div>
@@ -665,18 +681,6 @@
         <label class="opt-row"><input type="checkbox" id="opt-animated-bg" /><span>Fond animé (particules)</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-hide-offline" /><span>Masquer les streamers hors live</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-streamer-mode" /><span>Mode présentation (cache pseudo, avatar et IP)</span></label>
-      </div>
-
-      <div class="settings-section">
-        <span class="settings-label">KannibAventure</span>
-        <label class="opt-row"><span>Mémoire (RAM) allouée au jeu</span>
-          <select id="opt-kb-mem" style="background:var(--panel-solid);color:var(--text);border:1px solid var(--border);padding:4px 8px;margin-left:auto;"><option value="2">2 Go</option><option value="3">3 Go</option><option value="4">4 Go</option><option value="6">6 Go</option><option value="8">8 Go</option><option value="12">12 Go</option></select></label>
-        <div class="code-row" style="flex-wrap:wrap;gap:8px;margin-top:8px;">
-          <button class="btn-copy" id="kb-open-folder">Ouvrir le dossier du jeu</button>
-          <button class="btn-copy" id="kb-open-log">Voir le journal</button>
-          <button class="btn-copy" id="kb-repair">Réparer</button>
-        </div>
-        <p class="settings-hint" id="kb-opt-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);"></p>
       </div>
 
       <div class="settings-section">
@@ -691,8 +695,8 @@
       </div>
 
       <div class="settings-section">
-        <span class="settings-label">Tour guidé</span>
-        <button class="btn-copy" id="settings-replay-tour" style="width:100%;">Revoir le tour guidé</button>
+        <span class="settings-label">Tutoriel</span>
+        <button class="btn-copy" id="settings-replay-tour" style="width:100%;">Revoir le tutoriel</button>
       </div>
 
       <div class="settings-section">

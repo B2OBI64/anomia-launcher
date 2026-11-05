@@ -67,6 +67,9 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Admin (lecture seule)
   unlockAdmin: (passphrase) => ipcRenderer.invoke("admin:unlock", passphrase),
+  toggleKbMaintenance: (enable) => ipcRenderer.invoke("admin:toggleKbMaintenance", enable),
+  getTour: () => ipcRenderer.invoke("tour:get"),
+  checkSub: () => ipcRenderer.invoke("sub:check"),
   toggleMaintenance: (enable) => ipcRenderer.invoke("admin:toggleMaintenance", enable),
   isOnline: () => ipcRenderer.invoke("network:isOnline"),
   onNetworkStatus: (cb) => { ipcRenderer.removeAllListeners("network:status"); ipcRenderer.on("network:status", (e, online) => cb(online)); },
