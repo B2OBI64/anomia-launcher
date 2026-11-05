@@ -24,7 +24,7 @@
 
   <canvas id="fx-bg" aria-hidden="true"></canvas>
   <div class="app-shell">
-    <div class="offline-banner hidden" id="offline-banner">📡 Hors ligne : le launcher affiche les derniers contenus enregistrés.</div>
+    <div class="offline-banner hidden" id="offline-banner">📡 Tu es hors ligne : pas de connexion internet. Le launcher affiche les derniers contenus enregistrés et la connexion aux serveurs est indisponible.</div>
 
     <!-- Barre des serveurs (logos cliquables) -->
     <header class="topbar">
@@ -122,6 +122,16 @@
           <div class="ah-me-text"><b id="ah-me-name"></b><small id="ah-me-line"></small></div>
           <div class="ah-me-stats"><span><b id="ah-me-hours">—</b><i>TEMPS DE JEU</i></span><span><b id="ah-me-ach">—</b><i>SUCCÈS</i></span></div>
           <button class="ah-secondary" id="ah-me-open">Mon profil</button>
+        </div>
+
+        <div class="ah-tiles" id="ah-tiles">
+          <button class="ah-tile" data-goto="news"><span class="ah-ico">📰</span><b>Actualités</b><small id="ah-t-news">Les dernières infos</small></button>
+          <button class="ah-tile" data-goto="rules"><span class="ah-ico">📜</span><b>Règlement</b><small>Les règles du serveur</small></button>
+          <button class="ah-tile" data-goto="map"><span class="ah-ico">🗺️</span><b>Carte</b><small>Lieux et points d'intérêt</small></button>
+          <button class="ah-tile" data-goto="achievements"><span class="ah-ico">🏆</span><b>Succès</b><small id="ah-t-ach">Ta progression</small></button>
+          <button class="ah-tile" data-goto="media"><span class="ah-ico">🖼️</span><b>Média</b><small>Captures des joueurs</small></button>
+          <button class="ah-tile" data-goto="staff"><span class="ah-ico">👥</span><b>Équipe</b><small>Le staff d'Anomia</small></button>
+          <button class="ah-tile" data-goto="assets"><span class="ah-ico">🧹</span><b>Fichiers</b><small>Vider le cache FiveM</small></button>
         </div>
 
         <div class="ah-livebar hidden" id="ah-livebar"><span id="ah-livebar-text"></span><button class="ah-secondary" id="ah-livebar-btn">Voir le live</button></div>
@@ -231,18 +241,7 @@
           <div class="telemetry-item"><span class="telemetry-label">Joueurs</span><span class="telemetry-value" id="kbs-players">—</span></div>
           <div class="telemetry-item"><span class="telemetry-label">Ping</span><span class="telemetry-value dim" id="kbs-ping">—</span></div>
           <div class="telemetry-item"><span class="telemetry-label">Version</span><span class="telemetry-value" id="kbs-version">—</span></div>
-          <div class="telemetry-item"><span class="telemetry-label">Mon temps de jeu</span><span class="telemetry-value" id="kbs-time">—</span></div>
-        </div>
-        <div class="kb-playtime glass" id="kb-playtime">
-          <span class="kb-eyebrow">MON TEMPS DE JEU SUR KANNIBAVENTURE</span>
-          <div class="kbp-grid">
-            <div><b id="kbp-day">—</b><span>Aujourd'hui</span></div>
-            <div><b id="kbp-week">—</b><span>7 jours</span></div>
-            <div><b id="kbp-month">—</b><span>30 jours</span></div>
-            <div><b id="kbp-year">—</b><span>12 mois</span></div>
-            <div><b id="kbp-total">—</b><span>Total</span></div>
-          </div>
-          <p class="kbp-note">Compte le temps passé en jeu quand tu lances Minecraft depuis le launcher.</p>
+          <div class="telemetry-item telemetry-item-clickable" id="kbs-time-item" title="Voir le détail"><span class="telemetry-label">Mon temps de jeu</span><span class="telemetry-value" id="kbs-time">—</span></div>
         </div>
       </section>
 
@@ -258,7 +257,6 @@
             <button class="btn-connect" id="kbadm-maint-btn">Activer la maintenance</button>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-            <button class="btn-copy" id="kbadm-copy">Copier l'adresse</button>
             <button class="btn-copy" id="kbadm-refresh">Actualiser</button>
           </div>
         </div>
@@ -670,7 +668,7 @@
           <button class="theme-chip hidden" data-theme="anomia" style="--c:#2dd4bf"><i></i>Anomia ✦</button>
           <button class="theme-chip hidden" data-theme="cubic" style="--c:#f97316"><i></i>Cubique ▣</button>
           <button class="theme-chip hidden" data-theme="noel" style="--c:#ef4444"><i></i>Noël 🎄</button>
-          <button class="theme-chip hidden" data-theme="logorain" style="--c:#a855f7"><i></i>Pluie de logos 💜</button>
+          <button class="theme-chip hidden" data-theme="subman" style="--c:#a855f7"><i></i>Subman 💜</button>
           <button class="theme-chip hidden" data-theme="gold" style="--c:#facc15"><i></i>Or ✨</button>
           <button class="theme-chip hidden" data-theme="matrix" style="--c:#00ff41"><i></i>Matrix ▮</button>
         </div>
@@ -679,6 +677,7 @@
       <div class="settings-section">
         <span class="settings-label">Options</span>
         <label class="opt-row"><input type="checkbox" id="opt-animated-bg" /><span>Fond animé (particules)</span></label>
+        <label class="opt-row"><input type="checkbox" id="opt-session-summary" /><span>Résumé à la fin d'une session de jeu</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-hide-offline" /><span>Masquer les streamers hors live</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-streamer-mode" /><span>Mode présentation (cache pseudo, avatar et IP)</span></label>
       </div>
@@ -779,5 +778,6 @@
 
   <script src="renderer.js"></script>
   <script src="features.js"></script>
+  <script src="lightbox.js"></script>
 </body>
 </html>

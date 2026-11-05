@@ -556,6 +556,12 @@ function updateConnectButtonState() {
     if (pc) pc.textContent = `🗓 Retour prévu en ${anomiaSrv.connectLabel || "2027"}`;
   }
 
+  if (document.body.classList.contains("is-offline")) {
+    btn.disabled = true; btn.textContent = "📡 Hors ligne";
+    const st0 = document.getElementById("status-text"); if (st0) st0.textContent = "Tu es hors ligne";
+    const tm0 = document.getElementById("tm-status"); if (tm0) tm0.textContent = "HORS LIGNE";
+    return;
+  }
   // Serveur en pause (ex. Anomia jusqu'en 2027) : bouton grisé avec la date, sans connexion possible
   const anomia = getServer("anomia");
   if (anomia && anomia.status !== "online" && !isAdminUnlocked) {
@@ -585,6 +591,7 @@ function updateConnectButtonState() {
 }
 
 async function refreshStatus() {
+  if (document.body.classList.contains("is-offline")) { updateConnectButtonState(); return; }
   const dot = document.getElementById("status-dot");
   const text = document.getElementById("status-text");
   const count = document.getElementById("players-count");
@@ -1322,6 +1329,7 @@ document.getElementById("tm-jobs-item").addEventListener("click", async () => {
 });
 
 // --- Galerie média ---
+let mediaList = [];
 function renderMediaItem(item) {
   const el = document.createElement("div");
   el.className = "media-item";
@@ -1329,7 +1337,7 @@ function renderMediaItem(item) {
     <img src="${escapeHtml(item.url)}" alt="" loading="lazy" />
     <div class="media-item-author">${escapeHtml(item.author || "")}${item.date ? " · " + escapeHtml(item.date) : ""}</div>
   `;
-  el.addEventListener("click", () => window.anomia.openExternal(item.url));
+  el.addEventListener("click", () => { if (window.openLightbox) window.openLightbox(mediaList, mediaList.indexOf(item)); else window.anomia.openExternal(item.url); });
   return el;
 }
 
@@ -1344,6 +1352,7 @@ async function loadMedia() {
     grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Aucun media partagé pour le moment.</p>`;
     return;
   }
+  mediaList = media;
   media.forEach((item) => grid.appendChild(renderMediaItem(item)));
 }
 

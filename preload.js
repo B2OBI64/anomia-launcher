@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld("anomia", {
   getAppVersion: () => ipcRenderer.invoke("app:version"),
 
   // Galerie média
+  copyImage: (url) => ipcRenderer.invoke("media:copyImage", url),
   getMedia: () => ipcRenderer.invoke("media:get"),
 
   // Diagnostic réseau
@@ -72,6 +73,7 @@ contextBridge.exposeInMainWorld("anomia", {
   checkSub: () => ipcRenderer.invoke("sub:check"),
   toggleMaintenance: (enable) => ipcRenderer.invoke("admin:toggleMaintenance", enable),
   isOnline: () => ipcRenderer.invoke("network:isOnline"),
+  onSessionEnded: (cb) => { ipcRenderer.removeAllListeners("session:ended"); ipcRenderer.on("session:ended", (e, d) => cb(d)); },
   onNetworkStatus: (cb) => { ipcRenderer.removeAllListeners("network:status"); ipcRenderer.on("network:status", (e, online) => cb(online)); },
   getGameState: () => ipcRenderer.invoke("game:getState"),
   getNotes: () => ipcRenderer.invoke("notes:get"),

@@ -844,6 +844,22 @@ ipcMain.handle("cache:clear", async () => {
 // ============================================================
 // Calendrier des events RP
 // ============================================================
+// Copie une image (https uniquement, 15 Mo max) dans le presse-papiers
+ipcMain.handle("media:copyImage", async (event, url) => {
+  try {
+    const u = new URL(String(url || ""));
+    if (u.protocol !== "https:") return { ok: false };
+    const { clipboard, nativeImage, net } = require("electron");
+    const res = await net.fetch(u.toString());
+    if (!res.ok || !/^image\//i.test(res.headers.get("content-type") || "")) return { ok: false };
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > 15 * 1024 * 1024) return { ok: false };
+    const img = nativeImage.createFromBuffer(buf);
+    if (img.isEmpty()) return { ok: false };
+    clipboard.writeImage(img);
+    return { ok: true };
+  } catch { return { ok: false }; }
+});
 ipcMain.handle("media:get", async () => {
   let media = [];
   if (config.media.remoteUrl) {
@@ -905,8 +921,6 @@ ipcMain.handle("network:diagnose", async () => {
   }
 
   return {
-    ip: config.server.ip,
-    port: config.server.port,
     tcpOk: tcp.ok,
     tcpLatencyMs: tcp.latencyMs,
     tcpError: tcp.error || null,
@@ -1408,12 +1422,15 @@ ipcMain.handle("kb:getStatus", async () => {
   const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
   if (!kb.serverAddress) return { ok: false, error: "Adresse du serveur non configurée." };
   const isAdmin = cachedStaffRole === "admin";
-  const [r, m] = await Promise.all([
-    pingMinecraft(kb.serverAddress, kb.serverPort || 25565),
-    staffRequest("kbstatus", "public").catch(() => null)
-  ]);
+  // 1) Anomia (hôte FiveM, toujours allumé) : maintenance + statut Minecraft en cache (évite de solliciter le serveur Minecraft)
+  const m = await staffRequest("kbstatus", "public").catch(() => null);
+  const cached = m && m.status === 200 && m.body && m.body.kb && typeof m.body.kb.online === "boolean" ? m.body.kb : null;
+  // 2) Sinon (ou pour l'admin, qui veut la liste des joueurs) : ping direct
+  const r = cached && !isAdmin
+    ? { online: cached.online, players: cached.players, maxPlayers: cached.maxPlayers, version: cached.version, latencyMs: null, cached: true }
+    : await pingMinecraft(kb.serverAddress, kb.serverPort || 25565);
   const maintenance = !!(m && m.status === 200 && m.body && m.body.kbMaintenance);
-  const out = { ok: true, address: `${kb.serverAddress}:${kb.serverPort || 25565}`, maintenance, maintenanceKnown: !!(m && m.status === 200), ...r };
+  const out = { ok: true, maintenance, maintenanceKnown: !!(m && m.status === 200), ...r };
   if (!isAdmin) { delete out.names; delete out.motd; }
   return out;
 });
@@ -1532,9 +1549,9 @@ ipcMain.handle("kb:launch", async () => {
     else if (process.platform === "win32") {
       const { spawn } = require("child_process");
       spawn("explorer.exe", ["shell:AppsFolder\\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft"], { detached: true, stdio: "ignore" }).unref();
-    } else return { ok: false, error: "Minecraft Launcher introuvable.", address: addr };
-  } catch (e) { return { ok: false, error: "Impossible de lancer le Minecraft Launcher : " + e.message, address: addr }; }
-  return { ok: true, address: addr, version: kb.minecraftVersionId || kb.minecraftVersion || "26.1.2", ...prep, launcherFound: Boolean(exe) };
+    } else return { ok: false, error: "Minecraft Launcher introuvable." };
+  } catch (e) { return { ok: false, error: "Impossible de lancer le Minecraft Launcher : " + e.message }; }
+  return { ok: true, version: kb.minecraftVersionId || kb.minecraftVersion || "26.1.2", ...prep, launcherFound: Boolean(exe) };
 });
 
 // ------------------------------------------------------------------
@@ -1573,15 +1590,37 @@ function readKbSessions() { try { const a = JSON.parse(fs.readFileSync(kbSession
 function writeKbSessions(a) { try { fs.writeFileSync(kbSessionsPath(), JSON.stringify(a.slice(-3000))); } catch {} }
 const pidAlive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === "EPERM"; } };
 let kbSessionTimer = null;
+// Résumé de fin de session (fenêtre + notification Windows si le launcher n'est pas au premier plan)
+function emitSessionEnded(game, seconds, todaySeconds) {
+  if (seconds < 120) return; // sessions trop courtes ignorées
+  const label = game === "anomia" ? "Anomia RP" : "KannibAventure";
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("session:ended", { game, label, seconds, todaySeconds });
+    try {
+      if (!mainWindow.isFocused()) {
+        const { Notification } = require("electron");
+        if (Notification.isSupported()) new Notification({ title: `Session ${label} terminée`, body: `Tu as joué ${Math.floor(seconds / 3600) ? Math.floor(seconds / 3600) + " h " : ""}${Math.floor((seconds % 3600) / 60)} min.` }).show();
+      }
+    } catch {}
+  }
+}
+const kbLiveStarts = new Set(); // sessions démarrées pendant cette exécution du launcher
 function kbTick() {
   const a = readKbSessions(); let any = false;
-  for (const s of a) { if (!s.open) continue; if (s.pid && pidAlive(s.pid)) { s.last = Date.now(); any = true; } else s.open = false; }
+  for (const s of a) {
+    if (!s.open) continue;
+    if (s.pid && pidAlive(s.pid)) { s.last = Date.now(); any = true; }
+    else {
+      s.open = false;
+      if (kbLiveStarts.has(s.start)) { kbLiveStarts.delete(s.start); try { emitSessionEnded("kannibaventure", Math.round(((s.last || s.start) - s.start) / 1000), kbPlaytime().day); } catch {} }
+    }
+  }
   writeKbSessions(a);
   if (!any && kbSessionTimer) { clearInterval(kbSessionTimer); kbSessionTimer = null; }
   return any;
 }
 function kbEnsureTimer() { if (!kbSessionTimer) kbSessionTimer = setInterval(kbTick, 30000); }
-function kbTrackStart(pid) { const a = readKbSessions(); a.push({ start: Date.now(), last: Date.now(), pid, open: true }); writeKbSessions(a); kbEnsureTimer(); }
+function kbTrackStart(pid) { const t0 = Date.now(); kbLiveStarts.add(t0); const a = readKbSessions(); a.push({ start: t0, last: Date.now(), pid, open: true }); writeKbSessions(a); kbEnsureTimer(); }
 function kbPlaytime() {
   const now = Date.now(), d = new Date();
   const win = { day: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), week: now - 7 * 864e5, month: now - 30 * 864e5, year: now - 365 * 864e5, total: 0 };
@@ -1696,7 +1735,8 @@ ipcMain.handle("kb:launchDirect", async () => {
     let plan;
     try { plan = buildLaunch({ root, gameDir, versionId, auth: mc.mclc(), quickPlay: addr, nativesDir, memory: kbMemory() }); }
     catch (e) { return { ok: false, fallback: true, reason: e.message }; }
-    klog("# commande : " + java + " " + plan.args.join(" "));
+    // Journal partageable : on masque le jeton d'accès et l'adresse du serveur
+    klog("# commande : " + java + " " + plan.args.join(" ").replace(/(--accessToken\s+)\S+/g, "$1***").replace(/(--quickPlayMultiplayer\s+)\S+/g, "$1***").split(addr).join("***"));
     const { spawn } = require("child_process");
     const out = fs.openSync(logFile, "a");
     const child = spawn(java, plan.args, { cwd: gameDir, detached: true, stdio: ["ignore", out, out] });
@@ -1708,7 +1748,7 @@ ipcMain.handle("kb:launchDirect", async () => {
     if (early) return { ok: false, fallback: true, reason: early };
     child.unref();
     if (child.pid) kbTrackStart(child.pid);
-    return { ok: true, direct: true, address: addr, version, player: mc.profile && mc.profile.name };
+    return { ok: true, direct: true, version, player: mc.profile && mc.profile.name };
   } catch (e) {
     klog("# erreur : " + ((e && e.stack) || e));
     return { ok: false, fallback: true, reason: (e && e.message) || "Erreur inattendue." };
@@ -1769,9 +1809,21 @@ function isFiveMRunning() {
 const PLAYTIME_POLL_MS = 60000; // vérifie toutes les minutes
 const PLAYTIME_PERIODS = ["day", "week", "month", "year"];
 
+let fivemSince = null;
 async function pollPlaytime() {
   const running = await isFiveMRunning();
-  if (!running) return;
+  if (running && !fivemSince) fivemSince = Date.now();
+  if (!running) {
+    if (fivemSince) {
+      const secs = Math.round((Date.now() - fivemSince) / 1000);
+      fivemSince = null;
+      try {
+        const st = (loadSettings().playtimeStats || {}).day;
+        emitSessionEnded("anomia", secs, st && st.key === getPeriodKeys().day ? st.seconds : secs);
+      } catch {}
+    }
+    return;
+  }
 
   const keys = getPeriodKeys();
   const settings = loadSettings();

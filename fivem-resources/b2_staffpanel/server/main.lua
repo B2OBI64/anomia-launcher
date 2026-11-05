@@ -34,6 +34,27 @@ local MOD_ROLE_DEFAULT = "1434845539094233098"  -- role Modérateur Anomia
 local SUB_ROLE_DEFAULT = "1433850593759465554"   -- role abonne Twitch sur Kannibal Team (theme "pluie de logos")
 local KB_MAINT_KEY = "kb_maintenance"           -- etat de maintenance de KannibAventure (persistant)
 local roleCache = {} -- jeton Discord -> { role, expires } (60 s)
+-- Statut Minecraft mis en cache (1 requete par minute max, quel que soit le nombre de joueurs du launcher)
+-- Convar : set anomia_kb_host "ip:port"  (si absente, le launcher interroge lui-meme le serveur)
+local kbCache = { at = 0, data = nil, busy = false }
+local function refreshKb(cb)
+    local host = GetConvar("anomia_kb_host", "")
+    if host == "" then cb(nil) return end
+    if kbCache.data and (os.time() - kbCache.at) < 60 then cb(kbCache.data) return end
+    if kbCache.busy then cb(kbCache.data) return end
+    kbCache.busy = true
+    PerformHttpRequest("https://api.mcsrvstat.us/3/" .. host, function(status, body)
+        kbCache.busy = false
+        local ok, j = pcall(json.decode, body or "")
+        if status == 200 and ok and type(j) == "table" then
+            kbCache.data = { online = j.online and true or false, players = j.players and j.players.online or 0, maxPlayers = j.players and j.players.max or 0, version = j.version }
+            kbCache.at = os.time()
+        elseif not kbCache.data then
+            kbCache.data = nil
+        end
+        cb(kbCache.data)
+    end, "GET", "", { ["User-Agent"] = "KannibalLauncher/1.0" })
+end
 local subCache = {}  -- jeton Discord -> { sub, expires } (120 s)
 
 local function getModRole(code)
@@ -229,7 +250,8 @@ SetHttpHandler(function(req, res)
     local ppath = tostring(req.path or "")
     -- Routes publiques (aucun role requis)
     if ppath:find("kbstatus", 1, true) then
-        send(res, 200, { kbMaintenance = GetResourceKvpString(KB_MAINT_KEY) == "true" })
+        local maint = GetResourceKvpString(KB_MAINT_KEY) == "true"
+        refreshKb(function(kb) send(res, 200, { kbMaintenance = maint, kb = kb }) end)
         return
     end
     if ppath:find("subcheck", 1, true) then

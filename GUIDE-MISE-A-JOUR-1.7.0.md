@@ -76,3 +76,6 @@ Clique sur ton avatar (profil) : une ligne « ⚠ Staff : … » dit pourquoi. C
 
 ### Modifier le tutoriel (1.9.3)
 Les étapes sont dans `src/tour.json`. Pour en ajouter une, copie un bloc : `title`, `text`, `selector` (élément à entourer, facultatif : sans lui la bulle est au centre), `go` (`{"server":"anomia","view":"home"}` pour changer d'espace avant l'étape) et `staff:true` (étape réservée aux admins/modos). Une étape dont la cible n'existe pas est passée automatiquement.
+
+## 1.9.4 — cache du statut KannibAventure (serveur FiveM)
+Remplace de nouveau `b2_staffpanel`, puis ajoute dans `server.cfg` : `set anomia_kb_host "IP:PORT"` (adresse du serveur Minecraft). L'hôte FiveM interroge alors le statut Minecraft au plus 1 fois par minute (via api.mcsrvstat.us) et les launchers lisent ce cache. Sans cette ligne, rien ne casse : le launcher interroge directement le serveur comme avant.

@@ -1,10 +1,7 @@
-# 1.9.3 — Tutoriel, maintenance par serveur et accueils
+# 1.9.4 — Médias en grand, hors ligne et résumé de session
 
-- Nouveau tutoriel en bulles (20 étapes, pensé multi-serveur) : il te guide dans les serveurs, change d'espace tout seul et s'ouvre au premier lancement ; « Revoir le tutoriel » dans les réglages.
-- La maintenance d'Anomia ne s'affiche plus que dans Anomia ; KannibAventure a sa propre maintenance (activable par les admins, bandeau et bouton bloqué pour les joueurs).
-- Accueil Anomia : tableau « État d'Anomia » (statut, joueurs, ping moyen, entreprises ouvertes, temps de jeu), tuiles et anciens textes retirés.
-- KannibAventure : vrai accueil avec « État de KannibAventure » (statut, joueurs, ping, version, ton temps de jeu).
-- KannibAventure : mémoire, dossier du jeu, journal et Réparer sont dans l'onglet Paramètres du serveur.
-- Nouveau thème « Pluie de logos » pour les abonnés Twitch (rôle sur le Discord Kannibal Team).
-- Fond : 3 boutons — fond clair, fond noir, fond noir violet.
-- Le Discord principal s'appelle désormais « Kannibal Team ».
+- Médias d'Anomia : clique sur une image pour l'agrandir (flèches pour naviguer, Échap, croix ou clic à côté pour fermer, auteur et date, boutons Ouvrir et Copier l'image).
+- Statut de KannibAventure : lu via Anomia (mis en cache), le serveur Minecraft n'est plus interrogé par chaque joueur.
+- Mode hors ligne : bandeau clair, boutons de connexion désactivés (« Hors ligne ») et statuts adaptés quand tu n'as plus internet.
+- Résumé de fin de session : à la fermeture d'Anomia ou de KannibAventure, une fenêtre (et une notification Windows si le launcher est en arrière-plan) indique le temps joué et le total du jour. Désactivable dans les réglages.
+- Thèmes : ils fonctionnent maintenant avec tous les fonds (clair, noir et noir violet), avec des teintes adaptées sur fond clair.
