@@ -1,13 +1,9 @@
-# 1.9.7 — Nouvelle organisation de l'accueil
+# 1.9.8 — Accueil en tuiles d'état
 
-- Accueil réorganisé en catégories, comme sur Anomia et KannibAventure : Accueil, Communauté, Actualités, Média, Clips et Succès.
-- Communauté : uniquement les serveurs Discord. Les clips ont leur propre catégorie.
-- Actualités et Média de l'accueil : Anomia et KannibAventure réunis, avec un filtre Tous / Anomia RP / KannibAventure.
-- Média : Anomia n'affiche que ses médias, et KannibAventure a maintenant son propre onglet Média (la galerie se remplira dès que le salon sera relié).
-- Succès de l'accueil : tous les succès rangés par catégorie (Anomia RP, KannibAventure, Launcher).
-- Pause automatique : après 5 minutes sans activité, l'interface disparaît et seul le thème animé reste. Un mouvement de souris ou une touche la réaffiche (le bouton ⏸ est supprimé).
-- Nouveaux succès du launcher : « Polyvalent » (secret, avoir lancé chaque serveur) et « Viewers » (or, regarder un live depuis le launcher).
-- Succès KannibAventure : heures de jeu et avancements Minecraft (natifs, bientôt ceux des mods).
-- Nouvelle catégorie « Joueurs » sur l'accueil : joueurs connectés sur Anomia et KannibAventure, avec une fiche profil accessible à tous.
-- État du serveur en tuiles (Statut, Joueurs, Ping moyen, Entreprises ouvertes, Temps de jeu) sur Anomia et KannibAventure : le tableau disparaît, un clic sur une tuile ouvre le même détail qu'avant.
-- Nouvelle catégorie F.A.Q sur Anomia.
+- Accueil d'Anomia épuré : seules restent les tuiles d'état (Statut, Joueurs, Ping moyen, Entreprises ouvertes, Temps de jeu). La navigation se fait avec la barre de catégories.
+- Accueil de KannibAventure : même présentation en tuiles.
+- Visite guidée mise à jour : nouvelles catégories de l'accueil, joueurs, succès et tuiles d'état.
+- Pause automatique réglable dans les options : activation et délai (2, 5, 10 ou 30 minutes).
+- Le launcher se rouvre sur la dernière catégorie visitée, y compris dans l'accueil.
+- Nouvelle section « État du launcher » dans les réglages : un voyant vert ou rouge pour Discord, l'hôte Anomia, GitHub et FiveM.
+- Nouveau logo Kannibal Launcher : icône de l'application et de la barre des tâches, écran de démarrage et profil.

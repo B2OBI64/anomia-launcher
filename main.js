@@ -1278,6 +1278,22 @@ ipcMain.handle("kb:getPlayers", async () => {
   return { ok: Boolean(kb), online: Boolean(kb && kb.online), names: (kb && kb.list) || [], count: kb ? kb.players : 0, max: kb ? kb.maxPlayers : 0 };
 });
 
+// --- État du launcher : un voyant par service (aucune adresse n'est renvoyée) ---
+ipcMain.handle("health:launcher", async () => {
+  const timed = async (fn) => { const t = Date.now(); try { const ok = await fn(); return { ok: Boolean(ok), ms: Date.now() - t }; } catch { return { ok: false, ms: Date.now() - t }; } };
+  const [github, anomia] = await Promise.all([
+    timed(() => fetchJson(config.news.remoteUrl, 6000).then(() => true)),
+    timed(async () => { const r = await staffRequest("kbstatus", "public"); return r.status === 200; })
+  ]);
+  let fivem = null;
+  if (process.platform === "win32") { try { fivem = Boolean(findFiveMExe()); } catch { fivem = false; } }
+  return {
+    discord: { ok: Boolean(discordToken) },
+    anomia, github,
+    fivem: fivem === null ? { ok: false, na: true } : { ok: fivem }
+  };
+});
+
 ipcMain.handle("launcherAch:state", () => ({ list: launcherDefs(), unlocked: getLauncherAch().unlocked }));
 
 ipcMain.handle("achievements:getTitlePriority", () => (LA.exclusiveTitles || []).concat(config.achievements.titlePriority || []));

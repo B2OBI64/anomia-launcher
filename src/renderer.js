@@ -2965,3 +2965,21 @@ async function openPlayerProfile(server, name) {
     <p style="margin:8px 0">${rar}</p>
     ${top ? `<p style="font-size:12px;color:var(--text-dim);margin:10px 0 4px">Plus beaux succès</p><ul class="player-top">${top}</ul>` : ""}`);
 }
+
+
+// --- État du launcher (réglages) ---
+document.getElementById("health-launcher-btn").addEventListener("click", async (ev) => {
+  const btn = ev.currentTarget, box = document.getElementById("health-launcher");
+  btn.disabled = true; btn.textContent = "Vérification…";
+  let r = null;
+  try { r = await window.anomia.getLauncherHealth(); } catch (e) { r = null; }
+  btn.disabled = false; btn.textContent = "Vérifier à nouveau";
+  if (!r) { box.innerHTML = `<p class="hc-empty">Vérification impossible.</p>`; return; }
+  const rows = [
+    ["Connexion Discord", r.discord.ok, r.discord.ok ? "Connecté" : "Non connecté"],
+    ["Hôte Anomia (profils, statut)", r.anomia.ok, r.anomia.ok ? r.anomia.ms + " ms" : "Injoignable"],
+    ["GitHub (actus, mises à jour)", r.github.ok, r.github.ok ? r.github.ms + " ms" : "Injoignable"],
+    ["FiveM détecté", r.fivem.ok, r.fivem.na ? "Windows uniquement" : (r.fivem.ok ? "Installé" : "Introuvable")]
+  ];
+  box.innerHTML = rows.map(([n, ok, d]) => `<div class="hl-row"><span class="hl-dot ${ok ? "ok" : "ko"}"></span><b>${n}</b><small>${d}</small></div>`).join("");
+});

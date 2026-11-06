@@ -14,7 +14,33 @@
  {
   "title": "L'accueil général",
   "selector": "[data-server=\"hub\"]",
-  "text": "Le bouton maison te ramène à l'accueil commun : streamers en live, nouveautés de chaque serveur et clips de la communauté."
+  "text": "Le bouton maison te ramène à l'accueil commun. Il a ses propres catégories, juste en dessous."
+ },
+ {
+  "title": "Les catégories de l'accueil",
+  "selector": "#tabbar",
+  "go": {
+   "server": "hub"
+  },
+  "text": "Accueil (streamers en live), Communauté (les Discord), Joueurs (qui est en ligne, avec la fiche profil de chacun), Actualités et Média de tous les serveurs, Clips, et Succès : tous tes succès rangés par catégorie."
+ },
+ {
+  "title": "Qui est en ligne ?",
+  "selector": ".tab-item[data-view=\"hub-players\"]",
+  "go": {
+   "server": "hub",
+   "view": "hub-players"
+  },
+  "text": "La liste des joueurs connectés sur chaque serveur. Clique sur un pseudo pour voir sa fiche : titre, succès débloqués et heures de jeu."
+ },
+ {
+  "title": "Tous tes succès",
+  "selector": ".tab-item[data-view=\"hub-ach\"]",
+  "go": {
+   "server": "hub",
+   "view": "hub-ach"
+  },
+  "text": "Les succès d'Anomia, de KannibAventure et du launcher, avec ta progression. Certains sont secrets : le launcher cache des surprises à trouver…"
  },
  {
   "title": "Connexion Discord",
@@ -28,7 +54,7 @@
    "server": "anomia",
    "view": "home"
   },
-  "text": "Une fois dans un serveur, cette barre montre ses pages : actualités, règlement, carte, fichiers… Elles changent d'un serveur à l'autre."
+  "text": "Une fois dans un serveur, cette barre montre ses pages : actualités, règlement, F.A.Q, carte, fichiers… Elles changent d'un serveur à l'autre."
  },
  {
   "title": "Anomia RP : se connecter",
@@ -46,7 +72,7 @@
    "server": "anomia",
    "view": "home"
   },
-  "text": "Statut, joueurs connectés, ping moyen, entreprises ouvertes et temps de jeu. La maintenance d'Anomia n'apparaît que dans l'espace Anomia."
+  "text": "Cinq tuiles : statut, joueurs connectés, ping moyen, entreprises ouvertes et temps de jeu. Clique sur le ping, les entreprises ou le temps de jeu pour voir le détail. La maintenance d'Anomia n'apparaît que dans l'espace Anomia."
  },
  {
   "title": "Succès et profil Anomia",
@@ -82,7 +108,7 @@
    "server": "kannibaventure",
    "view": "kb-home"
   },
-  "text": "Statut, joueurs, ping, version et ton temps de jeu. KannibAventure a sa propre maintenance, indépendante d'Anomia."
+  "text": "Statut, joueurs, ping, version et ton temps de jeu (clique dessus pour le détail jour, semaine, mois, année). KannibAventure a sa propre maintenance, indépendante d'Anomia."
  },
  {
   "title": "Fichiers et mods",
@@ -109,7 +135,7 @@
    "server": "kannibaventure",
    "view": "kb-home"
   },
-  "text": "Chaque serveur a son propre règlement. Lis celui de KannibAventure avant de te connecter, et la FAQ pour les questions courantes."
+  "text": "Chaque serveur a son propre règlement et sa F.A.Q. Lis le règlement avant de te connecter."
  },
  {
   "title": "Ton bloc-notes",
@@ -132,7 +158,7 @@
  {
   "title": "Personnalise ton launcher",
   "selector": "#btn-settings",
-  "text": "Fond clair, noir ou noir violet, couleur d'accent, thèmes spéciaux (dont « Pluie de logos » pour les abonnés Twitch), fond animé et mode présentation pour tes lives."
+  "text": "Fond clair, noir ou noir violet, couleur d'accent, thèmes spéciaux (dont « Pluie de logos » pour les abonnés Twitch), fond animé, mode présentation pour tes lives, et pause automatique quand tu es inactif."
  },
  {
   "title": "Outils du staff",

@@ -2474,3 +2474,7 @@ body.zen #fx-bg{z-index:5}
 .telemetry-value{font-size:20px}
 .telemetry-label{margin-bottom:6px}
 .telemetry-value{font-size:18px;overflow-wrap:anywhere}
+
+.hl-list{display:flex;flex-direction:column;gap:6px}
+.hl-row{display:flex;align-items:center;gap:10px;font-size:13px}.hl-row small{margin-left:auto;opacity:.65}
+.hl-dot{width:10px;height:10px;border-radius:50%;flex:none}.hl-dot.ok{background:#22c55e;box-shadow:0 0 8px #22c55e88}.hl-dot.ko{background:#ef4444;box-shadow:0 0 8px #ef444488}

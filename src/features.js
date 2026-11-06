@@ -8,6 +8,7 @@
   const api = window.anomia;
   let S = {};            // copie locale des réglages
   let appVersion = "";
+  window.getLauncherSettings = () => S;
   const ready = api.getSettings().then((s) => { S = s || {}; }).catch(() => {});
   function save(patch) { Object.assign(S, patch); try { api.setSettings(patch); } catch (e) { /* ignore */ } }
   const esc = (t) => (typeof escapeHtml === "function" ? escapeHtml(String(t == null ? "" : t)) : String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));
@@ -168,6 +169,8 @@
     if (typeof loadHomeMe === "function") loadHomeMe();
     if (!$("profile-panel").classList.contains("hidden")) fillProfilePanel();
   }
+  $("opt-auto-pause").addEventListener("change", (e) => { save({ autoPause: e.target.checked }); $("opt-auto-pause-min").disabled = !e.target.checked; window.dispatchEvent(new Event("autopause-changed")); });
+  $("opt-auto-pause-min").addEventListener("change", (e) => { save({ autoPauseMin: Number(e.target.value) }); window.dispatchEvent(new Event("autopause-changed")); });
   $("opt-animated-bg").addEventListener("change", (e) => { save({ animatedBg: e.target.checked }); syncFx(); });
   $("opt-session-summary").addEventListener("change", (e) => save({ sessionSummary: e.target.checked }));
   api.onSessionEnded((d) => {
@@ -495,7 +498,7 @@
   const _selectServer = selectServer, _goToView = goToView;
   let restoring = false;
   selectServer = function (id) { _selectServer(id); document.body.dataset.server = id; if (id === "kannibaventure") loadKbState(); refreshKbAdminTab(); if (!restoring) save({ lastServer: id, lastView: null }); };
-  goToView = function (name) { _goToView(name); if (!restoring && currentServerId !== "hub" && name !== "admin") save({ lastView: name }); onViewShown(name); };
+  goToView = function (name) { _goToView(name); if (!restoring && name !== "admin" && (currentServerId !== "hub" || name.startsWith("hub-"))) save({ lastView: name }); onViewShown(name); };
   window.restoreLast = async function () {
     await ready;
     restoring = true;
@@ -505,7 +508,10 @@
         selectServer(id);
         const tab = (getServer(id).tabs || []).find((t) => t.view === S.lastView);
         if (tab) goToView(tab.view);
-      } else selectServer("hub");
+      } else {
+        selectServer("hub");
+        if (S.lastView && S.lastView.startsWith("hub-") && HUB_TABS.some((t) => t.view === S.lastView)) goToView(S.lastView);
+      }
     } finally { restoring = false; }
   };
 
@@ -690,6 +696,8 @@
     refreshThemeChips();
     dateEasterEggs();
     $("opt-animated-bg").checked = Boolean(S.animatedBg); syncFx();
+    $("opt-auto-pause").checked = S.autoPause !== false; $("opt-auto-pause-min").value = String(S.autoPauseMin || 5); $("opt-auto-pause-min").disabled = S.autoPause === false;
+    window.dispatchEvent(new Event("autopause-changed"));
     $("opt-session-summary").checked = S.sessionSummary !== false;
     $("opt-hide-offline").checked = Boolean(S.hideOffline); applyHideOffline(Boolean(S.hideOffline));
     $("opt-kb-mem").value = String(S.kbMemoryGb || 4);

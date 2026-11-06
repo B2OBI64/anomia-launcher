@@ -157,6 +157,7 @@ contextBridge.exposeInMainWorld("anomia", {
   getPlayerProfile: (server, name) => ipcRenderer.invoke("player:getProfile", server, name),
   getKbPlayers: () => ipcRenderer.invoke("kb:getPlayers"),
   onLauncherAch: (cb) => ipcRenderer.on("launcherAch:new", (e, defs) => cb(defs)),
+  getLauncherHealth: () => ipcRenderer.invoke("health:launcher"),
   getAchievements: () => ipcRenderer.invoke("achievements:get"),
   getAchievementTitlePriority: () => ipcRenderer.invoke("achievements:getTitlePriority"),
 

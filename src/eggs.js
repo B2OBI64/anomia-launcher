@@ -83,7 +83,10 @@
     });
   }
   // Pause automatique : après 5 min sans activité, l'interface disparaît et seul le thème animé reste.
-  const IDLE_MS = 5 * 60 * 1000;
+  function idleCfg() {
+    const s = (window.getLauncherSettings && window.getLauncherSettings()) || {};
+    return { on: s.autoPause !== false, ms: (s.autoPauseMin || 5) * 60 * 1000 };
+  }
   let zen = false, idleTimer = null;
   const zenHint = document.getElementById("zen-hint");
   function setZen(on) {
@@ -92,7 +95,13 @@
     window.dispatchEvent(new CustomEvent("zen", { detail: on }));
     if (on && zenHint) { zenHint.classList.add("show"); setTimeout(() => zenHint.classList.remove("show"), 3500); }
   }
-  function armIdle() { clearTimeout(idleTimer); idleTimer = setTimeout(() => setZen(true), IDLE_MS); }
+  function armIdle() {
+    clearTimeout(idleTimer);
+    const c = idleCfg();
+    if (!c.on) { if (zen) setZen(false); return; }
+    idleTimer = setTimeout(() => setZen(true), c.ms);
+  }
+  window.addEventListener("autopause-changed", armIdle);
   ["mousemove", "mousedown", "keydown", "wheel", "touchstart"].forEach((t) => document.addEventListener(t, (ev) => {
     if (zen) {
       // le 1er geste ne fait que réveiller le launcher (il n'active rien dessous)

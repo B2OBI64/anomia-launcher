@@ -148,17 +148,6 @@
           </div>
         </div>
 
-        <div class="ah-tiles" id="ah-tiles">
-          <button class="ah-tile" data-goto="news"><span class="ah-ico">📰</span><b>Actualités</b><small id="ah-t-news">Les dernières infos</small></button>
-          <button class="ah-tile" data-goto="rules"><span class="ah-ico">📜</span><b>Règlement</b><small>Les règles du serveur</small></button>
-          <button class="ah-tile" data-goto="faq"><span class="ah-ico">❓</span><b>F.A.Q</b><small>Questions fréquentes</small></button>
-          <button class="ah-tile" data-goto="map"><span class="ah-ico">🗺️</span><b>Carte</b><small>Lieux et points d'intérêt</small></button>
-          <button class="ah-tile" data-goto="achievements"><span class="ah-ico">🏆</span><b>Succès</b><small id="ah-t-ach">Ta progression</small></button>
-          <button class="ah-tile" data-goto="media"><span class="ah-ico">🖼️</span><b>Média</b><small>Captures des joueurs</small></button>
-          <button class="ah-tile" data-goto="staff"><span class="ah-ico">👥</span><b>Équipe</b><small>Le staff d'Anomia</small></button>
-          <button class="ah-tile" data-goto="assets"><span class="ah-ico">🧹</span><b>Fichiers</b><small>Vider le cache FiveM</small></button>
-        </div>
-
         <div class="ah-livebar hidden" id="ah-livebar"><span id="ah-livebar-text"></span><button class="ah-secondary" id="ah-livebar-btn">Voir le live</button></div>
 
         <div class="section-header">
@@ -731,6 +720,8 @@
       <div class="settings-section">
         <span class="settings-label">Options</span>
         <label class="opt-row"><input type="checkbox" id="opt-animated-bg" /><span>Fond animé (particules)</span></label>
+        <label class="opt-row"><input type="checkbox" id="opt-auto-pause" /><span>Pause automatique (masque l'interface quand tu es inactif)</span>
+          <select id="opt-auto-pause-min" style="background:var(--panel-solid);color:var(--text);border:1px solid var(--border);padding:4px 8px;margin-left:auto;"><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option></select></label>
         <label class="opt-row"><input type="checkbox" id="opt-session-summary" /><span>Résumé à la fin d'une session de jeu</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-hide-offline" /><span>Masquer les streamers hors live</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-streamer-mode" /><span>Mode présentation (cache pseudo, avatar et IP)</span></label>
@@ -745,6 +736,12 @@
       <div class="settings-section">
         <span class="settings-label">Versions</span>
         <button class="btn-copy" id="settings-versions" style="width:100%;">Revenir à une version précédente…</button>
+      </div>
+
+      <div class="settings-section">
+        <span class="settings-label">État du launcher</span>
+        <div id="health-launcher" class="hl-list"><p class="hc-empty">Clique sur « Vérifier » pour tester les connexions.</p></div>
+        <button class="btn-copy" id="health-launcher-btn" style="width:100%;margin-top:8px;">Vérifier</button>
       </div>
 
       <div class="settings-section">

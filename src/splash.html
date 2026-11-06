@@ -54,6 +54,14 @@
     animation: spin 1.1s linear infinite;
   }
 
+  .logo-full {
+    width: 300px;
+    max-width: 80vw;
+    object-fit: contain;
+    filter: drop-shadow(0 0 22px rgba(139, 92, 246, 0.5));
+    animation: pulse 2.2s ease-in-out infinite;
+  }
+
   .logo-img {
     width: 62px;
     height: 62px;
@@ -108,11 +116,7 @@
 </head>
 <body>
   <div class="splash">
-    <div class="logo-wrap">
-      <div class="logo-ring"></div>
-      <img src="../assets/logo.png" alt="" class="logo-img" />
-    </div>
-    <div class="brand">B<span class="accent">2</span> LAUNCHER</div>
+    <img src="../assets/logo-full.png" alt="Kannibal Launcher" class="logo-full" />
     <div class="status">Vérification des mises à jour…</div>
     <div class="tip" id="tip"></div>
     <div class="progress-track"><div class="progress-fill"></div></div>
