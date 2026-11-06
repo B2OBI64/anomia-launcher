@@ -1167,7 +1167,52 @@ ipcMain.handle("twitch:getClips", async () => {
 // ============================================================
 // Succès (nécessite une connexion Discord préalable, voir plus haut)
 // ============================================================
-ipcMain.handle("achievements:getTitlePriority", () => config.achievements.titlePriority || []);
+// --- Succès du launcher (locaux) : { unlocked: {key: timestamp}, eggs: {id: timestamp} } ---
+const LA = config.achievements.launcher;
+function getLauncherAch() {
+  const s = loadSettings().launcherAch || {};
+  return { unlocked: s.unlocked || {}, eggs: s.eggs || {} };
+}
+function unlockLauncherAch(key) {
+  const la = getLauncherAch();
+  const newly = [];
+  // « secretSeeker » ne se débloque jamais directement : uniquement via le compteur d'easter eggs
+  if (key !== "secretSeeker" && LA.list.some((d) => d.key === key) && !la.unlocked[key]) { la.unlocked[key] = Date.now(); newly.push(key); }
+  const eggCount = Object.keys(la.eggs).length;
+  if (eggCount >= LA.eggsRequired && !la.unlocked.secretSeeker) { la.unlocked.secretSeeker = Date.now(); newly.push("secretSeeker"); }
+  if (newly.length) saveSettings({ launcherAch: la });
+  return newly;
+}
+ipcMain.handle("launcherAch:unlock", (e, key) => {
+  const newly = unlockLauncherAch(String(key));
+  return { newly, defs: LA.list.filter((d) => newly.includes(d.key)) };
+});
+ipcMain.handle("launcherAch:egg", (e, id) => {
+  id = String(id);
+  if (!LA.eggs.includes(id)) return { newly: [], defs: [], eggs: 0, required: LA.eggsRequired, isNew: false };
+  const la = getLauncherAch();
+  const isNew = !la.eggs[id];
+  if (isNew) { la.eggs[id] = Date.now(); saveSettings({ launcherAch: la }); }
+  const newly = unlockLauncherAch("secretSeeker");
+  return { newly, defs: LA.list.filter((d) => newly.includes(d.key)), eggs: Object.keys(la.eggs).length, required: LA.eggsRequired, isNew };
+});
+function launcherDefs() { return LA.list.map((d) => Object.assign({ category: "launcher" }, d)); }
+function mergeLauncherAch(result) {
+  const la = getLauncherAch();
+  const achievements = Object.assign({}, result.achievements);
+  const unlockedAt = Object.assign({}, result.unlockedAt);
+  // Paliers « Chasseur de succès » : nombre total de succès débloqués (hors paliers eux-mêmes)
+  const hunterKeys = (LA.hunters || []).map((h) => h.key);
+  const base = new Set([...Object.keys(achievements).filter((k) => achievements[k]), ...Object.keys(la.unlocked)].filter((k) => !hunterKeys.includes(k)));
+  const launcherNew = [];
+  (LA.hunters || []).forEach((h) => { if (base.size >= h.n && !la.unlocked[h.key]) { la.unlocked[h.key] = Date.now(); launcherNew.push(h.key); } });
+  if (launcherNew.length) saveSettings({ launcherAch: la });
+  LA.list.forEach((d) => { if (la.unlocked[d.key]) { achievements[d.key] = true; unlockedAt[d.key] = la.unlocked[d.key]; } });
+  return Object.assign({}, result, { list: (result.list || config.achievements.list).concat(launcherDefs()), achievements, unlockedAt, launcherNew, launcherNewDefs: LA.list.filter((d) => launcherNew.includes(d.key)) });
+}
+ipcMain.handle("launcherAch:state", () => ({ list: launcherDefs(), unlocked: getLauncherAch().unlocked }));
+
+ipcMain.handle("achievements:getTitlePriority", () => (LA.exclusiveTitles || []).concat(config.achievements.titlePriority || []));
 
 ipcMain.handle("achievements:get", async () => {
   const profile = loadDiscordProfile();
@@ -1180,7 +1225,7 @@ ipcMain.handle("achievements:get", async () => {
     if (result.linked === false) {
       return { ok: true, linked: false, list: config.achievements.list };
     }
-    return { ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, playtimeSeconds: result.playtimeSeconds || 0, playtimeByServer: { anomia: result.playtimeSeconds || 0, kannibaventure: kbPlaytime().total }, list: config.achievements.list };
+    return mergeLauncherAch({ ok: true, linked: true, achievements: result.achievements || {}, unlockedAt: result.unlockedAt || {}, playtimeSeconds: result.playtimeSeconds || 0, playtimeByServer: { anomia: result.playtimeSeconds || 0, kannibaventure: kbPlaytime().total }, list: config.achievements.list });
   } catch (err) {
     return { ok: false, error: "La ressource b2_achievements ne répond pas (pas encore installée, ou serveur hors ligne).", list: config.achievements.list };
   }
@@ -1233,17 +1278,19 @@ ipcMain.handle("map:sendGpsWaypoint", async (event, x, y) => {
 // ============================================================
 const settingsPath = () => path.join(app.getPath("userData"), "settings.json");
 
+// Les réglages sont lus une seule fois puis gardés en mémoire (écriture directe sur disque à chaque sauvegarde)
+let settingsCache = null;
 function loadSettings() {
-  try {
-    return JSON.parse(fs.readFileSync(settingsPath(), "utf-8"));
-  } catch {
-    return {};
+  if (!settingsCache) {
+    try { settingsCache = JSON.parse(fs.readFileSync(settingsPath(), "utf-8")); } catch { settingsCache = {}; }
   }
+  return structuredClone(settingsCache);
 }
 
 function saveSettings(patch) {
   const current = loadSettings();
   const updated = { ...current, ...patch };
+  settingsCache = structuredClone(updated);
   try {
     fs.writeFileSync(settingsPath(), JSON.stringify(updated, null, 2), "utf-8");
   } catch (err) {
@@ -1795,15 +1842,21 @@ function getPeriodKeys(date = new Date()) {
   };
 }
 
+// Une seule commande « tasklist » à la fois, résultat gardé 10 s (plusieurs fonctions le demandent)
+let fivemCheck = { at: 0, value: false, pending: null };
 function isFiveMRunning() {
-  return new Promise((resolve) => {
-    if (process.platform !== "win32") return resolve(false);
+  if (process.platform !== "win32") return Promise.resolve(false);
+  if (Date.now() - fivemCheck.at < 10000) return Promise.resolve(fivemCheck.value);
+  if (fivemCheck.pending) return fivemCheck.pending;
+  fivemCheck.pending = new Promise((resolve) => {
     const { exec } = require("child_process");
-    exec('tasklist /FI "IMAGENAME eq FiveM.exe" /NH', (err, stdout) => {
-      if (err) return resolve(false);
-      resolve(stdout.toLowerCase().includes("fivem.exe"));
+    exec('tasklist /FI "IMAGENAME eq FiveM.exe" /NH', { windowsHide: true, timeout: 8000 }, (err, stdout) => {
+      const v = err ? false : stdout.toLowerCase().includes("fivem.exe");
+      fivemCheck = { at: Date.now(), value: v, pending: null };
+      resolve(v);
     });
   });
+  return fivemCheck.pending;
 }
 
 const PLAYTIME_POLL_MS = 60000; // vérifie toutes les minutes

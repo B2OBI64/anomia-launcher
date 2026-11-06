@@ -1,7 +1,7 @@
-# 1.9.4 — Médias en grand, hors ligne et résumé de session
+# 1.9.6 — Succès du launcher et secrets
 
-- Médias d'Anomia : clique sur une image pour l'agrandir (flèches pour naviguer, Échap, croix ou clic à côté pour fermer, auteur et date, boutons Ouvrir et Copier l'image).
-- Statut de KannibAventure : lu via Anomia (mis en cache), le serveur Minecraft n'est plus interrogé par chaque joueur.
-- Mode hors ligne : bandeau clair, boutons de connexion désactivés (« Hors ligne ») et statuts adaptés quand tu n'as plus internet.
-- Résumé de fin de session : à la fermeture d'Anomia ou de KannibAventure, une fenêtre (et une notification Windows si le launcher est en arrière-plan) indique le temps joué et le total du jour. Désactivable dans les réglages.
-- Thèmes : ils fonctionnent maintenant avec tous les fonds (clair, noir et noir violet), avec des teintes adaptées sur fond clair.
+- Nouveaux succès propres au launcher, avec le même système qu'Anomia : « Visite guidée », « Coup de peinture », la série « Chasseur de succès » (3 / 10 / 25 succès) et deux succès secrets.
+- Des easter eggs sont cachés dans le launcher, avec des indices sur l'accueil et à l'écran de démarrage. En trouver assez débloque un titre exclusif à afficher sur ton profil.
+- Accueil réorganisé : les serveurs Discord de la communauté passent à gauche, avec un résumé des succès par catégorie ; les clips tiennent dans une seule carte qui ouvre la liste complète.
+- Mode pause (bouton ⏸ en haut à droite) : toute l'interface disparaît, il ne reste que le thème animé. Clic ou touche pour revenir.
+- Notification en bas à droite à chaque succès débloqué (stockage local, fonctionne même sans connexion au serveur).

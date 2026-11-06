@@ -16,6 +16,7 @@
       <span class="brand-sub">LAUNCHER</span>
     </div>
     <div class="titlebar-controls">
+      <button id="btn-zen" class="win-btn" aria-label="Mode pause" title="Mode pause : ne garde que le thème animé">&#9208;</button>
       <button id="btn-min" class="win-btn" aria-label="Réduire">&#8211;</button>
       <button id="btn-max" class="win-btn" aria-label="Agrandir">&#9633;</button>
       <button id="btn-close" class="win-btn win-btn-close" aria-label="Fermer">&#10005;</button>
@@ -23,6 +24,7 @@
   </header>
 
   <canvas id="fx-bg" aria-hidden="true"></canvas>
+  <div id="zen-hint" class="zen-hint">Clique ou appuie sur une touche pour revenir</div>
   <div class="app-shell">
     <div class="offline-banner hidden" id="offline-banner">📡 Tu es hors ligne : pas de connexion internet. Le launcher affiche les derniers contenus enregistrés et la connexion aux serveurs est indisponible.</div>
 
@@ -183,6 +185,21 @@
 
       <!-- VUE ACCUEIL GLOBAL (B2 Launcher) : slider des serveurs + streamers -->
       <section class="view" id="view-hub">
+      <div class="hub-layout">
+      <aside class="hub-side" id="hub-side">
+        <div id="discord-section" class="hidden">
+          <div class="section-header"><div><span class="section-eyebrow">// DISCORD</span><h2>Rejoindre la communauté</h2></div></div>
+          <div class="discord-grid" id="discord-grid"></div>
+        </div>
+        <div class="home-card" id="ach-home-card">
+          <span class="section-eyebrow">// SUCCÈS</span>
+          <div id="ach-home-cats"><p class="hc-empty">Chargement…</p></div>
+          <p class="egg-hint" id="egg-hint"></p>
+          <button class="btn-copy" id="ach-home-open">Voir tous les succès</button>
+        </div>
+        <button class="home-card clips-card hidden" id="clips-card"><span class="section-eyebrow">// CLIPS</span><b id="clips-card-count">Clips de la communauté</b><small>Cliquer pour voir les clips</small></button>
+      </aside>
+      <div class="hub-main">
         <div class="hub-slider" id="hub-slider">
           <div class="hub-slides" id="hub-slides"></div>
           <button class="hub-arrow hub-prev" id="hub-prev" aria-label="Précédent">&#8249;</button>
@@ -207,20 +224,9 @@
         <div class="streamer-rail" id="streamer-rail"><span class="rail-label">STREAMERS<br>COMMUNAUTÉ</span><div class="streamer-grid" id="streamer-grid">
           <!-- injecté par renderer.js -->
         </div></div>
-        <div id="discord-section" class="hidden">
-          <div class="section-header"><div><span class="section-eyebrow">// DISCORD</span><h2>Rejoindre la communauté</h2></div></div>
-          <div class="discord-grid" id="discord-grid"></div>
-        </div>
-        <div id="clips-section" class="hidden">
-          <div class="section-header">
-            <div>
-              <span class="section-eyebrow">// CLIPS</span>
-              <h2>Clips de la communauté</h2>
-            </div>
-          </div>
-          <div class="clip-grid" id="clip-grid"></div>
-        </div>
-</section>
+      </div>
+      </div>
+      </section>
 
       <!-- VUES KANNIBAVENTURE -->
       <section class="view hidden" id="view-kb-home">
@@ -579,6 +585,21 @@
   </div>
 
   <!-- Modale d'information (diagnostic réseau, etc.) -->
+  <div class="modal-overlay hidden" id="clips-overlay">
+    <div class="modal-box glass clips-box">
+        <div id="clips-section">
+          <div class="section-header">
+            <div>
+              <span class="section-eyebrow">// CLIPS</span>
+              <h2>Clips de la communauté</h2>
+            </div>
+          </div>
+          <div class="clip-grid" id="clip-grid"></div>
+        </div>
+      <div class="modal-actions"><button class="btn-connect" id="clips-close">Fermer</button></div>
+    </div>
+  </div>
+
   <div class="modal-overlay hidden" id="info-overlay">
     <div class="modal-box glass">
       <h3 id="info-title">Info</h3>
@@ -776,8 +797,10 @@
     </div>
   </div>
 
+  <script src="perf.js"></script>
   <script src="renderer.js"></script>
   <script src="features.js"></script>
   <script src="lightbox.js"></script>
+  <script src="eggs.js"></script>
 </body>
 </html>

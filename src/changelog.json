@@ -1,5 +1,29 @@
 [
   {
+    "version": "1.9.6",
+    "date": "6 novembre 2026",
+    "title": "Succès du launcher et secrets",
+    "items": [
+      "Nouveaux succès propres au launcher, avec le même système qu'Anomia : « Visite guidée », « Coup de peinture », la série « Chasseur de succès » (3 / 10 / 25 succès) et deux succès secrets.",
+      "Des easter eggs sont cachés dans le launcher, avec des indices sur l'accueil et à l'écran de démarrage. En trouver assez débloque un titre exclusif à afficher sur ton profil.",
+      "Accueil réorganisé : les serveurs Discord de la communauté passent à gauche, avec un résumé des succès par catégorie ; les clips tiennent dans une seule carte qui ouvre la liste complète.",
+      "Mode pause (bouton ⏸ en haut à droite) : toute l'interface disparaît, il ne reste que le thème animé. Clic ou touche pour revenir.",
+      "Notification en bas à droite à chaque succès débloqué (stockage local, fonctionne même sans connexion au serveur)."
+    ]
+  },
+  {
+    "version": "1.9.5",
+    "date": "5 novembre 2026",
+    "title": "Optimisation du launcher",
+    "items": [
+      "Optimisation : les actualisations automatiques (statuts, live, ticker, diaporama) se mettent en pause quand la fenêtre est réduite ou cachée, et reprennent au retour.",
+      "Optimisation : les réglages sont gardés en mémoire (moins de lectures disque) et la détection de FiveM n'exécute plus qu'une commande à la fois.",
+      "Images allégées (logo KannibAventure 640 Ko → 100 Ko, carte et fond d'Anomia recompressés) pour un lancement plus rapide.",
+      "Installateur plus léger : seules les langues françaises et anglaises de Chromium sont embarquées, compression maximale.",
+      "Admins : tous les thèmes (dont Subman) sont débloqués automatiquement, sans avoir à les chercher."
+    ]
+  },
+  {
     "version": "1.9.4",
     "date": "5 novembre 2026",
     "title": "Médias en grand, hors ligne et résumé de session",

@@ -149,6 +149,9 @@ contextBridge.exposeInMainWorld("anomia", {
   sendGpsWaypoint: (x, y) => ipcRenderer.invoke("map:sendGpsWaypoint", x, y),
 
   // Succès
+  unlockLauncherAch: (k) => ipcRenderer.invoke("launcherAch:unlock", k),
+  foundEgg: (id) => ipcRenderer.invoke("launcherAch:egg", id),
+  getLauncherAchState: () => ipcRenderer.invoke("launcherAch:state"),
   getAchievements: () => ipcRenderer.invoke("achievements:get"),
   getAchievementTitlePriority: () => ipcRenderer.invoke("achievements:getTitlePriority"),
 

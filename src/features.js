@@ -17,7 +17,7 @@
   const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41", b2logo: "#a78bfa", anomia: "#2dd4bf", cubic: "#f97316", noel: "#ef4444", subman: "#a855f7" };
   const THEME_LABELS = { gold: "Or", matrix: "Matrix", anomia: "Anomia", cubic: "Cubique", noel: "Noël", subman: "Subman" };
   function applyTheme(name, persist) {
-    if (!THEMES[name] || (name === "subman" && !S.isSub)) name = "default";
+    if (!THEMES[name] || (name === "subman" && !S.isSub && !allThemes())) name = "default";
     document.documentElement.setAttribute("data-theme", name);
     applyAccentColor(THEMES[name]);
     const cp = $("color-picker"), hx = $("color-picker-hex");
@@ -25,17 +25,25 @@
     if (hx) hx.textContent = THEMES[name].toUpperCase();
     document.querySelectorAll(".theme-chip").forEach((c) => c.classList.toggle("active", c.dataset.theme === name));
     syncFx();
-    if (persist) save({ theme: name, accentColor: THEMES[name] });
+    if (persist) { save({ theme: name, accentColor: THEMES[name] }); }
   }
+  // Les admins ont tous les thèmes débloqués automatiquement (état mémorisé pour le prochain démarrage)
+  const allThemes = () => Boolean(S.themesAll);
+  window.addEventListener("admin-themes", (e) => {
+    const v = Boolean(e.detail);
+    if (v === allThemes()) return;
+    S.themesAll = v; save({ themesAll: v }); refreshThemeChips();
+    if (!v) { const cur = document.documentElement.getAttribute("data-theme"); if (cur === "subman" && !S.isSub) applyTheme("default", true); }
+  });
   function refreshThemeChips() {
     const lr = $("theme-chips") && $("theme-chips").querySelector('[data-theme="subman"]');
-    if (lr) lr.classList.toggle("hidden", !S.isSub);
+    if (lr) lr.classList.toggle("hidden", !(S.isSub || allThemes()));
     ["gold", "matrix", "anomia", "cubic", "noel"].forEach((t) => {
       const chip = $("theme-chips") && $("theme-chips").querySelector(`[data-theme="${t}"]`);
-      if (chip) chip.classList.toggle("hidden", !(S.unlockedThemes || []).includes(t));
+      if (chip) chip.classList.toggle("hidden", !(allThemes() || (S.unlockedThemes || []).includes(t)));
     });
   }
-  document.querySelectorAll(".theme-chip").forEach((c) => c.addEventListener("click", () => applyTheme(c.dataset.theme, true)));
+  document.querySelectorAll(".theme-chip").forEach((c) => c.addEventListener("click", () => { applyTheme(c.dataset.theme, true); if (window.launcherAch) window.launcherAch.unlock("themeSwitch"); }));
   // un accent choisi à la main sort du thème (les couleurs restent libres)
   document.querySelectorAll(".accent-swatch").forEach((b) => b.addEventListener("click", () => { document.documentElement.setAttribute("data-theme", "custom"); document.querySelectorAll(".theme-chip").forEach((c) => c.classList.remove("active")); save({ theme: "custom" }); }));
 
@@ -123,6 +131,7 @@
     ctx.globalAlpha = 1;
     fxRaf = requestAnimationFrame(fxLoop);
   }
+  window.addEventListener("zen", (e) => { if (e.detail) setAnimatedBg(true); else syncFx(); });
   function syncFx() { setAnimatedBg(Boolean(S.animatedBg) || ["matrix", "noel", "subman"].includes(document.documentElement.getAttribute("data-theme"))); }
   function setAnimatedBg(on) {
     fxOn = on; fx.style.display = on ? "block" : "none";
@@ -145,7 +154,7 @@
     if (!r || !r.ok) return; // hors ligne / pas connecté : on garde le dernier état connu
     if (Boolean(S.isSub) !== r.sub) { save({ isSub: r.sub }); }
     S.isSub = r.sub; refreshThemeChips();
-    if (!r.sub && document.documentElement.getAttribute("data-theme") === "subman") applyTheme("default", true);
+    if (!r.sub && !allThemes() && document.documentElement.getAttribute("data-theme") === "subman") applyTheme("default", true);
   }
   window.checkSubRole = checkSubRole;
   setTimeout(checkSubRole, 3000); setTimeout(checkSubRole, 12000); setInterval(checkSubRole, 180000);
@@ -314,7 +323,7 @@
     try {
       const h = await sha256(code);
       if (SECRET_HASHES[h] === "fx:creeper") { msg.textContent = "Sssssss…"; creeperBoom(); }
-      else if (SECRET_HASHES[h]) { const fresh = unlockTheme(SECRET_HASHES[h]); { const lb = THEME_LABELS[SECRET_HASHES[h]] || "secret"; msg.textContent = fresh ? `✨ Thème ${lb} débloqué et appliqué !` : `Thème ${lb} déjà débloqué (réappliqué).`; } }
+      else if (SECRET_HASHES[h]) { if (SECRET_HASHES[h] === "matrix" && window.launcherAch) window.launcherAch.unlock("error404"); const fresh = unlockTheme(SECRET_HASHES[h]); { const lb = THEME_LABELS[SECRET_HASHES[h]] || "secret"; msg.textContent = fresh ? `✨ Thème ${lb} débloqué et appliqué !` : `Thème ${lb} déjà débloqué (réappliqué).`; } }
       else msg.textContent = "Ce code ne donne rien… pour l'instant.";
     } catch (e) { msg.textContent = "Code impossible à vérifier."; }
   }
@@ -332,6 +341,7 @@
   // ---------- Easter eggs 1.7.4 ----------
   function creeperBoom() {
     const d = document.createElement("div"); d.className = "creeper-boom"; d.textContent = "💥";
+    if (window.launcherAch) window.launcherAch.egg("creeper", "💥", "Sssssss… BOUM.");
     document.body.appendChild(d); document.body.classList.add("shake");
     setTimeout(() => { d.remove(); document.body.classList.remove("shake"); }, 1700);
   }

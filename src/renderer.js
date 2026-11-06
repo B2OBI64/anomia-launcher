@@ -1170,7 +1170,7 @@ function formatClipDuration(sec) {
 
 async function loadClips() {
   if (clipsLoaded) return;
-  const section = document.getElementById("clips-section");
+  const section = document.getElementById("clips-card");
   const grid = document.getElementById("clip-grid");
   let result;
   try { result = await window.anomia.getTwitchClips(); } catch (e) { result = { ok: false }; }
@@ -1194,8 +1194,12 @@ async function loadClips() {
     el.addEventListener("click", () => window.anomia.openExternal(c.url));
     grid.appendChild(el);
   });
+  document.getElementById("clips-card-count").textContent = `${result.clips.length} clip${result.clips.length > 1 ? "s" : ""} de la communauté`;
   section.classList.remove("hidden");
 }
+document.getElementById("clips-card").addEventListener("click", () => document.getElementById("clips-overlay").classList.remove("hidden"));
+document.getElementById("clips-close").addEventListener("click", () => document.getElementById("clips-overlay").classList.add("hidden"));
+document.getElementById("clips-overlay").addEventListener("click", (e) => { if (e.target.id === "clips-overlay") e.target.classList.add("hidden"); });
 
 // --- Assets : la vérification des fichiers custom a été retirée (Anomia n'en a pas) ---
 
@@ -1599,13 +1603,16 @@ async function autoStaffUnlock() {
       adminVerified = true; adminOnDuty = Boolean(st && st.adminOnDuty);
       if (adminOnDuty) applyStaffRole(r);
       updateDutyButton();
+      window.dispatchEvent(new CustomEvent("admin-themes", { detail: true }));
     }
     else if (r && r.ok && r.role === "mod") {
       // Modérateur reconnu par son rôle Discord (serveur Anomia) : accès à la liste des joueurs, sans système de service
       lastStaffReason = null; adminVerified = false; updateDutyButton(); applyStaffRole(r);
+      window.dispatchEvent(new CustomEvent("admin-themes", { detail: false }));
     }
     else {
-      adminVerified = false; updateDutyButton(); lastStaffReason = (r && r.reason) || "invalid_code"; if (staffRole === "admin") clearStaffRole(); }
+      adminVerified = false; updateDutyButton(); lastStaffReason = (r && r.reason) || "invalid_code"; if (staffRole === "admin") clearStaffRole();
+      if (["missing_role", "not_in_guild"].includes(lastStaffReason)) window.dispatchEvent(new CustomEvent("admin-themes", { detail: false })); }
   } catch (e) { lastStaffReason = "server_down"; }
   showStaffReason();
 }
@@ -1918,6 +1925,7 @@ async function loadStaff() {
 
 // --- Succès ---
 const ACHIEVEMENT_ICONS = {
+  secretSeeker: "🕵️", error404: "🚫", hunter3: "🎯", hunter10: "🏹", hunter25: "👑", tourDone: "🧭", themeSwitch: "🎨",
   firstCharacter: "🧍", tutorialDone: "🎓", hasJob: "💼", hasVehicle: "🚗", hasHouse: "🏠",
   jobPromotion: "📈", money30k: "💵", money100k: "💰",
   drivingDistance100: "🛣️", drivingDistance500: "🛣️", drivingDistance1000: "🛣️",
@@ -2422,6 +2430,7 @@ async function showOnboardingStep(dir) {
 function finishOnboarding() {
   document.getElementById("onboarding-overlay").classList.add("hidden");
   window.anomia.setSettings({ onboardingSeen: true });
+  if (window.launcherAch) window.launcherAch.unlock("tourDone");
   try { selectServer("hub"); } catch (e) { /* ignore */ }
 }
 

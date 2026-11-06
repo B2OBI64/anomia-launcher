@@ -282,6 +282,23 @@ module.exports = {
       { key: "loginStreak30", rarity: "gold", label: "Fidèle au poste", description: "Te connecter 30 jours d'affilée" },
       { key: "serverBirthday", rarity: "secret", label: "Joyeux anniversaire !", description: "Te connecter le jour de l'anniversaire du serveur", secret: true }
     ],
+    // Succès propres au launcher (stockés en local, aucun serveur requis).
+    // Même format que les succès Anomia. "exclusiveTitle" = titre réservé.
+    launcher: {
+      eggsRequired: 6, // nombre d'easter eggs à trouver pour « Chercheur de secrets »
+      eggs: ["konami", "logo", "version", "kannibal", "anomia", "creeper", "noctambule"],
+      hunters: [{ key: "hunter3", n: 3 }, { key: "hunter10", n: 10 }, { key: "hunter25", n: 25 }],
+      list: [
+        { key: "secretSeeker", rarity: "secret", label: "Chercheur de secrets", description: "Trouver des easter eggs cachés dans le launcher", secret: true },
+        { key: "tourDone", rarity: "bronze", label: "Visite guidée", description: "Terminer la visite du launcher" },
+        { key: "themeSwitch", rarity: "bronze", label: "Coup de peinture", description: "Changer le thème du launcher" },
+        { key: "error404", rarity: "secret", label: "Erreur 404", description: "Tu n'es pas admin", secret: true },
+        { key: "hunter3", rarity: "bronze", label: "Chasseur de succès", description: "Débloquer 3 succès" },
+        { key: "hunter10", rarity: "silver", label: "Chasseur de succès confirmé", description: "Débloquer 10 succès" },
+        { key: "hunter25", rarity: "gold", label: "Chasseur de succès d'élite", description: "Débloquer 25 succès" }
+      ],
+      exclusiveTitles: ["secretSeeker"]
+    },
     // Ordre du plus prestigieux au moins prestigieux - le premier succès
     // débloqué de cette liste est affiché comme "titre" à côté du profil.
     titlePriority: [
