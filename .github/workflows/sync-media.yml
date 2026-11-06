@@ -24,11 +24,19 @@ jobs:
           DISCORD_MEDIA_CHANNEL_ID: ${{ vars.DISCORD_MEDIA_CHANNEL_ID }}
         run: node discord-news-sync/sync-media.js
 
+      - name: Récupérer les images KannibAventure depuis Discord
+        if: ${{ vars.DISCORD_KB_MEDIA_CHANNEL_ID != '' }}
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_MEDIA_CHANNEL_ID: ${{ vars.DISCORD_KB_MEDIA_CHANNEL_ID }}
+          OUTPUT_PATH: kb-media.json
+        run: node discord-news-sync/sync-media.js
+
       - name: Commit si le contenu a changé
         run: |
           git config user.name "anomia-news-bot"
           git config user.email "actions@github.com"
-          git add media.json
+          git add media.json kb-media.json
           git diff --cached --quiet && exit 0
           git commit -m "Sync media Discord [auto]"
           git pull --rebase origin main

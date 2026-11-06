@@ -29,6 +29,7 @@ module.exports = {
         { view: "staff", label: "Staff" },
         { view: "achievements", label: "Succès" },
         { view: "rules", label: "Règlement" },
+        { view: "faq", label: "F.A.Q" },
         { view: "map", label: "Carte" },
         { view: "assets", label: "Fichiers" }
       ]
@@ -56,6 +57,7 @@ module.exports = {
       tabs: [
         { view: "kb-home", label: "Accueil" },
         { view: "kb-devlog", label: "Journal de dev" },
+        { view: "kb-media", label: "Média" },
         { view: "kb-map", label: "Carte" },
         { view: "kb-files", label: "Fichiers" },
         { view: "kb-settings", label: "Paramètres" },
@@ -111,7 +113,7 @@ module.exports = {
   // --- Contenu des pages KannibAventure (modifiable sur GitHub sans republier) ---
   kannibaventure: {
     remoteBase: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/src/",
-    files: { devlog: "kb-devlog.json", faq: "kb-faq.json", rules: "kb-rules.json", mods: "kb-mods.json" }
+    files: { devlog: "kb-devlog.json", faq: "kb-faq.json", anomiafaq: "anomia-faq.json", rules: "kb-rules.json", mods: "kb-mods.json" }
   },
 
   // --- Connexion serveur FiveM ---
@@ -208,7 +210,10 @@ module.exports = {
   // URL distante synchronisée depuis un salon Discord (voir discord-news-sync/README.md).
   media: {
     remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/media.json",
-    localFallback: "src/media.json"
+    localFallback: "src/media.json",
+    // Médias KannibAventure (salon Discord séparé, voir discord-news-sync/README.md)
+    kbRemoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/kb-media.json",
+    kbLocalFallback: "src/kb-media.json"
   },
 
   // --- Détection FiveM ---
@@ -295,9 +300,38 @@ module.exports = {
         { key: "error404", rarity: "secret", label: "Erreur 404", description: "Tu n'es pas admin", secret: true },
         { key: "hunter3", rarity: "bronze", label: "Chasseur de succès", description: "Débloquer 3 succès" },
         { key: "hunter10", rarity: "silver", label: "Chasseur de succès confirmé", description: "Débloquer 10 succès" },
-        { key: "hunter25", rarity: "gold", label: "Chasseur de succès d'élite", description: "Débloquer 25 succès" }
+        { key: "hunter25", rarity: "gold", label: "Chasseur de succès d'élite", description: "Débloquer 25 succès" },
+        { key: "polyvalent", rarity: "secret", label: "Polyvalent", description: "Jouer au moins une fois sur chacun des serveurs proposés", secret: true },
+        { key: "viewer", rarity: "gold", label: "Viewers", description: "Regarder un live depuis le launcher" }
       ],
       exclusiveTitles: ["secretSeeker"]
+    },
+    // Succès KannibAventure : heures de jeu (launcher + serveur) et avancements Minecraft.
+    // « adv » = identifiant d'avancement (natif "minecraft:..." ou d'un mod "modid:...") ; il suffit
+    // d'ajouter une ligne pour un nouveau succès lié à un mod. Données fournies par tools/kb-export.
+    kannibaventure: {
+      list: [
+        { key: "kbHours1", rarity: "bronze", label: "Premiers pas", description: "Jouer 1 heure sur KannibAventure", hours: 1 },
+        { key: "kbHours10", rarity: "bronze", label: "Aventurier", description: "Jouer 10 heures sur KannibAventure", hours: 10 },
+        { key: "kbHours25", rarity: "silver", label: "Baroudeur", description: "Jouer 25 heures sur KannibAventure", hours: 25 },
+        { key: "kbHours50", rarity: "silver", label: "Pilier du serveur", description: "Jouer 50 heures sur KannibAventure", hours: 50 },
+        { key: "kbHours100", rarity: "gold", label: "Vétéran", description: "Jouer 100 heures sur KannibAventure", hours: 100 },
+        { key: "kbHours250", rarity: "gold", label: "Légende de KannibAventure", description: "Jouer 250 heures sur KannibAventure", hours: 250 },
+        { key: "kbAdvNether", rarity: "bronze", label: "Bienvenue en enfer", description: "Entrer dans le Nether", adv: "minecraft:story/enter_the_nether" },
+        { key: "kbAdvDiamond", rarity: "bronze", label: "Des diamants !", description: "Miner un diamant", adv: "minecraft:story/mine_diamond" },
+        { key: "kbAdvTrade", rarity: "bronze", label: "Marchand", description: "Faire un échange avec un villageois", adv: "minecraft:adventure/trade" },
+        { key: "kbAdvBeacon", rarity: "silver", label: "Phare de la région", description: "Créer une balise", adv: "minecraft:nether/create_beacon" },
+        { key: "kbAdvEnd", rarity: "silver", label: "La fin ?", description: "Entrer dans l'End", adv: "minecraft:story/enter_the_end" },
+        { key: "kbAdvElytra", rarity: "gold", label: "Le ciel est la limite", description: "Trouver des élytres", adv: "minecraft:end/elytra" },
+        { key: "kbAdvWither", rarity: "gold", label: "Invocateur", description: "Invoquer le Wither", adv: "minecraft:nether/summon_wither" },
+        { key: "kbAdvDragon", rarity: "gold", label: "Tueur de dragon", description: "Vaincre l'Ender Dragon", adv: "minecraft:end/kill_dragon" },
+        { key: "kbAdvHunter", rarity: "gold", label: "Chasseur de monstres", description: "Éliminer un exemplaire de chaque monstre hostile", adv: "minecraft:adventure/kill_all_mobs" },
+        { key: "kbAdvCount10", rarity: "bronze", label: "Historien", description: "Obtenir 10 avancements Minecraft", advCount: 10 },
+        { key: "kbAdvCount30", rarity: "silver", label: "Érudit", description: "Obtenir 30 avancements Minecraft", advCount: 30 },
+        { key: "kbAdvCount60", rarity: "gold", label: "Encyclopédiste", description: "Obtenir 60 avancements Minecraft", advCount: 60 }
+        // Succès liés aux mods : ajouter ici, ex.
+        // { key: "kbModXxx", rarity: "silver", label: "…", description: "…", adv: "modid:chemin/de_l_avancement" },
+      ]
     },
     // Ordre du plus prestigieux au moins prestigieux - le premier succès
     // débloqué de cette liste est affiché comme "titre" à côté du profil.

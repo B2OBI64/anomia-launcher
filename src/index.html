@@ -16,7 +16,6 @@
       <span class="brand-sub">LAUNCHER</span>
     </div>
     <div class="titlebar-controls">
-      <button id="btn-zen" class="win-btn" aria-label="Mode pause" title="Mode pause : ne garde que le thème animé">&#9208;</button>
       <button id="btn-min" class="win-btn" aria-label="Réduire">&#8211;</button>
       <button id="btn-max" class="win-btn" aria-label="Agrandir">&#9633;</button>
       <button id="btn-close" class="win-btn win-btn-close" aria-label="Fermer">&#10005;</button>
@@ -126,19 +125,6 @@
           <button class="ah-secondary" id="ah-me-open">Mon profil</button>
         </div>
 
-        <div class="ah-tiles" id="ah-tiles">
-          <button class="ah-tile" data-goto="news"><span class="ah-ico">📰</span><b>Actualités</b><small id="ah-t-news">Les dernières infos</small></button>
-          <button class="ah-tile" data-goto="rules"><span class="ah-ico">📜</span><b>Règlement</b><small>Les règles du serveur</small></button>
-          <button class="ah-tile" data-goto="map"><span class="ah-ico">🗺️</span><b>Carte</b><small>Lieux et points d'intérêt</small></button>
-          <button class="ah-tile" data-goto="achievements"><span class="ah-ico">🏆</span><b>Succès</b><small id="ah-t-ach">Ta progression</small></button>
-          <button class="ah-tile" data-goto="media"><span class="ah-ico">🖼️</span><b>Média</b><small>Captures des joueurs</small></button>
-          <button class="ah-tile" data-goto="staff"><span class="ah-ico">👥</span><b>Équipe</b><small>Le staff d'Anomia</small></button>
-          <button class="ah-tile" data-goto="assets"><span class="ah-ico">🧹</span><b>Fichiers</b><small>Vider le cache FiveM</small></button>
-        </div>
-
-        <div class="ah-livebar hidden" id="ah-livebar"><span id="ah-livebar-text"></span><button class="ah-secondary" id="ah-livebar-btn">Voir le live</button></div>
-
-        <div class="as-head state-head"><h2>État d'Anomia</h2></div>
         <div class="telemetry-strip">
           <div class="telemetry-item">
             <span class="telemetry-label">Statut</span>
@@ -162,6 +148,19 @@
           </div>
         </div>
 
+        <div class="ah-tiles" id="ah-tiles">
+          <button class="ah-tile" data-goto="news"><span class="ah-ico">📰</span><b>Actualités</b><small id="ah-t-news">Les dernières infos</small></button>
+          <button class="ah-tile" data-goto="rules"><span class="ah-ico">📜</span><b>Règlement</b><small>Les règles du serveur</small></button>
+          <button class="ah-tile" data-goto="faq"><span class="ah-ico">❓</span><b>F.A.Q</b><small>Questions fréquentes</small></button>
+          <button class="ah-tile" data-goto="map"><span class="ah-ico">🗺️</span><b>Carte</b><small>Lieux et points d'intérêt</small></button>
+          <button class="ah-tile" data-goto="achievements"><span class="ah-ico">🏆</span><b>Succès</b><small id="ah-t-ach">Ta progression</small></button>
+          <button class="ah-tile" data-goto="media"><span class="ah-ico">🖼️</span><b>Média</b><small>Captures des joueurs</small></button>
+          <button class="ah-tile" data-goto="staff"><span class="ah-ico">👥</span><b>Équipe</b><small>Le staff d'Anomia</small></button>
+          <button class="ah-tile" data-goto="assets"><span class="ah-ico">🧹</span><b>Fichiers</b><small>Vider le cache FiveM</small></button>
+        </div>
+
+        <div class="ah-livebar hidden" id="ah-livebar"><span id="ah-livebar-text"></span><button class="ah-secondary" id="ah-livebar-btn">Voir le live</button></div>
+
         <div class="section-header">
           <div>
             <span class="section-eyebrow">// LOG</span>
@@ -172,6 +171,13 @@
         <div class="news-preview" id="news-preview">
           <!-- injecté par renderer.js -->
         </div>
+      </section>
+
+      <!-- VUE F.A.Q ANOMIA -->
+      <section class="view hidden" id="view-faq">
+        <span class="section-eyebrow">// F.A.Q</span>
+        <h1 class="view-title">Questions fréquentes</h1>
+        <div class="kb-faq" id="faq-list"></div>
       </section>
 
       <!-- VUE NEWS -->
@@ -185,21 +191,6 @@
 
       <!-- VUE ACCUEIL GLOBAL (B2 Launcher) : slider des serveurs + streamers -->
       <section class="view" id="view-hub">
-      <div class="hub-layout">
-      <aside class="hub-side" id="hub-side">
-        <div id="discord-section" class="hidden">
-          <div class="section-header"><div><span class="section-eyebrow">// DISCORD</span><h2>Rejoindre la communauté</h2></div></div>
-          <div class="discord-grid" id="discord-grid"></div>
-        </div>
-        <div class="home-card" id="ach-home-card">
-          <span class="section-eyebrow">// SUCCÈS</span>
-          <div id="ach-home-cats"><p class="hc-empty">Chargement…</p></div>
-          <p class="egg-hint" id="egg-hint"></p>
-          <button class="btn-copy" id="ach-home-open">Voir tous les succès</button>
-        </div>
-        <button class="home-card clips-card hidden" id="clips-card"><span class="section-eyebrow">// CLIPS</span><b id="clips-card-count">Clips de la communauté</b><small>Cliquer pour voir les clips</small></button>
-      </aside>
-      <div class="hub-main">
         <div class="hub-slider" id="hub-slider">
           <div class="hub-slides" id="hub-slides"></div>
           <button class="hub-arrow hub-prev" id="hub-prev" aria-label="Précédent">&#8249;</button>
@@ -224,8 +215,66 @@
         <div class="streamer-rail" id="streamer-rail"><span class="rail-label">STREAMERS<br>COMMUNAUTÉ</span><div class="streamer-grid" id="streamer-grid">
           <!-- injecté par renderer.js -->
         </div></div>
-      </div>
-      </div>
+      </section>
+
+      <!-- ACCUEIL : Communauté (serveurs Discord uniquement) -->
+      <section class="view hidden" id="view-hub-community">
+        <span class="section-eyebrow">// COMMUNAUTÉ</span>
+        <h1 class="view-title">Serveurs de la communauté</h1>
+        <div id="discord-section" class="hidden">
+          <div class="section-header"><div><span class="section-eyebrow">// DISCORD</span><h2>Rejoindre la communauté</h2></div></div>
+          <div class="discord-grid" id="discord-grid"></div>
+        </div>
+      </section>
+
+      <!-- ACCUEIL : Joueurs connectés -->
+      <section class="view hidden" id="view-hub-players">
+        <span class="section-eyebrow">// EN LIGNE</span>
+        <h1 class="view-title">Joueurs connectés</h1>
+        <p class="hc-empty">Clique sur un joueur pour voir sa fiche profil.</p>
+        <div class="players-cols">
+          <div class="players-col"><h2>Anomia RP <span id="pl-anomia-count"></span></h2><div id="pl-anomia" class="players-list"></div></div>
+          <div class="players-col"><h2>KannibAventure <span id="pl-kb-count"></span></h2><div id="pl-kb" class="players-list"></div></div>
+        </div>
+      </section>
+
+      <!-- ACCUEIL : Actualités (Anomia + KannibAventure) -->
+      <section class="view hidden" id="view-hub-news">
+        <span class="section-eyebrow">// LOG</span>
+        <h1 class="view-title">Actualités</h1>
+        <div class="hub-filter" id="hub-news-filter" data-target="news"></div>
+        <div class="news-list" id="hub-news-list"></div>
+      </section>
+
+      <!-- ACCUEIL : Média (Anomia + KannibAventure) -->
+      <section class="view hidden" id="view-hub-media">
+        <span class="section-eyebrow">// GALERIE</span>
+        <h1 class="view-title">Média de la communauté</h1>
+        <div class="hub-filter" id="hub-media-filter" data-target="media"></div>
+        <div class="media-grid" id="hub-media-grid"></div>
+      </section>
+
+      <!-- ACCUEIL : Clips -->
+      <section class="view hidden" id="view-hub-clips">
+        <span class="section-eyebrow">// CLIPS</span>
+        <h1 class="view-title">Clips de la communauté</h1>
+        <p id="clips-empty" class="hidden" style="color:var(--text-dim);font-size:13px;">Aucun clip pour le moment.</p>
+        <div class="clip-grid" id="clip-grid"></div>
+      </section>
+
+      <!-- ACCUEIL : Succès (Anomia + KannibAventure + Launcher) -->
+      <section class="view hidden" id="view-hub-ach">
+        <span class="section-eyebrow">// PROGRESSION</span>
+        <h1 class="view-title">Tous mes succès</h1>
+        <div id="hub-ach-content"><p class="hc-empty">Chargement…</p></div>
+        <p class="egg-hint" id="egg-hint"></p>
+      </section>
+
+      <!-- KANNIBAVENTURE : Média -->
+      <section class="view hidden" id="view-kb-media">
+        <span class="section-eyebrow">// GALERIE</span>
+        <h1 class="view-title">Média de KannibAventure</h1>
+        <div class="media-grid" id="kb-media-grid"></div>
       </section>
 
       <!-- VUES KANNIBAVENTURE -->
@@ -241,7 +290,6 @@
             <button class="kb-discord-btn" id="kb-discord">Rejoindre le Discord</button>
           </div>
         </div>
-        <div class="as-head state-head"><h2>État de KannibAventure</h2></div>
         <div class="telemetry-strip" id="kb-state">
           <div class="telemetry-item"><span class="telemetry-label">Statut</span><span class="telemetry-value" id="kbs-status">—</span></div>
           <div class="telemetry-item"><span class="telemetry-label">Joueurs</span><span class="telemetry-value" id="kbs-players">—</span></div>
@@ -585,21 +633,6 @@
   </div>
 
   <!-- Modale d'information (diagnostic réseau, etc.) -->
-  <div class="modal-overlay hidden" id="clips-overlay">
-    <div class="modal-box glass clips-box">
-        <div id="clips-section">
-          <div class="section-header">
-            <div>
-              <span class="section-eyebrow">// CLIPS</span>
-              <h2>Clips de la communauté</h2>
-            </div>
-          </div>
-          <div class="clip-grid" id="clip-grid"></div>
-        </div>
-      <div class="modal-actions"><button class="btn-connect" id="clips-close">Fermer</button></div>
-    </div>
-  </div>
-
   <div class="modal-overlay hidden" id="info-overlay">
     <div class="modal-box glass">
       <h3 id="info-title">Info</h3>

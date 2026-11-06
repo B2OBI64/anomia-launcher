@@ -393,7 +393,27 @@ SetHttpHandler(function(req, res)
         end
     end
 
+    -- Fiche d'un autre joueur : ?playerName=Nom (uniquement un joueur actuellement connecte)
+    local playerName
+    if (not discordId or discordId == "") and req.path:find("playerName=", 1, true) then
+        local raw = req.path:match("playerName=([^&]+)") or ""
+        playerName = raw:gsub("%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
+        for _, src in ipairs(GetPlayers()) do
+            if (GetPlayerName(src) or ""):lower() == playerName:lower() then
+                for _, ident in ipairs(GetPlayerIdentifiers(src)) do
+                    local d = ident:match("^discord:(%d+)")
+                    if d then discordId = d end
+                end
+            end
+        end
+    end
+
     if not discordId or discordId == "" then
+        if playerName then
+            res.writeHead(200, { ['Content-Type'] = 'application/json', ['Access-Control-Allow-Origin'] = '*' })
+            res.send(json.encode({ linked = false, name = playerName }))
+            return
+        end
         res.writeHead(400, { ['Content-Type'] = 'application/json', ['Access-Control-Allow-Origin'] = '*' })
         res.send(json.encode({ error = "missing_discord_id" }))
         return
@@ -410,7 +430,7 @@ SetHttpHandler(function(req, res)
             recordAndFetchUnlockDates(citizenid, achievements, function(unlockedAt)
                 getTotalPlaytime(citizenid, function(playtime)
                     res.writeHead(200, { ['Content-Type'] = 'application/json', ['Access-Control-Allow-Origin'] = '*' })
-                    res.send(json.encode({ linked = true, achievements = achievements, unlockedAt = unlockedAt, playtimeSeconds = playtime }))
+                    res.send(json.encode({ linked = true, name = playerName, achievements = achievements, unlockedAt = unlockedAt, playtimeSeconds = playtime }))
                 end)
             end)
         end)

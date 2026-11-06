@@ -110,6 +110,16 @@ let SERVERS = [];
 let HUB = { slides: [], slideIntervalMs: 6500 };
 let TWITCH = { channel: "b2obi64", displayName: "B2OBI64", url: "https://twitch.tv/b2obi64", fallbackStreamers: [] };
 let currentServerId = "hub";
+// Catégories de l'accueil (même principe que les onglets d'Anomia et de KannibAventure)
+const HUB_TABS = [
+  { view: "hub", label: "Accueil" },
+  { view: "hub-community", label: "Communauté" },
+  { view: "hub-players", label: "Joueurs" },
+  { view: "hub-news", label: "Actualités" },
+  { view: "hub-media", label: "Média" },
+  { view: "hub-clips", label: "Clips" },
+  { view: "hub-ach", label: "Succès" }
+];
 
 function getServer(id) {
   return SERVERS.find((s) => s.id === id) || null;
@@ -127,7 +137,14 @@ function goToView(name) {
       v.classList.add("view-entering");
     }
   });
-  if (name === "hub") { loadStreamers(); loadClips(); loadHomeMe(); loadDiscordCommunities(); startHubSlider(); } else { stopHubSlider(); }
+  if (name === "hub") { loadStreamers(); loadHomeMe(); loadDiscordCommunities(); startHubSlider(); } else { stopHubSlider(); }
+  if (name === "hub-community") loadDiscordCommunities();
+  if (name === "hub-clips") loadClips();
+  if (name === "hub-players") loadHubPlayers();
+  if (name === "hub-news") loadHubNews();
+  if (name === "hub-media") loadHubMedia();
+  if (name === "hub-ach") loadHubAch();
+  if (name === "kb-media") loadKbMedia();
   if (name === "staff") loadStaff();
   if (name === "achievements") loadAchievements();
   if (name === "rules") loadRules();
@@ -137,6 +154,7 @@ function goToView(name) {
   if (name === "kb-devlog") loadKbDevlog();
   if (name === "kb-rules") loadKbRules();
   if (name === "kb-faq") loadKbFaq();
+  if (name === "faq") loadAnomiaFaq();
   if (name === "kb-files") refreshKbFiles();
   if (name === "kb-map") initKbMap();
 }
@@ -148,8 +166,24 @@ function selectServer(id) {
   const tabbar = document.getElementById("tabbar");
   const navAdmin = document.getElementById("nav-admin");
 
+  const tabsEl = document.getElementById("tabbar-tabs");
+  const buildTabs = (tabs) => {
+    tabsEl.innerHTML = "";
+    tabs.forEach((tab) => {
+      const btn = document.createElement("button");
+      btn.className = "tab-item";
+      btn.dataset.view = tab.view;
+      btn.textContent = tab.label;
+      btn.addEventListener("click", () => goToView(tab.view));
+      tabsEl.appendChild(btn);
+    });
+  };
+
   if (id === "hub") {
-    tabbar.classList.add("hidden");
+    tabbar.classList.remove("hidden");
+    tabbar.style.setProperty("--server-color", "var(--teal)");
+    document.getElementById("tabbar-server").textContent = "KANNIBAL";
+    buildTabs(HUB_TABS);
     navAdmin.style.display = "none";
     goToView("hub");
     return;
@@ -160,17 +194,7 @@ function selectServer(id) {
   tabbar.classList.remove("hidden");
   tabbar.style.setProperty("--server-color", server.color || "var(--teal)");
   document.getElementById("tabbar-server").textContent = server.name.toUpperCase();
-
-  const tabsEl = document.getElementById("tabbar-tabs");
-  tabsEl.innerHTML = "";
-  (server.tabs || []).forEach((tab) => {
-    const btn = document.createElement("button");
-    btn.className = "tab-item";
-    btn.dataset.view = tab.view;
-    btn.textContent = tab.label;
-    btn.addEventListener("click", () => goToView(tab.view));
-    tabsEl.appendChild(btn);
-  });
+  buildTabs(server.tabs || []);
   // L'onglet Admin n'existe que pour Anomia (il reste masqué tant que le code staff n'est pas saisi)
   navAdmin.style.display = id === "anomia" ? "" : "none";
 
@@ -302,6 +326,22 @@ async function loadKbRules() {
   const closeBtn = document.getElementById("rules-close-all");
   if (openBtn) openBtn.addEventListener("click", () => setAll(true));
   if (closeBtn) closeBtn.addEventListener("click", () => setAll(false));
+}
+
+let anomiaFaqLoaded = false;
+async function loadAnomiaFaq() {
+  if (anomiaFaqLoaded) return;
+  const list = document.getElementById("faq-list");
+  const data = await window.anomia.getKbContent("anomiafaq");
+  list.innerHTML = "";
+  if (!Array.isArray(data) || !data.length) { list.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">F.A.Q bientôt disponible.</p>`; return; }
+  anomiaFaqLoaded = true;
+  data.forEach((item) => {
+    const d = document.createElement("details");
+    d.className = "kb-faq-item";
+    d.innerHTML = `<summary>${escapeHtml(item.q || "")}</summary><p>${escapeHtml(item.a || "")}</p>`;
+    list.appendChild(d);
+  });
 }
 
 let kbFaqLoaded = false;
@@ -885,7 +925,7 @@ function openStreamerModal(streamer) {
   }
 
   bio.textContent = streamer.bio || "Aucune bio renseignée.";
-  openBtn.onclick = () => window.anomia.openExternal(`https://twitch.tv/${streamer.channel}`);
+  openBtn.onclick = () => { window.anomia.openExternal(`https://twitch.tv/${streamer.channel}`); if (streamer.live && window.launcherAch) window.launcherAch.unlock("viewer"); };
 
   overlay.classList.remove("hidden");
 }
@@ -973,7 +1013,7 @@ function renderFeatured() {
 function initTwitchPanel() {
   document.getElementById("twitch-watch").addEventListener("click", () => {
     const ch = featuredNow && featuredNow.channel;
-    if (ch && CHANNEL_RE.test(ch)) window.anomia.openExternal(`https://twitch.tv/${ch}`);
+    if (ch && CHANNEL_RE.test(ch)) { window.anomia.openExternal(`https://twitch.tv/${ch}`); if (featuredNow.live && window.launcherAch) window.launcherAch.unlock("viewer"); }
   });
   document.getElementById("twitch-discord").addEventListener("click", () => {
     const isMe = featuredNow && (featuredNow.channel || "").toLowerCase() === myChannelKey();
@@ -1170,12 +1210,14 @@ function formatClipDuration(sec) {
 
 async function loadClips() {
   if (clipsLoaded) return;
-  const section = document.getElementById("clips-card");
+  const section = document.getElementById("clip-grid");
+  const empty = document.getElementById("clips-empty");
   const grid = document.getElementById("clip-grid");
   let result;
   try { result = await window.anomia.getTwitchClips(); } catch (e) { result = { ok: false }; }
   // Indisponible (serveur arrêté, Twitch non configuré...) : la section reste simplement cachée
-  if (!result || !result.ok || !result.clips || !result.clips.length) { section.classList.add("hidden"); return; }
+  if (!result || !result.ok || !result.clips || !result.clips.length) { empty.classList.remove("hidden"); return; }
+  empty.classList.add("hidden");
   clipsLoaded = true;
   grid.innerHTML = "";
   result.clips.forEach((c) => {
@@ -1194,12 +1236,7 @@ async function loadClips() {
     el.addEventListener("click", () => window.anomia.openExternal(c.url));
     grid.appendChild(el);
   });
-  document.getElementById("clips-card-count").textContent = `${result.clips.length} clip${result.clips.length > 1 ? "s" : ""} de la communauté`;
-  section.classList.remove("hidden");
 }
-document.getElementById("clips-card").addEventListener("click", () => document.getElementById("clips-overlay").classList.remove("hidden"));
-document.getElementById("clips-close").addEventListener("click", () => document.getElementById("clips-overlay").classList.add("hidden"));
-document.getElementById("clips-overlay").addEventListener("click", (e) => { if (e.target.id === "clips-overlay") e.target.classList.add("hidden"); });
 
 // --- Assets : la vérification des fichiers custom a été retirée (Anomia n'en a pas) ---
 
@@ -1333,31 +1370,168 @@ document.getElementById("tm-jobs-item").addEventListener("click", async () => {
 });
 
 // --- Galerie média ---
-let mediaList = [];
-function renderMediaItem(item) {
+function renderMediaItem(item, list) {
   const el = document.createElement("div");
   el.className = "media-item";
+  const badge = item.serverLabel ? `<span class="media-srv media-srv-${escapeHtml(item.serverId || "")}">${escapeHtml(item.serverLabel)}</span>` : "";
   el.innerHTML = `
     <img src="${escapeHtml(item.url)}" alt="" loading="lazy" />
+    ${badge}
     <div class="media-item-author">${escapeHtml(item.author || "")}${item.date ? " · " + escapeHtml(item.date) : ""}</div>
   `;
-  el.addEventListener("click", () => { if (window.openLightbox) window.openLightbox(mediaList, mediaList.indexOf(item)); else window.anomia.openExternal(item.url); });
+  el.addEventListener("click", () => { if (window.openLightbox) window.openLightbox(list, list.indexOf(item)); else window.anomia.openExternal(item.url); });
   return el;
+}
+
+function fillMediaGrid(grid, items, emptyText) {
+  grid.innerHTML = "";
+  if (!items.length) { grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">${emptyText}</p>`; return; }
+  items.forEach((item) => grid.appendChild(renderMediaItem(item, items)));
 }
 
 let mediaLoaded = false;
 async function loadMedia() {
   if (mediaLoaded) return;
   mediaLoaded = true;
-  const grid = document.getElementById("media-grid");
   const media = await window.anomia.getMedia();
-  grid.innerHTML = "";
-  if (!media.length) {
-    grid.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Aucun media partagé pour le moment.</p>`;
-    return;
+  fillMediaGrid(document.getElementById("media-grid"), media || [], "Aucun media partagé pour le moment.");
+}
+
+let kbMediaLoaded = false;
+async function loadKbMedia() {
+  if (kbMediaLoaded) return;
+  const media = await window.anomia.getKbMedia();
+  if (media && media.length) kbMediaLoaded = true;
+  fillMediaGrid(document.getElementById("kb-media-grid"), media || [], "La galerie de KannibAventure arrive bientôt.");
+}
+
+// --- Accueil : filtres Tous / Anomia / KannibAventure (actualités + média) ---
+const HUB_SOURCES = [{ id: "all", label: "Tous" }, { id: "anomia", label: "Anomia RP" }, { id: "kannibaventure", label: "KannibAventure" }];
+function renderHubFilter(el, current, onPick) {
+  el.innerHTML = "";
+  HUB_SOURCES.forEach((s) => {
+    const b = document.createElement("button");
+    b.className = "hub-chip" + (s.id === current ? " active" : "");
+    b.textContent = s.label;
+    b.addEventListener("click", () => onPick(s.id));
+    el.appendChild(b);
+  });
+}
+const SRC_LABEL = { anomia: "Anomia RP", kannibaventure: "KannibAventure" };
+
+let hubMediaFilter = "all", hubMediaData = null;
+async function loadHubMedia() {
+  const grid = document.getElementById("hub-media-grid");
+  if (!hubMediaData) {
+    const [a, k] = await Promise.all([window.anomia.getMedia().catch(() => []), window.anomia.getKbMedia().catch(() => [])]);
+    const tag = (arr, id) => (arr || []).map((m) => Object.assign({}, m, { serverId: id, serverLabel: SRC_LABEL[id] }));
+    hubMediaData = tag(a, "anomia").concat(tag(k, "kannibaventure")).sort((x, y) => String(y.date || "").localeCompare(String(x.date || "")));
   }
-  mediaList = media;
-  media.forEach((item) => grid.appendChild(renderMediaItem(item)));
+  const draw = () => {
+    renderHubFilter(document.getElementById("hub-media-filter"), hubMediaFilter, (id) => { hubMediaFilter = id; draw(); });
+    const items = hubMediaData.filter((m) => hubMediaFilter === "all" || m.serverId === hubMediaFilter);
+    fillMediaGrid(grid, items, "Aucun media pour le moment.");
+  };
+  draw();
+}
+
+let hubNewsFilter = "all", hubNewsData = null;
+async function loadHubNews() {
+  const list = document.getElementById("hub-news-list");
+  if (!hubNewsData) {
+    const [a, k] = await Promise.all([window.anomia.getNews().catch(() => []), window.anomia.getKbContent("devlog").catch(() => [])]);
+    const tag = (arr, id) => (Array.isArray(arr) ? arr : []).map((n) => Object.assign({}, n, { serverId: id }));
+    hubNewsData = tag(a, "anomia").concat(tag(k, "kannibaventure")).sort((x, y) => String(y.date || "").localeCompare(String(x.date || "")));
+  }
+  const draw = () => {
+    renderHubFilter(document.getElementById("hub-news-filter"), hubNewsFilter, (id) => { hubNewsFilter = id; draw(); });
+    list.innerHTML = "";
+    const items = hubNewsData.filter((n) => hubNewsFilter === "all" || n.serverId === hubNewsFilter);
+    if (!items.length) { list.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Aucune actualité pour le moment.</p>`; return; }
+    items.forEach((n) => {
+      const card = renderNewsCard(n);
+      const s = document.createElement("span");
+      s.className = "news-srv news-srv-" + n.serverId;
+      s.textContent = SRC_LABEL[n.serverId];
+      card.insertBefore(s, card.firstChild);
+      list.appendChild(card);
+    });
+    setupNewsClamp(list);
+  };
+  draw();
+}
+
+// --- Accueil : tous les succès par catégorie (Anomia, KannibAventure, Launcher) ---
+function achBadgeEl(def, got, at) {
+  const unlocked = Boolean(got[def.key]);
+  const isSecretLocked = def.secret && !unlocked;
+  let dateLabel = "";
+  if (unlocked && at) {
+    const d = new Date(typeof at === "string" ? at.replace(" ", "T") : at);
+    if (!Number.isNaN(d.getTime())) dateLabel = `<span class="achievement-date">Débloqué le ${d.toLocaleDateString("fr-FR")}</span>`;
+  }
+  const rarity = RARITY_LABELS[def.rarity] ? def.rarity : "bronze";
+  const el = document.createElement("div");
+  el.className = `achievement-badge rarity-${rarity} ${unlocked ? "unlocked" : ""}`;
+  el.innerHTML = `
+    <div class="achievement-icon">${isSecretLocked ? "❓" : (ACHIEVEMENT_ICONS[def.key] || "🏆")}</div>
+    <span class="achievement-name">${isSecretLocked ? "???" : escapeHtml(def.label)}</span>
+    <span class="achievement-desc">${isSecretLocked ? "Succès secret" : escapeHtml(def.description)}</span>
+    <span class="achievement-rarity">${isSecretLocked ? "Secret" : RARITY_LABELS[rarity]}</span>
+    <span class="achievement-status">${unlocked ? "Débloqué" : "Verrouillé"}</span>
+    ${dateLabel}`;
+  return el;
+}
+
+const EGG_HINTS = [
+  "Fais le Konami code : une petite surprise t'attend.",
+  "Tape « kannibal » au clavier, juste pour voir…",
+  "Le logo en haut à gauche adore qu'on insiste.",
+  "Certains codes secrets font exploser des choses…",
+  "Il paraît que le launcher cache des secrets. Combien en trouveras-tu ?"
+];
+
+async function loadHubAch() {
+  const box = document.getElementById("hub-ach-content");
+  const hint = document.getElementById("egg-hint");
+  if (hint) hint.textContent = "💡 " + EGG_HINTS[Math.floor(Math.random() * EGG_HINTS.length)];
+  let r = null;
+  try { r = await getAchData(); } catch (e) { r = null; }
+  const linked = Boolean(r && r.ok && r.linked);
+  let list, got, at;
+  if (linked) { list = r.list || []; got = r.achievements || {}; at = r.unlockedAt || {}; }
+  else {
+    let s = { list: [], unlocked: {} };
+    try { s = await window.anomia.getLauncherAchState(); } catch (e) { /* ignore */ }
+    list = s.list || []; got = s.unlocked || {}; at = s.unlocked || {};
+  }
+  let kb = { list: [], unlocked: {}, linked: false, hasServerData: false };
+  try { kb = await window.anomia.getKbAchSelf(); } catch (e) { /* ignore */ }
+  const kbGot = kb.unlocked || {};
+  const kbNote = !kb.list.length ? "" : !kb.linked ? "Lance KannibAventure depuis le launcher (connexion Microsoft) pour suivre tes avancements Minecraft." : !kb.hasServerData ? "Avancements Minecraft pas encore synchronisés : seules tes heures de jeu comptent pour l'instant." : "";
+  const groups = [
+    { id: "anomia", name: "Anomia RP", defs: list.filter((d) => d.category !== "launcher" && d.category !== "kannibaventure"), note: linked ? "" : (r && r.notConnected ? "Connecte-toi avec Discord pour suivre tes succès Anomia." : "Connecte-toi une fois en jeu sur Anomia pour activer le suivi.") },
+    { id: "kannibaventure", name: "KannibAventure", defs: kb.list || [], note: kbNote, got: kbGot },
+    { id: "launcher", name: "Launcher", defs: list.filter((d) => d.category === "launcher"), note: "" }
+  ];
+  box.innerHTML = "";
+  groups.forEach((g) => {
+    const sec = document.createElement("div");
+    sec.className = "ach-cat-block";
+    const gg = g.got || got;
+    const n = g.defs.filter((d) => gg[d.key]).length;
+    const pct = g.defs.length ? Math.round(100 * n / g.defs.length) : 0;
+    sec.innerHTML = `<div class="ach-cat-head"><h2>${g.name}</h2><span>${g.defs.length ? n + " / " + g.defs.length : "—"}</span></div><div class="hc-bar"><div style="width:${pct}%"></div></div>`;
+    if (g.note) {
+      const p = document.createElement("p"); p.className = "hc-empty"; p.textContent = g.note; sec.appendChild(p);
+    }
+    if (g.defs.length) {
+      const grid = document.createElement("div"); grid.className = "achievements-grid";
+      g.defs.forEach((d) => grid.appendChild(achBadgeEl(d, gg, g.got ? null : at[d.key])));
+      sec.appendChild(grid);
+    }
+    box.appendChild(sec);
+  });
 }
 
 // --- Détection FiveM ---
@@ -1925,7 +2099,7 @@ async function loadStaff() {
 
 // --- Succès ---
 const ACHIEVEMENT_ICONS = {
-  secretSeeker: "🕵️", error404: "🚫", hunter3: "🎯", hunter10: "🏹", hunter25: "👑", tourDone: "🧭", themeSwitch: "🎨",
+  secretSeeker: "🕵️", polyvalent: "🎭", viewer: "📺", kbHours1: "⏱️", kbHours10: "⏱️", kbHours25: "⏱️", kbHours50: "⏱️", kbHours100: "⌛", kbHours250: "⌛", kbAdvNether: "🔥", kbAdvDiamond: "💎", kbAdvTrade: "🤝", kbAdvBeacon: "🔆", kbAdvEnd: "🌌", kbAdvElytra: "🪽", kbAdvWither: "💀", kbAdvDragon: "🐉", kbAdvHunter: "🗡️", kbAdvCount10: "📜", kbAdvCount30: "📚", kbAdvCount60: "🎓", error404: "🚫", hunter3: "🎯", hunter10: "🏹", hunter25: "👑", tourDone: "🧭", themeSwitch: "🎨",
   firstCharacter: "🧍", tutorialDone: "🎓", hasJob: "💼", hasVehicle: "🚗", hasHouse: "🏠",
   jobPromotion: "📈", money30k: "💵", money100k: "💰",
   drivingDistance100: "🛣️", drivingDistance500: "🛣️", drivingDistance1000: "🛣️",
@@ -2741,4 +2915,53 @@ async function refreshAchievementTitle() {
 
   const titleEl = document.getElementById("achievement-title-badge");
   if (titleEl) titleEl.textContent = def.label;
+}
+
+
+// --- Accueil : joueurs connectés + fiche profil (visible par tout le monde) ---
+function playerRow(name, server, extra) {
+  const b = document.createElement("button");
+  b.className = "player-row";
+  b.innerHTML = `<span class="player-dot"></span><b>${escapeHtml(name)}</b><small>${escapeHtml(extra || "")}</small>`;
+  b.addEventListener("click", () => openPlayerProfile(server, name));
+  return b;
+}
+async function loadHubPlayers() {
+  const a = document.getElementById("pl-anomia"), k = document.getElementById("pl-kb");
+  a.innerHTML = k.innerHTML = `<p class="hc-empty">Chargement…</p>`;
+  const [st, kb] = await Promise.all([window.anomia.getServerStatus().catch(() => null), window.anomia.getKbPlayers().catch(() => null)]);
+  a.innerHTML = "";
+  if (!st || !st.online) a.innerHTML = `<p class="hc-empty">Serveur hors ligne.</p>`;
+  else if (!st.players || !st.players.length) a.innerHTML = `<p class="hc-empty">${st.clients ? "La liste des joueurs n'est pas publique." : "Personne en ligne."}</p>`;
+  else st.players.slice().sort((x, y) => String(x.name).localeCompare(String(y.name))).forEach((p) => a.appendChild(playerRow(p.name, "anomia", p.ping != null ? p.ping + " ms" : "")));
+  document.getElementById("pl-anomia-count").textContent = st && st.online ? `(${st.clients ?? (st.players || []).length})` : "";
+  k.innerHTML = "";
+  if (!kb || !kb.ok) k.innerHTML = `<p class="hc-empty">Statut indisponible pour le moment.</p>`;
+  else if (!kb.online) k.innerHTML = `<p class="hc-empty">Serveur hors ligne.</p>`;
+  else if (!kb.names.length) k.innerHTML = `<p class="hc-empty">${kb.count ? "Les pseudos ne sont pas communiqués par le serveur." : "Personne en ligne."}</p>`;
+  else kb.names.slice().sort((x, y) => x.localeCompare(y)).forEach((n) => k.appendChild(playerRow(n, "kannibaventure")));
+  document.getElementById("pl-kb-count").textContent = kb && kb.online ? `(${kb.count})` : "";
+}
+async function openPlayerProfile(server, name) {
+  showInfo(name, `<p class="hc-empty">Chargement de la fiche…</p>`);
+  const p = await window.anomia.getPlayerProfile(server, name).catch(() => null);
+  const srvName = server === "kannibaventure" ? "KannibAventure" : "Anomia RP";
+  if (!p || !p.ok) { showInfo(name, `<p>Fiche indisponible pour le moment.</p>`); return; }
+  if (!p.linked) { showInfo(name, `<p style="color:var(--text-dim)">${srvName} · ce joueur n'a pas de profil lié (compte Discord ou Minecraft non synchronisé).</p>`); return; }
+  const list = p.list || [], got = p.unlocked || {};
+  const done = list.filter((d) => got[d.key]);
+  const hours = Math.floor((p.playSec || 0) / 3600);
+  const rar = ["gold", "silver", "bronze", "secret"].map((k) => {
+    const a = list.filter((d) => d.rarity === k), u = a.filter((d) => got[d.key]).length;
+    return a.length ? `<span class="hc-dot rarity-${k}">${RARITY_LABELS[k]} ${u}/${a.length}</span>` : "";
+  }).join(" ");
+  const order = { gold: 0, silver: 1, bronze: 2, secret: 3 };
+  const title = (p.titlePriority || []).map((k) => list.find((d) => d.key === k && got[k])).find(Boolean);
+  const top = done.slice().sort((x, y) => (order[x.rarity] ?? 9) - (order[y.rarity] ?? 9)).slice(0, 6)
+    .map((d) => `<li>${ACHIEVEMENT_ICONS[d.key] || "🏆"} ${escapeHtml(d.label)}</li>`).join("");
+  showInfo(name, `
+    <p style="color:var(--text-dim);font-size:12px;margin:0 0 6px">${srvName}${title ? " · « " + escapeHtml(title.label) + " »" : ""}</p>
+    <p><b>${done.length}</b> / ${list.length} succès · <b>${hours}</b> h de jeu</p>
+    <p style="margin:8px 0">${rar}</p>
+    ${top ? `<p style="font-size:12px;color:var(--text-dim);margin:10px 0 4px">Plus beaux succès</p><ul class="player-top">${top}</ul>` : ""}`);
 }

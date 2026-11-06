@@ -1,7 +1,13 @@
-# 1.9.6 — Succès du launcher et secrets
+# 1.9.7 — Nouvelle organisation de l'accueil
 
-- Nouveaux succès propres au launcher, avec le même système qu'Anomia : « Visite guidée », « Coup de peinture », la série « Chasseur de succès » (3 / 10 / 25 succès) et deux succès secrets.
-- Des easter eggs sont cachés dans le launcher, avec des indices sur l'accueil et à l'écran de démarrage. En trouver assez débloque un titre exclusif à afficher sur ton profil.
-- Accueil réorganisé : les serveurs Discord de la communauté passent à gauche, avec un résumé des succès par catégorie ; les clips tiennent dans une seule carte qui ouvre la liste complète.
-- Mode pause (bouton ⏸ en haut à droite) : toute l'interface disparaît, il ne reste que le thème animé. Clic ou touche pour revenir.
-- Notification en bas à droite à chaque succès débloqué (stockage local, fonctionne même sans connexion au serveur).
+- Accueil réorganisé en catégories, comme sur Anomia et KannibAventure : Accueil, Communauté, Actualités, Média, Clips et Succès.
+- Communauté : uniquement les serveurs Discord. Les clips ont leur propre catégorie.
+- Actualités et Média de l'accueil : Anomia et KannibAventure réunis, avec un filtre Tous / Anomia RP / KannibAventure.
+- Média : Anomia n'affiche que ses médias, et KannibAventure a maintenant son propre onglet Média (la galerie se remplira dès que le salon sera relié).
+- Succès de l'accueil : tous les succès rangés par catégorie (Anomia RP, KannibAventure, Launcher).
+- Pause automatique : après 5 minutes sans activité, l'interface disparaît et seul le thème animé reste. Un mouvement de souris ou une touche la réaffiche (le bouton ⏸ est supprimé).
+- Nouveaux succès du launcher : « Polyvalent » (secret, avoir lancé chaque serveur) et « Viewers » (or, regarder un live depuis le launcher).
+- Succès KannibAventure : heures de jeu et avancements Minecraft (natifs, bientôt ceux des mods).
+- Nouvelle catégorie « Joueurs » sur l'accueil : joueurs connectés sur Anomia et KannibAventure, avec une fiche profil accessible à tous.
+- État du serveur en tuiles (Statut, Joueurs, Ping moyen, Entreprises ouvertes, Temps de jeu) sur Anomia et KannibAventure : le tableau disparaît, un clic sur une tuile ouvre le même détail qu'avant.
+- Nouvelle catégorie F.A.Q sur Anomia.

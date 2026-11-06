@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Galerie média
   copyImage: (url) => ipcRenderer.invoke("media:copyImage", url),
+  getKbMedia: () => ipcRenderer.invoke("media:getKb"),
   getMedia: () => ipcRenderer.invoke("media:get"),
 
   // Diagnostic réseau
@@ -152,6 +153,10 @@ contextBridge.exposeInMainWorld("anomia", {
   unlockLauncherAch: (k) => ipcRenderer.invoke("launcherAch:unlock", k),
   foundEgg: (id) => ipcRenderer.invoke("launcherAch:egg", id),
   getLauncherAchState: () => ipcRenderer.invoke("launcherAch:state"),
+  getKbAchSelf: () => ipcRenderer.invoke("kbAch:getSelf"),
+  getPlayerProfile: (server, name) => ipcRenderer.invoke("player:getProfile", server, name),
+  getKbPlayers: () => ipcRenderer.invoke("kb:getPlayers"),
+  onLauncherAch: (cb) => ipcRenderer.on("launcherAch:new", (e, defs) => cb(defs)),
   getAchievements: () => ipcRenderer.invoke("achievements:get"),
   getAchievementTitlePriority: () => ipcRenderer.invoke("achievements:getTitlePriority"),
 

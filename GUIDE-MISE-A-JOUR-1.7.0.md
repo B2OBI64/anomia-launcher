@@ -79,3 +79,29 @@ Les étapes sont dans `src/tour.json`. Pour en ajouter une, copie un bloc : `tit
 
 ## 1.9.4 — cache du statut KannibAventure (serveur FiveM)
 Remplace de nouveau `b2_staffpanel`, puis ajoute dans `server.cfg` : `set anomia_kb_host "IP:PORT"` (adresse du serveur Minecraft). L'hôte FiveM interroge alors le statut Minecraft au plus 1 fois par minute (via api.mcsrvstat.us) et les launchers lisent ce cache. Sans cette ligne, rien ne casse : le launcher interroge directement le serveur comme avant.
+
+
+## 1.9.7 — Média KannibAventure (quand tu auras l'ID du salon)
+
+1. Sur GitHub : repo → Settings → Secrets and variables → Actions → onglet **Variables** → New repository variable.
+2. Nom : `DISCORD_KB_MEDIA_CHANNEL_ID`, valeur : l'ID du salon média de KannibAventure.
+3. Actions → « Sync media Discord » → Run workflow (ou attends 10 min).
+4. Le fichier `kb-media.json` se remplit tout seul. Rien à republier côté launcher.
+
+En cas de conflit git avec le bot : `git checkout --ours kb-media.json`, `git add kb-media.json`, `git rebase --continue` (comme pour `media.json`).
+
+
+## 1.9.7 — Succès KannibAventure + fiches joueurs (côté serveurs)
+
+**Hôte FiveM (Anomia)**
+1. Remplace les ressources `b2_staffpanel` et `b2_achievements` par celles du zip, puis `restart` des deux.
+2. Dans le `server.cfg` : `set anomia_kb_push_secret "UN-LONG-SECRET-ALEATOIRE"` (sans cette ligne, la réception des avancements est désactivée).
+3. Déjà en place : `set anomia_kb_host "IP:PORT"` (sert aussi à lister les pseudos connectés sur Minecraft).
+
+**Machine Minecraft** (avancements natifs + mods, heures de jeu)
+1. Copie `tools/kb-export/export.py` sur la machine du serveur Minecraft (Python 3 requis, rien d'autre).
+2. Définis `KB_WORLD_DIR` (dossier du monde), `KB_PUSH_URL` (`http://IP_ANOMIA:30140/b2_staffpanel/kbpush`) et `KB_PUSH_SECRET` (le même secret que ci-dessus).
+3. Planifie-le toutes les 2 à 5 minutes (cron ou planificateur de tâches Windows).
+4. Succès liés à un mod : ajoute une ligne dans `config.js` → `achievements.kannibaventure.list` avec `adv: "modid:chemin/avancement"` (l'identifiant se lit dans `world/advancements/<uuid>.json`).
+
+Sans ces deux étapes, tout fonctionne : seules les heures de jeu comptent pour les succès KannibAventure.

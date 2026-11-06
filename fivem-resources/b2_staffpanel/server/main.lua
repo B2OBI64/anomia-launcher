@@ -47,13 +47,37 @@ local function refreshKb(cb)
         kbCache.busy = false
         local ok, j = pcall(json.decode, body or "")
         if status == 200 and ok and type(j) == "table" then
-            kbCache.data = { online = j.online and true or false, players = j.players and j.players.online or 0, maxPlayers = j.players and j.players.max or 0, version = j.version }
+            kbCache.data = { online = j.online and true or false, players = j.players and j.players.online or 0, maxPlayers = j.players and j.players.max or 0, version = j.version, list = (function() local l = {} if j.players and type(j.players.list) == "table" then for _, pl in ipairs(j.players.list) do if pl.name then l[#l + 1] = pl.name end end end return l end)() }
             kbCache.at = os.time()
         elseif not kbCache.data then
             kbCache.data = nil
         end
         cb(kbCache.data)
     end, "GET", "", { ["User-Agent"] = "KannibalLauncher/1.0" })
+end
+-- Succes KannibAventure : donnees poussees par un script sur la machine Minecraft (tools/kb-export/export.py)
+-- Convar : set anomia_kb_push_secret "un-long-secret"  (sans elle, la route kbpush est desactivee)
+local KB_STATS_KEY = "kb_stats"
+local kbStats = { players = {}, at = 0 }
+do
+    local raw = GetResourceKvpString(KB_STATS_KEY)
+    if raw then local ok, j = pcall(json.decode, raw) if ok and type(j) == "table" then kbStats = j end end
+end
+local function kbPlayerView(p)
+    return { name = p.name, adv = p.adv or {}, playTicks = p.playTicks or 0, at = kbStats.at }
+end
+local function kbFind(uuid, name)
+    if uuid and uuid ~= "" then
+        local key = tostring(uuid):lower():gsub("-", "")
+        local p = kbStats.players[key]
+        if p then return p end
+    end
+    if name and name ~= "" then
+        for _, p in pairs(kbStats.players) do
+            if p.name and p.name:lower() == name:lower() then return p end
+        end
+    end
+    return nil
 end
 local subCache = {}  -- jeton Discord -> { sub, expires } (120 s)
 
@@ -252,6 +276,35 @@ SetHttpHandler(function(req, res)
     if ppath:find("kbstatus", 1, true) then
         local maint = GetResourceKvpString(KB_MAINT_KEY) == "true"
         refreshKb(function(kb) send(res, 200, { kbMaintenance = maint, kb = kb }) end)
+        return
+    end
+    if ppath:find("kbpush", 1, true) then
+        local secret = GetConvar("anomia_kb_push_secret", "")
+        if secret == "" or headers["x-push-secret"] ~= secret then send(res, 403, { error = "forbidden" }) return end
+        req.setDataHandler(function(body)
+            local ok, j = pcall(json.decode, body or "")
+            if not ok or type(j) ~= "table" or type(j.players) ~= "table" then send(res, 400, { error = "bad_body" }) return end
+            local players = {}
+            for uuid, p in pairs(j.players) do
+                if type(p) == "table" then
+                    players[(tostring(uuid):lower():gsub("-", ""))] = { name = tostring(p.name or ""), adv = type(p.adv) == "table" and p.adv or {}, playTicks = tonumber(p.playTicks) or 0 }
+                end
+            end
+            kbStats = { players = players, at = os.time() }
+            SetResourceKvp(KB_STATS_KEY, json.encode(kbStats))
+            send(res, 200, { ok = true, count = j.count })
+        end)
+        return
+    end
+    if ppath:find("kbach", 1, true) then
+        local q = ppath:match("%?(.*)") or ""
+        local uuid = q:match("uuid=([%w%-]+)")
+        local name = q:match("name=([^&]+)")
+        local decoded = name and (name:gsub("%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end)) or nil
+        local p = kbFind(uuid, decoded)
+        if not p then send(res, 200, { found = false }) return end
+        local v = kbPlayerView(p) v.found = true
+        send(res, 200, v)
         return
     end
     if ppath:find("subcheck", 1, true) then

@@ -51,14 +51,6 @@
   // Easter egg « noctambule » : launcher ouvert entre 3 h et 5 h du matin
   setTimeout(() => { const h = new Date().getHours(); if (h >= 3 && h < 5) egg("noctambule", "🌙", "Tu ne dors jamais ?"); }, 6000);
 
-  // Indices (visibles sur l'accueil) : on en montre un, au hasard
-  const HINTS = [
-    "Fais le Konami code : une petite surprise t'attend.",
-    "Tape « kannibal » au clavier, juste pour voir…",
-    "Le logo en haut à gauche adore qu'on insiste.",
-    "Certains codes secrets font exploser des choses…",
-    "Il paraît que le launcher cache des secrets. Combien en trouveras-tu ?"
-  ];
   // 1) Konami code
   const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
   let kpos = 0;
@@ -90,54 +82,30 @@
       if (c >= n) { c = 0; fn(); }
     });
   }
-  // Accueil : catégories de succès
-  const CATS = { anomia: "Anomia RP", launcher: "Launcher" };
-  async function refreshHomeAch() {
-    const box = document.getElementById("ach-home-cats"); if (!box) return;
-    const hint = document.getElementById("egg-hint");
-    if (hint) hint.textContent = "💡 " + HINTS[Math.floor(Math.random() * HINTS.length)];
-    let list = [], got = {};
-    let r = null;
-    try { r = await window.getAchData(); } catch (err) { r = null; }
-    if (r && r.ok && r.linked) { list = r.list || []; got = r.achievements || {}; }
-    else {
-      try { const s = await api.getLauncherAchState(); list = s.list || []; got = s.unlocked || {}; } catch (err) { /* ignore */ }
-    }
-    const linked = Boolean(r && r.ok && r.linked);
-    const groups = { anomia: [], launcher: [] };
-    list.forEach((d) => (groups[d.category === "launcher" ? "launcher" : "anomia"]).push(d));
-    const row = (name, arr, note) => {
-      const n = arr.filter((d) => got[d.key]).length, t = arr.length || 1;
-      const rar = ["bronze", "silver", "gold", "secret"].map((k) => {
-        const a = arr.filter((d) => d.rarity === k); const u = a.filter((d) => got[d.key]).length;
-        return a.length ? `<i class="hc-dot rarity-${k}" title="${RAR[k]} : ${u}/${a.length}">${u}/${a.length}</i>` : "";
-      }).join("");
-      return `<div class="hc-cat"><div class="hc-cat-top"><b>${name}</b><span>${note || n + "/" + arr.length}</span></div><div class="hc-bar"><div style="width:${Math.round(100 * n / t)}%"></div></div>${note ? "" : `<div class="hc-rar">${rar}</div>`}</div>`;
-    };
-    box.innerHTML = row(CATS.launcher, groups.launcher) + (linked ? row(CATS.anomia, groups.anomia) : row(CATS.anomia, groups.anomia, "Connecte-toi"));
-  }
-  window.refreshHomeAch = refreshHomeAch;
-  const _go = window.goToView;
-  window.goToView = function (n) { _go.apply(this, arguments); if (n === "hub") refreshHomeAch(); };
-  const openBtn = document.getElementById("ach-home-open");
-  if (openBtn) openBtn.addEventListener("click", () => { try { selectServer("anomia"); goToView("achievements"); } catch (err) { /* ignore */ } });
-  refreshHomeAch();
-
-  // Mode pause : on cache toute l'interface, il ne reste que le thème animé
-  let zen = false;
+  // Pause automatique : après 5 min sans activité, l'interface disparaît et seul le thème animé reste.
+  const IDLE_MS = 5 * 60 * 1000;
+  let zen = false, idleTimer = null;
   const zenHint = document.getElementById("zen-hint");
   function setZen(on) {
+    if (zen === on) return;
     zen = on; document.body.classList.toggle("zen", on);
     window.dispatchEvent(new CustomEvent("zen", { detail: on }));
     if (on && zenHint) { zenHint.classList.add("show"); setTimeout(() => zenHint.classList.remove("show"), 3500); }
   }
-  const zb = document.getElementById("btn-zen");
-  if (zb) zb.addEventListener("click", (ev) => { ev.stopPropagation(); setZen(true); });
-  ["click", "keydown", "wheel"].forEach((t) => document.addEventListener(t, (ev) => {
-    if (!zen) return;
-    if (t === "wheel" || (t === "click" && ev.target && ev.target.id === "btn-zen")) return;
-    setTimeout(() => setZen(false), 0); ev.stopPropagation(); ev.preventDefault();
+  function armIdle() { clearTimeout(idleTimer); idleTimer = setTimeout(() => setZen(true), IDLE_MS); }
+  ["mousemove", "mousedown", "keydown", "wheel", "touchstart"].forEach((t) => document.addEventListener(t, (ev) => {
+    if (zen) {
+      // le 1er geste ne fait que réveiller le launcher (il n'active rien dessous)
+      if (t === "mousemove" && ev.movementX === 0 && ev.movementY === 0) return;
+      setZen(false); ev.stopPropagation(); if (t !== "mousemove") ev.preventDefault();
+    }
+    armIdle();
   }, true));
+  armIdle();
+  window.launcherZen = setZen; // test / usage manuel
+
+  // Succès débloqués côté main (ex. « Polyvalent »)
+  if (api.onLauncherAch) api.onLauncherAch((defs) => announce(defs));
 
   multiClick(".titlebar-brand", 7, () => egg("logo", "👀", "Tu as cliqué sur le logo 7 fois…"));
   multiClick("#app-version", 10, () => egg("version", "🔢", "Un numéro de version très cliqué."));

@@ -2440,3 +2440,37 @@ body.zen > *:not(#fx-bg):not(#zen-hint){opacity:0!important;pointer-events:none!
 body.zen #fx-bg{z-index:5}
 .zen-hint{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:9999;padding:8px 16px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;opacity:0;pointer-events:none;transition:opacity .5s}
 .zen-hint.show{opacity:1}
+
+/* 1.9.7 : onglets de l'accueil, filtres, succès par catégorie, média */
+.hub-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.hub-chip{padding:6px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel-solid);color:var(--text);font:inherit;font-size:12px;cursor:pointer;transition:border-color .2s,background .2s}
+.hub-chip:hover{border-color:var(--teal)}
+.hub-chip.active{background:var(--teal);color:#000;border-color:var(--teal)}
+.news-srv,.media-srv{display:inline-block;font-size:10px;letter-spacing:.8px;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.08);margin-bottom:6px}
+.news-srv-anomia,.media-srv-anomia{background:rgba(45,212,191,.18);color:#2dd4bf}
+.news-srv-kannibaventure,.media-srv-kannibaventure{background:rgba(168,85,247,.2);color:#c084fc}
+.media-item{position:relative}
+.media-srv{position:absolute;top:8px;left:8px;margin:0;backdrop-filter:blur(4px);background:rgba(0,0,0,.55)}
+.ach-cat-block{margin-bottom:30px}
+.ach-cat-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.ach-cat-head h2{margin:0;font-size:20px}.ach-cat-head span{opacity:.7;font-size:13px}
+.ach-cat-block .achievements-grid{margin-top:14px}
+#view-hub-ach .egg-hint{margin-top:8px}
+#view-hub-community .section-header{display:none}
+.players-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:14px}
+.players-col h2{font-size:16px;margin:0 0 10px}.players-col h2 span{opacity:.6;font-weight:400}
+.players-list{display:flex;flex-direction:column;gap:6px}
+.player-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel-solid);color:var(--text);font:inherit;cursor:pointer;text-align:left;transition:border-color .2s}
+.player-row:hover{border-color:var(--teal)}.player-row small{margin-left:auto;opacity:.6}
+.player-dot{width:8px;height:8px;border-radius:50%;background:#22c55e}
+.player-top{margin:0;padding-left:18px;font-size:13px;line-height:1.7}
+@media (max-width:800px){.players-cols{grid-template-columns:1fr}}
+
+/* 1.9.7 : état du serveur en tuiles (Anomia et KannibAventure) */
+.telemetry-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;background:none;border:none;margin:0 0 14px}
+.telemetry-item{border:1px solid var(--border);border-radius:16px;padding:14px;background:rgba(255,255,255,.03);transition:transform .2s,border-color .2s,background .2s}
+.telemetry-item:last-child{border:1px solid var(--border)}
+.telemetry-item-clickable:hover{transform:translateY(-3px);border-color:var(--teal);background:rgba(255,255,255,.06)}
+.telemetry-value{font-size:20px}
+.telemetry-label{margin-bottom:6px}
+.telemetry-value{font-size:18px;overflow-wrap:anywhere}

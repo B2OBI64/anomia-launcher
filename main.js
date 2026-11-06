@@ -609,6 +609,7 @@ ipcMain.handle("server:status", async () => {
 // Connexion au serveur
 // ============================================================
 ipcMain.on("server:connect", (event) => {
+  try { markServerPlayed("anomia"); } catch { /* ignore */ }
   const url = `fivem://connect/${config.server.ip}:${config.server.port}`;
 
   // Méthode d'origine (identique à la 1.4.5) : explorer.exe comme intermédiaire
@@ -860,11 +861,11 @@ ipcMain.handle("media:copyImage", async (event, url) => {
     return { ok: true };
   } catch { return { ok: false }; }
 });
-ipcMain.handle("media:get", async () => {
+async function loadMediaList(remoteUrl, localFallback) {
   let media = [];
-  if (config.media.remoteUrl) {
+  if (remoteUrl) {
     try {
-      const remote = await fetchJsonCached(config.media.remoteUrl);
+      const remote = await fetchJsonCached(remoteUrl);
       if (Array.isArray(remote)) media = remote;
     } catch {
       // on retombe sur le fichier local ci-dessous
@@ -872,14 +873,16 @@ ipcMain.handle("media:get", async () => {
   }
   if (media.length === 0) {
     try {
-      const raw = fs.readFileSync(path.join(__dirname, config.media.localFallback), "utf-8");
+      const raw = fs.readFileSync(path.join(__dirname, localFallback), "utf-8");
       media = JSON.parse(raw);
     } catch {
       media = [];
     }
   }
   return media;
-});
+}
+ipcMain.handle("media:get", () => loadMediaList(config.media.remoteUrl, config.media.localFallback));
+ipcMain.handle("media:getKb", () => loadMediaList(config.media.kbRemoteUrl, config.media.kbLocalFallback));
 
 // ============================================================
 // Diagnostic réseau (remplace l'ancien bouton "copier l'IP", peu utile)
@@ -1171,7 +1174,21 @@ ipcMain.handle("twitch:getClips", async () => {
 const LA = config.achievements.launcher;
 function getLauncherAch() {
   const s = loadSettings().launcherAch || {};
-  return { unlocked: s.unlocked || {}, eggs: s.eggs || {} };
+  return { unlocked: s.unlocked || {}, eggs: s.eggs || {}, played: s.played || {} };
+}
+function pushLauncherNew(keys) {
+  const defs = LA.list.filter((d) => keys.includes(d.key));
+  if (defs.length && mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("launcherAch:new", defs);
+}
+// « Polyvalent » : avoir lancé chacun des serveurs proposés au moins une fois
+function markServerPlayed(id) {
+  const la = getLauncherAch();
+  if (!la.played[id]) la.played[id] = Date.now();
+  const all = (config.servers || []).map((s) => s.id);
+  const newly = [];
+  if (all.every((sid) => la.played[sid]) && !la.unlocked.polyvalent) { la.unlocked.polyvalent = Date.now(); newly.push("polyvalent"); }
+  saveSettings({ launcherAch: la });
+  pushLauncherNew(newly);
 }
 function unlockLauncherAch(key) {
   const la = getLauncherAch();
@@ -1203,6 +1220,7 @@ function mergeLauncherAch(result) {
   const unlockedAt = Object.assign({}, result.unlockedAt);
   // Paliers « Chasseur de succès » : nombre total de succès débloqués (hors paliers eux-mêmes)
   const hunterKeys = (LA.hunters || []).map((h) => h.key);
+  try { const kbHrs = (kbPlaytime().total || 0) / 3600; KBA.list.forEach((d) => { if (d.hours && kbHrs >= d.hours) achievements["__kb_" + d.key] = true; }); } catch { /* ignore */ }
   const base = new Set([...Object.keys(achievements).filter((k) => achievements[k]), ...Object.keys(la.unlocked)].filter((k) => !hunterKeys.includes(k)));
   const launcherNew = [];
   (LA.hunters || []).forEach((h) => { if (base.size >= h.n && !la.unlocked[h.key]) { la.unlocked[h.key] = Date.now(); launcherNew.push(h.key); } });
@@ -1210,6 +1228,56 @@ function mergeLauncherAch(result) {
   LA.list.forEach((d) => { if (la.unlocked[d.key]) { achievements[d.key] = true; unlockedAt[d.key] = la.unlocked[d.key]; } });
   return Object.assign({}, result, { list: (result.list || config.achievements.list).concat(launcherDefs()), achievements, unlockedAt, launcherNew, launcherNewDefs: LA.list.filter((d) => launcherNew.includes(d.key)) });
 }
+// --- Succès KannibAventure ---
+const KBA = config.achievements.kannibaventure;
+function kbAchCompute(advList, playSec) {
+  const adv = new Set(advList || []);
+  const hours = (playSec || 0) / 3600;
+  const unlocked = {};
+  KBA.list.forEach((d) => {
+    if (d.hours && hours >= d.hours) unlocked[d.key] = true;
+    else if (d.adv && adv.has(d.adv)) unlocked[d.key] = true;
+    else if (d.advCount && adv.size >= d.advCount) unlocked[d.key] = true;
+  });
+  return unlocked;
+}
+const kbDefs = () => KBA.list.map((d) => Object.assign({ category: "kannibaventure" }, d));
+async function kbRemoteStats(query) {
+  try {
+    const r = await staffRequest("kbach?" + query, "public");
+    if (r.status === 200 && r.body && r.body.found) return r.body;
+  } catch { /* hôte Anomia éteint */ }
+  return null;
+}
+ipcMain.handle("kbAch:getSelf", async () => {
+  const prof = loadSettings().kbProfile;
+  const remote = prof && prof.id ? await kbRemoteStats("uuid=" + encodeURIComponent(prof.id)) : null;
+  const playSec = Math.max(kbPlaytime().total || 0, remote ? Math.round((remote.playTicks || 0) / 20) : 0);
+  return { list: kbDefs(), unlocked: kbAchCompute(remote ? remote.adv : [], playSec), playSec, linked: Boolean(prof && prof.id), hasServerData: Boolean(remote) };
+});
+// Fiche d'un autre joueur (visible par tout le monde)
+ipcMain.handle("player:getProfile", async (e, server, name) => {
+  name = String(name || "").slice(0, 32);
+  if (!name) return { ok: false };
+  if (server === "kannibaventure") {
+    const remote = await kbRemoteStats("name=" + encodeURIComponent(name));
+    if (!remote) return { ok: true, name, linked: false };
+    const playSec = Math.round((remote.playTicks || 0) / 20);
+    return { ok: true, name, linked: true, list: kbDefs(), unlocked: kbAchCompute(remote.adv, playSec), playSec };
+  }
+  try {
+    const r = await fetchJson(`${config.server.achievementsUrl}?playerName=${encodeURIComponent(name)}`, 6000);
+    if (!r || r.linked === false) return { ok: true, name, linked: false };
+    return { ok: true, name, linked: true, list: config.achievements.list, unlocked: r.achievements || {}, playSec: r.playtimeSeconds || 0, titlePriority: config.achievements.titlePriority || [] };
+  } catch { return { ok: false, error: "Serveur injoignable." }; }
+});
+// Joueurs connectés sur KannibAventure (liste mise en cache côté Anomia)
+ipcMain.handle("kb:getPlayers", async () => {
+  const m = await staffRequest("kbstatus", "public").catch(() => null);
+  const kb = m && m.status === 200 && m.body && m.body.kb;
+  return { ok: Boolean(kb), online: Boolean(kb && kb.online), names: (kb && kb.list) || [], count: kb ? kb.players : 0, max: kb ? kb.maxPlayers : 0 };
+});
+
 ipcMain.handle("launcherAch:state", () => ({ list: launcherDefs(), unlocked: getLauncherAch().unlocked }));
 
 ipcMain.handle("achievements:getTitlePriority", () => (LA.exclusiveTitles || []).concat(config.achievements.titlePriority || []));
@@ -1598,6 +1666,7 @@ ipcMain.handle("kb:launch", async () => {
       spawn("explorer.exe", ["shell:AppsFolder\\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft"], { detached: true, stdio: "ignore" }).unref();
     } else return { ok: false, error: "Minecraft Launcher introuvable." };
   } catch (e) { return { ok: false, error: "Impossible de lancer le Minecraft Launcher : " + e.message }; }
+  try { markServerPlayed("kannibaventure"); } catch { /* ignore */ }
   return { ok: true, version: kb.minecraftVersionId || kb.minecraftVersion || "26.1.2", ...prep, launcherFound: Boolean(exe) };
 });
 
@@ -1795,6 +1864,7 @@ ipcMain.handle("kb:launchDirect", async () => {
     if (early) return { ok: false, fallback: true, reason: early };
     child.unref();
     if (child.pid) kbTrackStart(child.pid);
+    try { markServerPlayed("kannibaventure"); if (mc.profile && mc.profile.id) saveSettings({ kbProfile: { id: String(mc.profile.id).replace(/-/g, ""), name: mc.profile.name } }); } catch { /* ignore */ }
     return { ok: true, direct: true, version, player: mc.profile && mc.profile.name };
   } catch (e) {
     klog("# erreur : " + ((e && e.stack) || e));

@@ -1,0 +1,34 @@
+[
+  {
+    "q": "Qu'est-ce qu'Anomia RP ?",
+    "a": "Un serveur roleplay GTA V (FiveM, base QBCore) pour la communauté francophone de B2."
+  },
+  {
+    "q": "Le serveur est-il ouvert en ce moment ?",
+    "a": "Anomia est en pause et un retour est prévu en 2027. Le launcher reste le meilleur moyen d'être prévenu : actualités, Discord et statut y sont toujours à jour."
+  },
+  {
+    "q": "De quoi ai-je besoin pour jouer ?",
+    "a": "GTA V et FiveM installés sur ton PC. Le launcher vérifie FiveM et te connecte au serveur en un clic avec le bouton « Se connecter »."
+  },
+  {
+    "q": "Pourquoi passer par le launcher ?",
+    "a": "Il te donne le statut du serveur, les actualités, le règlement, la carte, tes succès et ton temps de jeu au même endroit, et protège l'adresse du serveur."
+  },
+  {
+    "q": "Comment fonctionnent les succès ?",
+    "a": "Connecte-toi avec Discord dans le launcher et lie ton compte en jeu : tes succès et ton temps de jeu se synchronisent automatiquement. Les succès secrets restent cachés jusqu'à leur déblocage."
+  },
+  {
+    "q": "Où lire le règlement ?",
+    "a": "Dans l'onglet Règlement du launcher. Il est à lire avant ta première connexion."
+  },
+  {
+    "q": "J'ai un problème technique, que faire ?",
+    "a": "Essaie l'onglet Fichiers (vider le cache FiveM), puis préviens le staff sur le Discord d'Anomia en décrivant ton problème."
+  },
+  {
+    "q": "Comment contacter le staff ?",
+    "a": "Via le Discord d'Anomia (bouton dans l'onglet Accueil). L'onglet Staff présente toute l'équipe."
+  }
+]
