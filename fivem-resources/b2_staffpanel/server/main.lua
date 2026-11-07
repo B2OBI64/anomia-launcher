@@ -2,7 +2,7 @@
 -- b2_staffpanel
 --
 -- Donne au B2 Launcher (version staff) :
---   GET /b2_staffpanel/role     -> { role = "admin" | "mod" | nil }
+--   GET /b2_staffpanel/role     -> { role = "admin" | "mod" | nil, scopes = { anomia, kb } }
 --   GET /b2_staffpanel/players  -> liste des joueurs connectes (staff uniquement)
 --
 -- Authentification :
@@ -21,6 +21,7 @@
 --   POST/GET /b2_staffpanel/maintenance/on|off -> bascule la maintenance (admin uniquement)
 --   GET /b2_staffpanel/health   -> sante du serveur (admin uniquement)
 --   GET /b2_staffpanel/kbstatus -> { kbMaintenance } (public) ; /kbmaintenance/on|off (admin) : maintenance KannibAventure
+--   GET /b2_staffpanel/rolecheck/anomia|kannibaventure -> { citizen: true|false|null } (role citoyen requis pour jouer)
 --   GET /b2_staffpanel/subcheck -> { sub } (en-tete x-discord-token) : role abonne sur Kannibal Team (convar anomia_sub_role_id)
 -- Lecture seule : aucune action (kick/ban...) n'est possible depuis le launcher.
 -- ============================================================
@@ -32,6 +33,28 @@ local STAFF_ROLE_DEFAULT = "1112002757004632215"
 local MOD_GUILD_DEFAULT = "1407312954616975360" -- serveur Discord Anomia
 local MOD_ROLE_DEFAULT = "1434845539094233098"  -- role Modérateur Anomia
 local SUB_ROLE_DEFAULT = "1433850593759465554"   -- role abonne Twitch sur Kannibal Team (theme "pluie de logos")
+-- Admin du launcher : fondateur + admin de chaque Discord (guild:role). scope : all = tous les serveurs, anomia, kb.
+-- Fondateurs et admin Kannibal Team = tous les droits ; admin Anomia = Anomia ; admin KannibAventure = KannibAventure. Ajouts possibles : set anomia_extra_admin_roles "guild:role,guild:role"
+local ADMIN_ROLES = {
+    { guild = "445112343064477696",  role = "1112002757004632215", scope = "all" }, -- Kannibal Team : fondateur
+    { guild = "445112343064477696",  role = "1112001736303984750", scope = "all" }, -- Kannibal Team : administrateur
+    { guild = "1407312954616975360", role = "1443623997316006040", scope = "all" }, -- Anomia : fondateur
+    { guild = "1407312954616975360", role = "1443624137607352321", scope = "anomia" }, -- Anomia : admin
+    { guild = "1357757210272469212", role = "1357760463903133902", scope = "kb" }, -- KannibAventure : administrateur
+}
+-- Role citoyen requis pour se connecter a chaque serveur
+local CITIZEN = {
+    anomia = { guild = "1407312954616975360", role = "1434849042319278231", convar = "anomia_citizen_role_id" },
+    kannibaventure = { guild = "1357757210272469212", role = "1370879305097154692", convar = "anomia_kb_citizen_role_id" },
+}
+local function adminRoleList()
+    local list = {}
+    local g, r = GetConvar("anomia_staff_guild_id", ""), GetConvar("anomia_staff_role_id", "")
+    if g ~= "" and r ~= "" then list[#list + 1] = { guild = g, role = r, scope = "all" } end
+    for _, e in ipairs(ADMIN_ROLES) do list[#list + 1] = e end
+    for guild, role in GetConvar("anomia_extra_admin_roles", ""):gmatch("(%d+):(%d+)") do list[#list + 1] = { guild = guild, role = role, scope = "all" } end
+    return list
+end
 local KB_MAINT_KEY = "kb_maintenance"           -- etat de maintenance de KannibAventure (persistant)
 local roleCache = {} -- jeton Discord -> { role, expires } (60 s)
 -- Statut Minecraft mis en cache (1 requete par minute max, quel que soit le nombre de joueurs du launcher)
@@ -110,7 +133,7 @@ end
 local function getDiscordRole(token, cb)
     if not token or token == "" or #token > 200 then cb(nil, "bad_token") return end
     local cached = roleCache[token]
-    if cached and cached.expires > os.time() then cb(cached.role, cached.reason) return end
+    if cached and cached.expires > os.time() then cb(cached.role, cached.reason, cached.scopes) return end
 
     local botToken = GetConvar("anomia_discord_bot_token", "")
     local guildId = GetConvar("anomia_staff_guild_id", STAFF_GUILD_DEFAULT)
@@ -130,17 +153,62 @@ local function getDiscordRole(token, cb)
             cb(nil, "token_expired")
             return
         end
-        local function finish(role, reason)
-            roleCache[token] = { role = role, reason = reason, expires = os.time() + 60 }
-            cb(role, reason)
+        local function finish(role, reason, scopes)
+            roleCache[token] = { role = role, reason = reason, scopes = scopes, expires = os.time() + 60 }
+            cb(role, reason, scopes)
         end
-        memberHasRole(botToken, guildId, roleId, user.id, function(isAdmin, st)
-            if isAdmin then finish("admin", nil) return end
-            local adminReason = (st == 200 and "missing_role") or (st == 404 and "not_in_guild") or "bot_error"
-            -- pas admin : verifie le role modo sur le serveur Anomia
-            memberHasRole(botToken, modGuildId, modRoleId, user.id, function(isMod)
-                if isMod then finish("mod", nil) else finish(nil, adminReason) end
+        -- admin = fondateur ou admin sur l'un des 3 Discord (Kannibal Team, Anomia, KannibAventure)
+        local list = adminRoleList()
+        local i, firstSt = 0, nil
+        local scopes = { anomia = false, kb = false }
+        local isAdmin = false
+        local function nextAdmin()
+            i = i + 1
+            local e = list[i]
+            if not e then
+                if isAdmin then finish("admin", nil, scopes) return end
+                -- pas admin : verifie le role modo sur le serveur Anomia (lecture seule, pas de maintenance)
+                memberHasRole(botToken, modGuildId, modRoleId, user.id, function(isMod)
+                    if isMod then finish("mod", nil, { anomia = false, kb = false }) return end
+                    local st = firstSt
+                    finish(nil, (st == 200 and "missing_role") or (st == 404 and "not_in_guild") or "bot_error", nil)
+                end)
+                return
+            end
+            memberHasRole(botToken, e.guild, e.role, user.id, function(has, st)
+                if has then
+                    isAdmin = true
+                    if e.scope == "all" or e.scope == "anomia" then scopes.anomia = true end
+                    if e.scope == "all" or e.scope == "kb" then scopes.kb = true end
+                end
+                if i == 1 then firstSt = st end
+                if st == 200 then firstSt = 200 end
+                nextAdmin()
             end)
+        end
+        nextAdmin()
+    end, "GET", "", { ["Authorization"] = "Bearer " .. token })
+end
+
+-- Role citoyen (requis pour jouer) : cb(true|false|nil) ; nil = verification impossible
+local citizenCache = {}
+local function checkCitizen(token, server, cb)
+    if not token or token == "" or #token > 200 then cb(nil) return end
+    local def = CITIZEN[server]
+    if not def then cb(nil) return end
+    local key = token .. ":" .. server
+    local c = citizenCache[key]
+    if c and c.expires > os.time() then cb(c.v) return end
+    local botToken = GetConvar("anomia_discord_bot_token", "")
+    if botToken == "" then cb(nil) return end
+    PerformHttpRequest("https://discord.com/api/v10/users/@me", function(status, body)
+        local ok, user = pcall(json.decode, body or "")
+        if status ~= 200 or not ok or not user or not user.id then cb(nil) return end
+        memberHasRole(botToken, def.guild, GetConvar(def.convar, def.role), user.id, function(has, st)
+            local v
+            if st == 200 then v = has and true or false elseif st == 404 then v = false else v = nil end
+            citizenCache[key] = { v = v, expires = os.time() + 60 }
+            cb(v)
         end)
     end, "GET", "", { ["Authorization"] = "Bearer " .. token })
 end
@@ -307,11 +375,17 @@ SetHttpHandler(function(req, res)
         send(res, 200, v)
         return
     end
+    if ppath:find("rolecheck", 1, true) then
+        local srv = tostring(req.path or ""):find("kannibaventure", 1, true) and "kannibaventure" or "anomia"
+        checkCitizen(headers["x-discord-token"], srv, function(v) send(res, 200, { citizen = v }) end)
+        return
+    end
     if ppath:find("subcheck", 1, true) then
         checkSub(headers["x-discord-token"], function(has) send(res, 200, { sub = has }) end)
         return
     end
-    resolveRole(headers, function(role, reason)
+    resolveRole(headers, function(role, reason, scopes)
+        scopes = scopes or { anomia = false, kb = false }
         if not role then
             noteFailure(addr)
             send(res, 403, { error = "invalid_code", reason = reason or "invalid_code" })
@@ -320,7 +394,7 @@ SetHttpHandler(function(req, res)
 
         local path = tostring(req.path or "")
         if path:find("kbmaintenance", 1, true) then
-            if role ~= "admin" then send(res, 403, { error = "admin_only" }) return end
+            if role ~= "admin" or not scopes.kb then send(res, 403, { error = "admin_only" }) return end
             local state = path:find("/on", 1, true) and "on" or (path:find("/off", 1, true) and "off" or nil)
             if not state then send(res, 400, { error = "bad_state" }) return end
             SetResourceKvp(KB_MAINT_KEY, state == "on" and "true" or "false")
@@ -329,7 +403,7 @@ SetHttpHandler(function(req, res)
             return
         end
         if path:find("maintenance", 1, true) then
-            if role ~= "admin" then send(res, 403, { error = "admin_only" }) return end
+            if role ~= "admin" or not scopes.anomia then send(res, 403, { error = "admin_only" }) return end
             local state = path:find("/on", 1, true) and "on" or (path:find("/off", 1, true) and "off" or nil)
             if not state then send(res, 400, { error = "bad_state" }) return end
             ExecuteCommand("maintenance " .. state)
@@ -338,7 +412,7 @@ SetHttpHandler(function(req, res)
             return
         end
         if path:find("health", 1, true) then
-            if role ~= "admin" then
+            if role ~= "mod" and not scopes.anomia then
                 send(res, 403, { error = "admin_only" })
                 return
             end
@@ -346,9 +420,9 @@ SetHttpHandler(function(req, res)
             return
         end
         if path:find("players", 1, true) then
-            send(res, 200, { role = role, players = buildPlayers(), maxClients = GetConvarInt("sv_maxclients", 0) })
+            send(res, 200, { role = role, scopes = scopes, players = buildPlayers(), maxClients = GetConvarInt("sv_maxclients", 0) })
         else
-            send(res, 200, { role = role })
+            send(res, 200, { role = role, scopes = scopes })
         end
     end)
 end)

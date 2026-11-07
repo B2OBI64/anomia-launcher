@@ -432,16 +432,20 @@
   }
   $("kbadm-refresh").addEventListener("click", loadKbAdmin);
   // Admin en service : peut "rejoindre" KannibAventure même avant l'ouverture (copie l'adresse du serveur)
+  window.refreshKbConnect = () => refreshKbConnect();
   function refreshKbConnect() {
     const b = $("kb-connect"), kb = typeof getServer === "function" ? getServer("kannibaventure") : null;
     if (!b || !kb) return;
     if (document.body.classList.contains("is-offline")) { b.disabled = true; b.textContent = "Hors ligne"; b.onclick = null; return; }
-    const canPlay = (isAdminUnlocked || kb.status === "online") && kb.serverAddress;
-    if (kbMaintenance && !isAdminUnlocked) { b.disabled = true; b.textContent = "Serveur en maintenance"; b.onclick = null; return; }
+    const kbAdm = window.isKbAdmin && window.isKbAdmin();
+    const canPlay = (kbAdm || kb.status === "online") && kb.serverAddress;
+    if (kbMaintenance && !kbAdm) { b.disabled = true; b.textContent = "Serveur en maintenance"; b.onclick = null; return; }
     if (!canPlay) { b.disabled = true; b.textContent = kb.connectLabel || "Bientôt"; b.onclick = null; return; }
-    b.disabled = false; b.textContent = isAdminUnlocked && kb.status !== "online" ? "Se connecter (admin)" : "Se connecter";
+    if (window.__citizen && window.__citizen.kannibaventure === false && !kbAdm) { b.disabled = true; b.textContent = "Rôles requis"; b.title = "Rejoins le Discord pour passer ta douane"; b.onclick = null; return; }
+    b.title = "";
+    b.disabled = false; b.textContent = kbAdm && kb.status !== "online" ? "Se connecter (admin)" : "Se connecter";
     b.onclick = async () => {
-      if (typeof discordProfile !== "undefined" && !discordProfile && await api.isDiscordConfigured()) { showInfo("Connexion Discord requise", "<p>Connecte-toi avec Discord avant de rejoindre le serveur.</p>"); return; }
+      if (typeof discordProfile !== "undefined" && !discordProfile && await api.isDiscordConfigured()) { showInfo("Connexion Discord requise", "<p>Lie ton compte Discord avant de rejoindre le serveur.</p>"); return; }
       b.disabled = true; b.textContent = "Lancement de Minecraft…";
       // Connexion directe : installe NeoForge + mods si besoin, puis lance Minecraft dans le serveur (repli : mode classique)
       let fallbackReason = null;
@@ -470,7 +474,7 @@
     const tabs = $("tabbar-tabs");
     if (!tabs) return;
     const existing = tabs.querySelector('[data-view="kb-admin"]');
-    if (currentServerId === "kannibaventure" && isAdminUnlocked) {
+    if (currentServerId === "kannibaventure" && window.isKbAdmin && window.isKbAdmin()) {
       if (!existing) {
         const btn = document.createElement("button"); btn.className = "tab-item"; btn.dataset.view = "kb-admin"; btn.textContent = "Admin";
         btn.addEventListener("click", () => goToView("kb-admin")); tabs.appendChild(btn);
@@ -547,7 +551,7 @@
   let healthTimer = null;
   const fmtUp = (s) => { const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60); return d ? `${d} j ${h} h` : `${h} h ${String(m).padStart(2, "0")}`; };
   async function loadHealth() {
-    if (!isAdminUnlocked) return;
+    if (!staffRole) return;
     const msg = $("health-msg"), grid = $("health-grid");
     let r; try { r = await api.getServerHealth(); } catch (e) { r = { ok: false, error: "Erreur." }; }
     if (!r.ok) { msg.textContent = r.error || "Indisponible."; msg.classList.remove("hidden"); grid.classList.add("hidden"); $("health-stops").innerHTML = ""; return; }
@@ -567,7 +571,7 @@
       ? `<div class="health-stops"><b>Ressources arrêtées récemment</b>${stops.map((s) => `<span>${esc(s.name)} · il y a ${fmtDur(s.secondsAgo * 1000)}</span>`).join("")}</div>`
       : `<p class="health-ok">✓ Aucune ressource arrêtée depuis le démarrage.</p>`;
   }
-  function startHealthLoop() { stopHealthLoop(); if (!isAdminUnlocked) return; loadHealth(); healthTimer = setInterval(loadHealth, 15000); }
+  function startHealthLoop() { stopHealthLoop(); if (!staffRole) return; loadHealth(); healthTimer = setInterval(loadHealth, 15000); }
   function stopHealthLoop() { if (healthTimer) { clearInterval(healthTimer); healthTimer = null; } }
   $("health-refresh").addEventListener("click", loadHealth);
 

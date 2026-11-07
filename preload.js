@@ -72,6 +72,7 @@ contextBridge.exposeInMainWorld("anomia", {
   toggleKbMaintenance: (enable) => ipcRenderer.invoke("admin:toggleKbMaintenance", enable),
   getTour: () => ipcRenderer.invoke("tour:get"),
   checkSub: () => ipcRenderer.invoke("sub:check"),
+  checkCitizen: (server) => ipcRenderer.invoke("role:citizen", server),
   toggleMaintenance: (enable) => ipcRenderer.invoke("admin:toggleMaintenance", enable),
   isOnline: () => ipcRenderer.invoke("network:isOnline"),
   onSessionEnded: (cb) => { ipcRenderer.removeAllListeners("session:ended"); ipcRenderer.on("session:ended", (e, d) => cb(d)); },

@@ -402,7 +402,7 @@ app.whenReady().then(restoreDiscordToken);
 
 function clearDiscordProfile() {
   persistDiscordToken(null);
-  cachedStaffRole = null; cachedStaffCode = null; cachedAdminPassphrase = null;
+  cachedStaffRole = null; cachedStaffCode = null; cachedAdminPassphrase = null; cachedStaffScopes = { anomia: false, kb: false };
   try {
     fs.unlinkSync(discordProfilePath());
   } catch {
@@ -995,6 +995,7 @@ ipcMain.handle("fivem:check", async () => {
 // déclenchées depuis le launcher pendant cette session.
 let cachedAdminPassphrase = null;
 let cachedStaffRole = null; // "admin" | "mod"
+let cachedStaffScopes = { anomia: false, kb: false };
 let cachedStaffCode = null; // code staff (admin ou modo), en mémoire uniquement
 
 function staffRequest(urlPath, code) {
@@ -1027,9 +1028,10 @@ ipcMain.handle("admin:unlock", async (event, passphrase) => {
     const r = await staffRequest("role", mode);
     if (r.status === 200 && (r.body.role === "admin" || r.body.role === "mod")) {
       cachedStaffRole = r.body.role;
+      cachedStaffScopes = { anomia: !!(r.body.scopes && r.body.scopes.anomia), kb: !!(r.body.scopes && r.body.scopes.kb) };
       cachedStaffCode = mode;
       cachedAdminPassphrase = null;
-      return { ok: true, role: r.body.role };
+      return { ok: true, role: r.body.role, scopes: cachedStaffScopes };
     }
     if (r.status === 429) return { ok: false, reason: "throttled", error: "Trop d'essais, réessaie dans une minute." };
     return { ok: false, reason: (r.body && r.body.reason) || (mode === "discord" ? "server_outdated" : "invalid_code") };
@@ -1039,8 +1041,8 @@ ipcMain.handle("admin:unlock", async (event, passphrase) => {
 });
 
 ipcMain.handle("admin:toggleMaintenance", async (event, enable) => {
-  if (cachedStaffRole !== "admin" || cachedStaffCode !== "discord") {
-    return { ok: false, error: "Session admin expirée, reconnecte-toi avec Discord." };
+  if (cachedStaffRole !== "admin" || cachedStaffCode !== "discord" || !cachedStaffScopes.anomia) {
+    return { ok: false, error: "Session admin expirée ou droits insuffisants pour Anomia." };
   }
   try {
     const r = await staffRequest(`maintenance/${enable ? "on" : "off"}`, "discord");
@@ -1065,7 +1067,7 @@ ipcMain.handle("admin:getPlayers", async () => {
 });
 
 ipcMain.handle("admin:getHealth", async () => {
-  if (cachedStaffRole !== "admin" || !cachedStaffCode) return { ok: false, error: "Réservé aux admins." };
+  if (!cachedStaffRole || !cachedStaffCode) return { ok: false, error: "Réservé au staff." };
   try {
     const r = await staffRequest("health", cachedStaffCode);
     if (r.status === 200 && r.body && r.body.health) return { ok: true, health: r.body.health };
@@ -1552,7 +1554,7 @@ function pingMinecraft(host, port, timeoutMs = 4000) {
 ipcMain.handle("kb:getStatus", async () => {
   const kb = (config.servers || []).find((s) => s.id === "kannibaventure") || {};
   if (!kb.serverAddress) return { ok: false, error: "Adresse du serveur non configurée." };
-  const isAdmin = cachedStaffRole === "admin";
+  const isAdmin = cachedStaffRole === "admin" && cachedStaffScopes.kb;
   // 1) Anomia (hôte FiveM, toujours allumé) : maintenance + statut Minecraft en cache (évite de solliciter le serveur Minecraft)
   const m = await staffRequest("kbstatus", "public").catch(() => null);
   const cached = m && m.status === 200 && m.body && m.body.kb && typeof m.body.kb.online === "boolean" ? m.body.kb : null;
@@ -1566,8 +1568,8 @@ ipcMain.handle("kb:getStatus", async () => {
   return out;
 });
 ipcMain.handle("admin:toggleKbMaintenance", async (event, enable) => {
-  if (cachedStaffRole !== "admin" || cachedStaffCode !== "discord") {
-    return { ok: false, error: "Session admin expirée, reconnecte-toi avec Discord." };
+  if (cachedStaffRole !== "admin" || cachedStaffCode !== "discord" || !cachedStaffScopes.kb) {
+    return { ok: false, error: "Session admin expirée ou droits insuffisants pour KannibAventure." };
   }
   try {
     const r = await staffRequest(`kbmaintenance/${enable ? "on" : "off"}`, "discord");
@@ -1576,6 +1578,15 @@ ipcMain.handle("admin:toggleKbMaintenance", async (event, enable) => {
   } catch { return { ok: false, error: "Serveur injoignable (l'hôte FiveM doit être allumé)." }; }
 });
 // Rôle abonné Twitch (Kannibal Team) : vérifié côté serveur avec le jeton Discord de l'utilisateur
+ipcMain.handle("role:citizen", async (e, server) => {
+  if (!discordToken) return { ok: false, citizen: null };
+  try {
+    const r = await staffRequest("rolecheck/" + (server === "kannibaventure" ? "kannibaventure" : "anomia"), "discord");
+    const c = r.body && typeof r.body.citizen === "boolean" ? r.body.citizen : null;
+    return { ok: r.status === 200, citizen: c };
+  } catch { return { ok: false, citizen: null }; }
+});
+
 ipcMain.handle("sub:check", async () => {
   if (!discordToken) return { ok: false, sub: false };
   try {

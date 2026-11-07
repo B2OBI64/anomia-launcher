@@ -15,6 +15,24 @@ let streamerMode = false; // mode présentation : masque pseudo/avatar
 let chosenTitleKey = ""; // titre choisi par le joueur
 let isAdminUnlocked = false; // admin complet (bypass connexion, maintenance)
 let staffRole = null; // "admin" | "mod"
+let staffScopes = { anomia: false, kb: false };
+// Rôle « citoyen » par serveur : true / false / null (inconnu). Bloque le bouton de connexion si false.
+const citizen = { anomia: null, kannibaventure: null };
+const CITIZEN_TIP = "Rejoins le Discord pour passer ta douane";
+window.__citizen = citizen;
+window.isKbAdmin = () => staffRole === "admin" && !!staffScopes.kb;
+async function refreshCitizen() {
+  if (typeof discordProfile === "undefined" || !discordProfile) { citizen.anomia = null; citizen.kannibaventure = null; }
+  else {
+    for (const sv of ["anomia", "kannibaventure"]) {
+      try { const r = await window.anomia.checkCitizen(sv); citizen[sv] = r && typeof r.citizen === "boolean" ? r.citizen : null; } catch { citizen[sv] = null; }
+    }
+  }
+  try { updateConnectButtonState(); } catch {}
+  try { if (window.refreshKbConnect) window.refreshKbConnect(); } catch {}
+}
+window.refreshCitizen = refreshCitizen;
+setInterval(() => { refreshCitizen(); }, 120000);
 
 // --- Thème : mode sombre/clair + couleur d'accent (appliqués le plus tôt possible) ---
 function hexToRgb(hex) {
@@ -548,7 +566,7 @@ document.getElementById("btn-connect").addEventListener("click", async (e) => {
   if (discordRequired && !discordProfile) {
     await showInfo(
       "Connexion Discord requise",
-      `<p>Tu dois te connecter avec Discord avant de pouvoir te connecter au serveur. Utilise le bouton "Se connecter avec Discord" en haut à droite.</p>`
+      `<p>Tu dois lier ton compte Discord avant de pouvoir te connecter au serveur. Utilise le bouton « Lier Discord » en haut à droite.</p>`
     );
     return;
   }
@@ -616,6 +634,12 @@ function updateConnectButtonState() {
     return;
   }
 
+  // Rôle Citoyen requis (sauf admin) : bouton bloqué
+  if (citizen.anomia === false && !isAdminUnlocked) {
+    btn.disabled = true; btn.textContent = "Rôles requis"; btn.title = CITIZEN_TIP;
+    return;
+  }
+  btn.title = "";
   // Le bouton reste utilisable si : le serveur est en ligne ET (pas en
   // maintenance OU l'admin s'est identifié avec le code d'accès staff).
   const canConnect = lastServerOnline && (!lastServerMaintenance || isAdminUnlocked);
@@ -1708,8 +1732,10 @@ document.getElementById("admin-cancel").addEventListener("click", () => {
 
 function applyStaffRole(result) {
   staffRole = result.role || "mod";
-  isAdminUnlocked = staffRole === "admin";
-  document.getElementById("admin-only-block").classList.toggle("hidden", !isAdminUnlocked);
+  staffScopes = { anomia: !!(result.scopes && result.scopes.anomia), kb: !!(result.scopes && result.scopes.kb) };
+  isAdminUnlocked = staffRole === "admin" && staffScopes.anomia; // droits admin sur Anomia
+  document.getElementById("admin-only-block").classList.toggle("hidden", !(staffRole === "mod" || isAdminUnlocked));
+  const mb = document.getElementById("admin-maint-block"); if (mb) mb.classList.toggle("hidden", !isAdminUnlocked);
   document.getElementById("admin-title").textContent = isAdminUnlocked ? "Tableau de bord · Admin" : "Tableau de bord · Modération";
   document.getElementById("nav-admin").classList.remove("hidden");
   updateConnectButtonState();
@@ -1717,6 +1743,7 @@ function applyStaffRole(result) {
 
 function clearStaffRole() {
   staffRole = null;
+  staffScopes = { anomia: false, kb: false };
   isAdminUnlocked = false;
   document.getElementById("nav-admin").classList.add("hidden");
   if (currentServerId === "anomia" && !document.getElementById("view-admin").classList.contains("hidden")) goToView("home");
@@ -1731,8 +1758,8 @@ const STAFF_REASONS = {
   server_down: "Serveur Anomia injoignable (éteint ?) : l'accès admin est vérifié par lui.",
   no_bot_token: "Serveur : anomia_discord_bot_token manquant dans le server.cfg.",
   bot_error: "Serveur : le bot ne peut pas lire les membres de Kannibal Team (bot absent du serveur ou intent « Server Members » désactivé).",
-  not_in_guild: "Ton compte Discord n'est pas dans le serveur Kannibal Team.",
-  missing_role: "Tu n'as pas le rôle admin sur Kannibal Team.",
+  not_in_guild: "Ton compte Discord n'est pas dans les serveurs Kannibal Team / Anomia / KannibAventure.",
+  missing_role: "Tu n'as pas de rôle fondateur/admin sur Kannibal Team, Anomia ou KannibAventure.",
   server_outdated: "Le serveur n'a pas la nouvelle version de b2_staffpanel (remplace la ressource puis restart b2_staffpanel).",
   throttled: "Trop d'essais, réessaie dans une minute."
 };
@@ -1926,7 +1953,7 @@ function renderDiscordSlot() {
     slot.innerHTML = `
       <button class="ext-link discord-connect-btn" id="btn-discord-auth">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        <span class="nav-label">Se connecter avec Discord</span>
+        <span class="nav-label">Lier Discord</span>
       </button>`;
     document.getElementById("btn-discord-auth").addEventListener("click", () => {
       window.anomia.startDiscordAuth();
@@ -1956,12 +1983,12 @@ async function initDiscordAuth() {
 
   discordProfile = await window.anomia.getDiscordProfile();
   renderDiscordSlot();
-  autoStaffUnlock();
+  autoStaffUnlock(); refreshCitizen();
 
   window.anomia.onDiscordConnected((profile) => {
     discordProfile = profile;
     renderDiscordSlot();
-    autoStaffUnlock();
+    autoStaffUnlock(); refreshCitizen();
     if (profile.allowed === false) {
       showInfo(
         "Rôle whitelist manquant",
@@ -2124,8 +2151,8 @@ async function loadAchievements() {
   if (!result.ok && result.notConnected) {
     content.innerHTML = `
       <div class="achievements-locked-msg">
-        <p>Connecte-toi avec Discord pour débloquer et suivre tes succès.</p>
-        <button class="btn-connect" id="achievements-discord-btn">Se connecter avec Discord</button>
+        <p>Lie ton compte Discord pour débloquer et suivre tes succès.</p>
+        <button class="btn-connect" id="achievements-discord-btn">Lier Discord</button>
       </div>`;
     document.getElementById("achievements-discord-btn").addEventListener("click", () => {
       window.anomia.startDiscordAuth();
@@ -2760,7 +2787,7 @@ async function openMapPointPopup(point) {
         gpsBtn.disabled = false;
         gpsBtn.textContent = "Envoyer sur le GPS in-game";
       } else if (result.reason === "not_connected") {
-        await showInfo("Discord requis", `<p>Connecte-toi avec Discord pour utiliser cette fonction.</p>`);
+        await showInfo("Discord requis", `<p>Lie ton compte Discord pour utiliser cette fonction.</p>`);
         gpsBtn.disabled = false;
         gpsBtn.textContent = "Envoyer sur le GPS in-game";
       } else {

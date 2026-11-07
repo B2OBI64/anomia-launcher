@@ -1,9 +1,6 @@
-# 1.9.8 — Accueil en tuiles d'état
+# 1.9.9 — Rôles Discord
 
-- Accueil d'Anomia épuré : seules restent les tuiles d'état (Statut, Joueurs, Ping moyen, Entreprises ouvertes, Temps de jeu). La navigation se fait avec la barre de catégories.
-- Accueil de KannibAventure : même présentation en tuiles.
-- Visite guidée mise à jour : nouvelles catégories de l'accueil, joueurs, succès et tuiles d'état.
-- Pause automatique réglable dans les options : activation et délai (2, 5, 10 ou 30 minutes).
-- Le launcher se rouvre sur la dernière catégorie visitée, y compris dans l'accueil.
-- Nouvelle section « État du launcher » dans les réglages : un voyant vert ou rouge pour Discord, l'hôte Anomia, GitHub et FiveM.
-- Nouveau logo du launcher : icône de l'application, barre des tâches, écran de démarrage, barre du haut et fenêtre de mise à jour.
+- Droits par rôle Discord : fondateurs et admins Kannibal Team = tous les droits ; admin Anomia = Anomia uniquement ; admin KannibAventure = KannibAventure uniquement.
+- Modérateur Anomia : voit le tableau de bord (joueurs, santé du serveur) comme un admin, mais ne peut pas activer la maintenance.
+- Rôle Citoyen : le bouton de connexion est bloqué (« Rôles requis ») si le rôle manque, avec l'infobulle « Rejoins le Discord pour passer ta douane ». Les admins ne sont pas concernés.
+- Vérifications Discord plus fiables (plusieurs serveurs, mise en cache).

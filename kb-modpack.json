@@ -4,308 +4,438 @@
   "mods": [
     {
       "file": "adorabuild-structures-2.11.0-neoforge-26.1.1.jar",
-      "sha256": "7f932adb2aa9db4dc87dcd4a330087e44b28c978035f1ae3586d4bc0e426dc87",
-      "size": 711273
+      "size": 711273,
+      "sha256": "7f932adb2aa9db4dc87dcd4a330087e44b28c978035f1ae3586d4bc0e426dc87"
     },
     {
       "file": "animalgarden-bison-1.0.0-neoforge-26.2.0.54.jar",
-      "sha256": "41172680e1fa14074a487784d33435423ccd2b75025ae29803cf9eb7adfd06f9",
-      "size": 270898
+      "size": 270898,
+      "sha256": "41172680e1fa14074a487784d33435423ccd2b75025ae29803cf9eb7adfd06f9"
     },
     {
       "file": "animalgarden-capybara-1.0.0-neoforge-26.2.0.88.jar",
-      "sha256": "5bef8d9a38c6c5d100d37ef2fa96a30e910977e84b531895c02a262b3cb2ce38",
-      "size": 279602
+      "size": 279602,
+      "sha256": "5bef8d9a38c6c5d100d37ef2fa96a30e910977e84b531895c02a262b3cb2ce38"
     },
     {
       "file": "animalgarden-commonraccoon-1.0.0-neoforge-26.2.0.75.jar",
-      "sha256": "1cdd6fcc5c56b10c8a5ce943ba783b8d879db6876ffdd5ffdc4d90e3260462a8",
-      "size": 197872
+      "size": 197872,
+      "sha256": "1cdd6fcc5c56b10c8a5ce943ba783b8d879db6876ffdd5ffdc4d90e3260462a8"
     },
     {
       "file": "animalgarden-hippopotamus-1.0.2-neoforge-26.1.1.10.jar",
-      "sha256": "c7b66e26869c8bef4661e89ea6ef5ac5f75c6aea829607aa6d8dac865dc775d8",
-      "size": 308690
+      "size": 308690,
+      "sha256": "c7b66e26869c8bef4661e89ea6ef5ac5f75c6aea829607aa6d8dac865dc775d8"
     },
     {
       "file": "animalgarden-lion-1.0.3-neoforge-26.1.1.1.jar",
-      "sha256": "e12d9f8e61d61820b55bdacfecb654ad25f689880522894b965b92a69942badf",
-      "size": 488945
+      "size": 488945,
+      "sha256": "e12d9f8e61d61820b55bdacfecb654ad25f689880522894b965b92a69942badf"
     },
     {
       "file": "animalgarden-manatee-1.0.2-neoforge-26.1.2.2.jar",
-      "sha256": "10710f6bc237317c30628907b4bdd36abb47a0980dae33dce1cf182366303c97",
-      "size": 99017
+      "size": 99017,
+      "sha256": "10710f6bc237317c30628907b4bdd36abb47a0980dae33dce1cf182366303c97"
     },
     {
       "file": "animalgarden-mouse-1.0.6-neoforge-26.1.2.4.jar",
-      "sha256": "f1cd617eefda4f1aa6acc378a6e2e2ea8539dec76ef673b568a1d591eca480fb",
-      "size": 109879
+      "size": 109879,
+      "sha256": "f1cd617eefda4f1aa6acc378a6e2e2ea8539dec76ef673b568a1d591eca480fb"
     },
     {
       "file": "animalgarden-spottedhyena-1.1.1-neoforge-26.2.0.6.jar",
-      "sha256": "f0ceb7da434b5e005c1dbe635ddee220bcebae2f2333faef96946e6981bdf03a",
-      "size": 406211
+      "size": 406211,
+      "sha256": "f0ceb7da434b5e005c1dbe635ddee220bcebae2f2333faef96946e6981bdf03a"
     },
     {
       "file": "animalgarden-westerngorilla-1.0.1-neoforge-26.1.2.7.jar",
-      "sha256": "e9b270f76a4e957d29ca8d31f496dc9853dc9188af5a0952dff7486a6dd0533b",
-      "size": 251940
+      "size": 251940,
+      "sha256": "e9b270f76a4e957d29ca8d31f496dc9853dc9188af5a0952dff7486a6dd0533b"
     },
     {
       "file": "animalgarden-whiterhinoceros-1.0.1-neoforge-26.1.1.8.jar",
-      "sha256": "0e16355b3405049d059eec718d6ed4aac81b02e1f5ae8e68f7017bc499a561c9",
-      "size": 225775
+      "size": 225775,
+      "sha256": "0e16355b3405049d059eec718d6ed4aac81b02e1f5ae8e68f7017bc499a561c9"
     },
     {
       "file": "aquariuslibs-1.2.0-neoforge-26.2.0.2.jar",
-      "sha256": "19a81eea5a2c67105712176062863579237c450ee0dbe791ee11f475a61d3171",
-      "size": 200549
+      "size": 200549,
+      "sha256": "19a81eea5a2c67105712176062863579237c450ee0dbe791ee11f475a61d3171"
+    },
+    {
+      "file": "arc-neoforge-20.2.10.jar",
+      "size": 726255,
+      "sha256": "5fe1d9a393680aed2ce0140d4f0acb1d6d85c37f9b692b29867dec45c1ac1b38"
+    },
+    {
+      "file": "arcadia-admin-panel-neoforge-26.1.2-2.0.4.jar",
+      "size": 1419901,
+      "sha256": "b3fd4d0a3f1fb4b2f5e6d7c04e205cde58c1df5522caa4b1fc828f42458a722f"
+    },
+    {
+      "file": "bat-membrane-v3.1.5.jar",
+      "size": 49325,
+      "sha256": "a3be0be84d95552e1b62c029334b3f7d34fa8dc67057204f63cc9e601b471047"
     },
     {
       "file": "bclib-26.1.10.jar",
-      "sha256": "453a57f196e4f12069ea27a763e8f0909dcac2fc4c7393712c05a426e724a41f",
-      "size": 2166995
+      "size": 2166995,
+      "sha256": "453a57f196e4f12069ea27a763e8f0909dcac2fc4c7393712c05a426e724a41f"
     },
     {
       "file": "BetterEnd-26.1.12.jar",
-      "sha256": "49f6ca18e170a95e2c91f2ed330405aae48ec9ace02d5a7bdb41308c13b85432",
-      "size": 98009944
+      "size": 98009944,
+      "sha256": "49f6ca18e170a95e2c91f2ed330405aae48ec9ace02d5a7bdb41308c13b85432"
     },
     {
       "file": "BetterNether-26.1.11.jar",
-      "sha256": "afb129e3aedea01746785599fc2c2b57360747cfcc8deabd9873da2c0f10372d",
-      "size": 26939895
+      "size": 26939895,
+      "sha256": "afb129e3aedea01746785599fc2c2b57360747cfcc8deabd9873da2c0f10372d"
+    },
+    {
+      "file": "burgermod-neoforge-2.10.3-26.1.2.jar",
+      "size": 195371,
+      "sha256": "cb4173067c58f01fb6c16d766d352a822437a217b33b1c9f23d181020a213888"
+    },
+    {
+      "file": "diversity-neoforge-26.1.2-2.5.5.jar",
+      "size": 649836,
+      "sha256": "118d68c2bb5850d270b50a408a315f9e66a94ac47150dd8d48104d5dff9cb56f"
     },
     {
       "file": "dungeons-and-taverns-5.2.0.jar",
-      "sha256": "cd681ab497d439eac531c516e4bd9a3f3d97a2db6c6dbb65abb2cfe08fb77ade",
-      "size": 39393055
+      "size": 39393055,
+      "sha256": "cd681ab497d439eac531c516e4bd9a3f3d97a2db6c6dbb65abb2cfe08fb77ade"
+    },
+    {
+      "file": "effectivefarmer-1.3.0_neoforge_26.1.2.jar",
+      "size": 357222,
+      "sha256": "0f8af82030da5cc1865996e5986d372a41bacf0c2d0038cb67bfc4d74f84b2f9"
+    },
+    {
+      "file": "elytra_accessory-1.3.4-neoforge+26.1.2.jar",
+      "size": 25834,
+      "sha256": "26097df8bca348ee17063778fb2310f54ac6b8b4d860db8d1fa1c413f7acb927"
+    },
+    {
+      "file": "faewulf_lib-neoforge-26.1.2-1.4.0.jar",
+      "size": 324616,
+      "sha256": "fd788d8adddfd7e6b7f2e10e9163663dfa30dbb45bf7c5ee7284d4a5782118bb"
     },
     {
       "file": "geckolib-neoforge-26.1.2-5.5.2.jar",
-      "sha256": "e335e5392274016c0e50d52f867b8975c6ee9d21035b45e4baf853a4d2d9dd2d",
-      "size": 664146
+      "size": 664146,
+      "sha256": "e335e5392274016c0e50d52f867b8975c6ee9d21035b45e4baf853a4d2d9dd2d"
+    },
+    {
+      "file": "HopoBetterUnderwaterRuins-[26.1]-1.2.7.jar",
+      "size": 738547,
+      "sha256": "a3dc8ec7c2e379e26da54df646d341dc11bd1cf3b6ab7384cda7e6c6bb6c8a78"
     },
     {
       "file": "illagerwarship-1.0.0 Neoforge 26.1.2.jar",
-      "sha256": "3174de2105914206fc525eb223a65f96acbfe997ff3d66f01842e0bef9e3d07e",
-      "size": 71972
+      "size": 71972,
+      "sha256": "3174de2105914206fc525eb223a65f96acbfe997ff3d66f01842e0bef9e3d07e"
+    },
+    {
+      "file": "ImprovedPillagerOutpost-v7.jar",
+      "size": 614666,
+      "sha256": "9774ab5a2efd85e7cf98da559249693b647b0c5fd4a7f40d87f10d961c4b1bdf"
     },
     {
       "file": "iris-neoforge-1.11.4+mc26.1.2.jar",
-      "sha256": "32d672a890d3c74f75227abc7e7ef048bbb83a799bf46632f03f0583d4c22be5",
-      "size": 2756643
+      "size": 2756643,
+      "sha256": "32d672a890d3c74f75227abc7e7ef048bbb83a799bf46632f03f0583d4c22be5"
+    },
+    {
+      "file": "itemrestrictions-neoforge-20.1.2.jar",
+      "size": 80031,
+      "sha256": "0b86473f79d08ce2edda8289acad9c024f742ef9269551523a377157cc94d240"
+    },
+    {
+      "file": "jei-26.1.2-neoforge-29.53.0.115.jar",
+      "size": 4796265,
+      "sha256": "ff87c80d1b1b87c2f1db8003b6f4709e2aa47aa4c20d8199a602b9aa5366703a"
+    },
+    {
+      "file": "jobsplus-neoforge-20.2.7.jar",
+      "size": 580375,
+      "sha256": "b05e9507656aa62f9f08ea923edbf5844fb54a173f110dec1dc2832800faa4d0"
     },
     {
       "file": "katters-structures-2.4.jar",
-      "sha256": "fec06072050ecb5fc4ae8e154d9792c595bd81896831c43a56801d3fe93ace8f",
-      "size": 13456730
+      "size": 13456730,
+      "sha256": "fec06072050ecb5fc4ae8e154d9792c595bd81896831c43a56801d3fe93ace8f"
+    },
+    {
+      "file": "knot-neoforge-core-20.2.10.jar",
+      "size": 356476,
+      "sha256": "00f4b53d4a71770305bccd7c91e8ceebeaeea8765d237615eddd531cf546f18e"
+    },
+    {
+      "file": "lib-5555ff-v1.1.5.jar",
+      "size": 1294128,
+      "sha256": "a3db4102a9f23616bfd9bd1630a4924f9c477353794eb93d3786c324b1795120"
     },
     {
       "file": "mca-neoforge-8.1.11+26.1.2.jar",
-      "sha256": "74c23f4e07903a385bd909bc6136f3019b4a2359d61ace5bd5d8c2c3a3b1b736",
-      "size": 12031310
+      "size": 12031310,
+      "sha256": "74c23f4e07903a385bd909bc6136f3019b4a2359d61ace5bd5d8c2c3a3b1b736"
     },
     {
       "file": "mcw-doors-1.1.5-mc26.1neoforge.jar",
-      "sha256": "17ae91a6552538d9b63a37321d42cc29d08ae8def75e2bfeb2dcb699644870f5",
-      "size": 1349249
+      "size": 1349249,
+      "sha256": "17ae91a6552538d9b63a37321d42cc29d08ae8def75e2bfeb2dcb699644870f5"
     },
     {
       "file": "mcw-fences-1.2.1-mc26.1neoforge.jar",
-      "sha256": "f48d53e896f6344b6424afe2f94807eeb8826b9b523bd076ddf10719c4e49cbb",
-      "size": 697795
+      "size": 697795,
+      "sha256": "f48d53e896f6344b6424afe2f94807eeb8826b9b523bd076ddf10719c4e49cbb"
     },
     {
       "file": "mcw-furniture-3.4.2-mc26.1neoforge.jar",
-      "sha256": "f3c8abf38c6eda3127ee72db968c5b7f5880aab3aef3d4853eb2c45084b39227",
-      "size": 2271355
+      "size": 2271355,
+      "sha256": "f3c8abf38c6eda3127ee72db968c5b7f5880aab3aef3d4853eb2c45084b39227"
     },
     {
       "file": "mcw-lights-1.1.5-mc26.1neoforge.jar",
-      "sha256": "899c2aaae8d3f500f9982796bceddb389fc6152071f1b1b9ecd3b66cbb2ab97c",
-      "size": 533696
+      "size": 533696,
+      "sha256": "899c2aaae8d3f500f9982796bceddb389fc6152071f1b1b9ecd3b66cbb2ab97c"
     },
     {
       "file": "mcw-paintings-1.1.0-mc26.1neoforge.jar",
-      "sha256": "4451db6f67a83355f20b89dfa84bedc52f8eb5f9038a1208a627da475df42c8b",
-      "size": 194371
+      "size": 194371,
+      "sha256": "4451db6f67a83355f20b89dfa84bedc52f8eb5f9038a1208a627da475df42c8b"
     },
     {
       "file": "mcw-roofs-2.3.2-mc26.1neoforge.jar",
-      "sha256": "ba4bcdbfab3c0330f919ff92f22a9aa4e7808afca43f4a24f086ce24ee04700f",
-      "size": 1829764
+      "size": 1829764,
+      "sha256": "ba4bcdbfab3c0330f919ff92f22a9aa4e7808afca43f4a24f086ce24ee04700f"
     },
     {
       "file": "mcw-trapdoors-1.1.5-mc26.1neoforge.jar",
-      "sha256": "1c49ed1bbfa39d4ba6a1f5c26db2ecd8a62c9d6f7664a3e6f5ea16bb99ad8efd",
-      "size": 621940
+      "size": 621940,
+      "sha256": "1c49ed1bbfa39d4ba6a1f5c26db2ecd8a62c9d6f7664a3e6f5ea16bb99ad8efd"
     },
     {
       "file": "mcw-windows-2.4.2-mc26.1neoforge.jar",
-      "sha256": "7ce78596e06a3e20d2c91cc291b6e942d781ff1ec422b0099cc1432b6b7a4961",
-      "size": 1324783
+      "size": 1324783,
+      "sha256": "7ce78596e06a3e20d2c91cc291b6e942d781ff1ec422b0099cc1432b6b7a4961"
     },
     {
       "file": "medieval_buildings-neoforge-26.1.2-1.2.0.jar",
-      "sha256": "9b7f91e56979aaac38eb1b00f35946ff0b108adf2e27ab0d8d4987e09b0157bc",
-      "size": 217537
+      "size": 217537,
+      "sha256": "9b7f91e56979aaac38eb1b00f35946ff0b108adf2e27ab0d8d4987e09b0157bc"
     },
     {
       "file": "medieval_end-neoforge-26.1.2-1.2.1.jar",
-      "sha256": "7fd2a33aaf4bea6ef5b7593578ce825d08d2ad2054eeea83026e0935b32747c6",
-      "size": 476757
+      "size": 476757,
+      "sha256": "7fd2a33aaf4bea6ef5b7593578ce825d08d2ad2054eeea83026e0935b32747c6"
     },
     {
       "file": "medieval_nether-neoforge-26.1.2-1.2.1.jar",
-      "sha256": "3cfbda6e41b021747e4157b05e8a0b88f35962ab45ec1e6aae6090624514d60f",
-      "size": 542832
+      "size": 542832,
+      "sha256": "3cfbda6e41b021747e4157b05e8a0b88f35962ab45ec1e6aae6090624514d60f"
+    },
+    {
+      "file": "modernfix-neoforge-5.27.27-mc26.1.2.jar",
+      "size": 529390,
+      "sha256": "d6e9c95e173089029c54d4985d4bd89c11260b60707a1e5cff92ec22eb078329"
     },
     {
       "file": "MoogsNetherStructures-universal-1.21-3.1.1.jar",
-      "sha256": "46e0506264bd66df1ec6fb031f75d6b7f4660ad5f874b5df446dc1a3beebe7f6",
-      "size": 3916038
+      "size": 3916038,
+      "sha256": "46e0506264bd66df1ec6fb031f75d6b7f4660ad5f874b5df446dc1a3beebe7f6"
     },
     {
       "file": "MoogsSoaringStructures-universal-1.21-2.2.0.jar",
-      "sha256": "2caca5b2dab3ea4541eb3207bab9d5efcc034e3bf7d89788fd95d7b582d24ed2",
-      "size": 5022443
+      "size": 5022443,
+      "sha256": "2caca5b2dab3ea4541eb3207bab9d5efcc034e3bf7d89788fd95d7b582d24ed2"
     },
     {
       "file": "MoogsStructureLib-neoforge-26.1.2-3.4.2.jar",
-      "sha256": "76534ab157aa32100fb985d41cb4dd5640a96dcfa8cd03e0762e7234e7511f5e",
-      "size": 1097251
-    },
-    {
-      "file": "more-raids-V1.0.6-data.jar",
-      "sha256": "485fbf5786d57d362669fe8602a5f6961d276d392228b5c685eb075335d0ca74",
-      "size": 481593
+      "size": 1097251,
+      "sha256": "76534ab157aa32100fb985d41cb4dd5640a96dcfa8cd03e0762e7234e7511f5e"
     },
     {
       "file": "more_mobs-v1.5.11-mc1.14-26.3.9-mod.jar",
-      "sha256": "e8a1e0aa8b9df2ee414e0a89924e5007414861269b8ddcc816c11c4926f61de4",
-      "size": 379474
+      "size": 379474,
+      "sha256": "e8a1e0aa8b9df2ee414e0a89924e5007414861269b8ddcc816c11c4926f61de4"
+    },
+    {
+      "file": "more-raids-V1.0.6-data.jar",
+      "size": 481593,
+      "sha256": "485fbf5786d57d362669fe8602a5f6961d276d392228b5c685eb075335d0ca74"
+    },
+    {
+      "file": "moreconcrete-neoforge-1.6.2-26.1.2.jar",
+      "size": 495951,
+      "sha256": "7cd1447c3c37044b6e8cc2f0a73e0e3d6dc6c75417d7148f397c58da189e1c6e"
     },
     {
       "file": "MutantsZombies-1.3.3-NeoForge-mc26.1.jar",
-      "sha256": "9d4e0a73bcd15a0d5435f300568b525b3de64caadc57d75d6fc6e70c31fda860",
-      "size": 461058
+      "size": 461058,
+      "sha256": "9d4e0a73bcd15a0d5435f300568b525b3de64caadc57d75d6fc6e70c31fda860"
     },
     {
       "file": "no-enderman-grief-v3.1.1.jar",
-      "sha256": "15f8aeb1c98bacfce413f3d6a25fd510179c720f4cc4b1c8c7dca2e40ff63d67",
-      "size": 89599
+      "size": 89599,
+      "sha256": "15f8aeb1c98bacfce413f3d6a25fd510179c720f4cc4b1c8c7dca2e40ff63d67"
+    },
+    {
+      "file": "ohmega-1.6.0-beta.11-neoforge-mc26.1.2.jar",
+      "size": 359602,
+      "sha256": "93ce7561b4a171513ba544686169df0a42cd1c0853b0698127f4a88dfd93f50d"
     },
     {
       "file": "phantom_remover-1.0.1-neoforge-26.1.2.jar",
-      "sha256": "5e30b0654e4f42e69d28207289f68479a66cc47ecd8e45e84b3f8351f2e4d812",
-      "size": 7889
+      "size": 7889,
+      "sha256": "5e30b0654e4f42e69d28207289f68479a66cc47ecd8e45e84b3f8351f2e4d812"
+    },
+    {
+      "file": "seven_days_to_blood_moonV1.0.2 26.1.2.jar",
+      "size": 179838,
+      "sha256": "c1e88813760daf27d88c13e5cea6381e7355d9fb2fd38ecf76a8d795cd144b30"
     },
     {
       "file": "simplehats-neoforge-26.1.2-0.4.1.jar",
-      "sha256": "8a14f8cc5f628feaf45bd531d309ec844fd53c6b3b5b15e8a3126d5bd3286764",
-      "size": 1485712
+      "size": 1485712,
+      "sha256": "8a14f8cc5f628feaf45bd531d309ec844fd53c6b3b5b15e8a3126d5bd3286764"
     },
     {
       "file": "sodium-neoforge-0.9.2+mc26.1.2.jar",
-      "sha256": "e760fb2ad8bacd8e706f71e78e48f9d93a5c66a4d5976e4db053abebf9f08252",
-      "size": 1260562
+      "size": 1260562,
+      "sha256": "e760fb2ad8bacd8e706f71e78e48f9d93a5c66a4d5976e4db053abebf9f08252"
+    },
+    {
+      "file": "sound-physics-remastered-neoforge-1.5.2+26.1.2.jar",
+      "size": 202250,
+      "sha256": "8866cb42a2d46378dd8f10b3e3425107879ced1c78b6807af5ca8098cad85a14"
     },
     {
       "file": "Structory_26.2_v1.3.7.jar",
-      "sha256": "e9079b2bb9bc2efb9b0f1244376488e41f8b50f25415094d8f03dc753cdfb131",
-      "size": 1261346
+      "size": 1261346,
+      "sha256": "e9079b2bb9bc2efb9b0f1244376488e41f8b50f25415094d8f03dc753cdfb131"
     },
     {
       "file": "Structory_Towers_26.2_v1.0.17.jar",
-      "sha256": "226d8cb187e0d4fb75571db017c0abb26176aec16586c337a1b5620f3805a372",
-      "size": 491515
+      "size": 491515,
+      "sha256": "226d8cb187e0d4fb75571db017c0abb26176aec16586c337a1b5620f3805a372"
     },
     {
       "file": "TerraBlender-neoforge-26.1.2-26.1.2.0.3.jar",
-      "sha256": "2b9a081fa64edf137b3b059e71aa01568fcc2a330f3471078655eecd328cb587",
-      "size": 139774
+      "size": 139774,
+      "sha256": "2b9a081fa64edf137b3b059e71aa01568fcc2a330f3471078655eecd328cb587"
+    },
+    {
+      "file": "tidal-towns-2.0.jar",
+      "size": 586133,
+      "sha256": "349ab80789a83bca9dd9fc1d9f9244962b808ff358a27eba465fe93a081d35a4"
+    },
+    {
+      "file": "tool-trims-v3.0.7-for-1.21.11+.jar",
+      "size": 2297995,
+      "sha256": "927cd9f92a815ca447f2d1298bf394264df76a161bb6b34c7e1796dc331cbacb"
+    },
+    {
+      "file": "totem_accessory-1.3.2-neoforge+26.1.2.jar",
+      "size": 18983,
+      "sha256": "2c2c6b4b3ab59c65d3add67a86db7dc568d46f285536dd2875b2cebac46d512e"
     },
     {
       "file": "travelersbackpack-neoforge-26.1.2-11.2.9.jar",
-      "sha256": "ce72271d5a028f27d603526d3eca4004dcf19de9d44c376015cea54941cf6222",
-      "size": 1478593
+      "size": 1478593,
+      "sha256": "ce72271d5a028f27d603526d3eca4004dcf19de9d44c376015cea54941cf6222"
+    },
+    {
+      "file": "uilib-neoforge-20.1.4.jar",
+      "size": 102163,
+      "sha256": "c7fe250bbbcb4abd4e4b92f31e37f52bb99afd5b0c44c99108b21e14b83d5441"
     },
     {
       "file": "worldweaver-26.1.13.jar",
-      "sha256": "46717adf329fbf7b96d792194e4a9abdb7fef79eb6c398fe8debf49195898b14",
-      "size": 2225443
+      "size": 2225443,
+      "sha256": "46717adf329fbf7b96d792194e4a9abdb7fef79eb6c398fe8debf49195898b14"
     },
     {
       "file": "wunderlib-26.1.3.jar",
-      "sha256": "c35f312248e9d27d4314aa842a3c7b83a04d55ac7b7254766c9cf5a7d8a22841",
-      "size": 382640
+      "size": 382640,
+      "sha256": "c35f312248e9d27d4314aa842a3c7b83a04d55ac7b7254766c9cf5a7d8a22841"
+    },
+    {
+      "file": "xaerominimap-neoforge-26.1.2-26.6.2.jar",
+      "size": 2166839,
+      "sha256": "303bf212a0bd8f7db008b5ce15e3c3f5652bc4bcc2af3d31c63d95a58133ab72"
+    },
+    {
+      "file": "yamlconfig-neoforge-20.1.2.jar",
+      "size": 1639946,
+      "sha256": "d3232f50c86983308b5c755b45f8617aae558315df04960431264599fcadf0bd"
     },
     {
       "file": "YungsApi-26.1.2-NeoForge-6.1.3.jar",
-      "sha256": "cff0f38b3192bc0b1e89ab43a5d11bc26f10e3aafc40d7c1d5e8d20d59f7d683",
-      "size": 439024
+      "size": 439024,
+      "sha256": "cff0f38b3192bc0b1e89ab43a5d11bc26f10e3aafc40d7c1d5e8d20d59f7d683"
     },
     {
       "file": "YungsBetterDesertTemples-26.1.2-NeoForge-5.1.1.jar",
-      "sha256": "7b010dbce306694ef746fd112329bc1650b952fb8f75ff1dcb9949f7a9e0df24",
-      "size": 902000
+      "size": 902000,
+      "sha256": "7b010dbce306694ef746fd112329bc1650b952fb8f75ff1dcb9949f7a9e0df24"
     },
     {
       "file": "YungsBetterDungeons-26.1.2-NeoForge-6.1.1.jar",
-      "sha256": "2c98d93cd758eefab15319b0d4f5ef725e99a04f0880b90dc23a85a42833153a",
-      "size": 782207
+      "size": 782207,
+      "sha256": "2c98d93cd758eefab15319b0d4f5ef725e99a04f0880b90dc23a85a42833153a"
     },
     {
       "file": "YungsBetterEndIsland-26.1.2-NeoForge-4.1.0.jar",
-      "sha256": "d4024e81b22b343ece39ceebcaa1c4381f9f7b6153f454fcf2358f385e3e1d02",
-      "size": 399530
+      "size": 399530,
+      "sha256": "d4024e81b22b343ece39ceebcaa1c4381f9f7b6153f454fcf2358f385e3e1d02"
     },
     {
       "file": "YungsBetterJungleTemples-26.1.2-NeoForge-4.1.1.jar",
-      "sha256": "bfa0788c38e7096d4961aa0d1e86d3a6e7213b3333f406bbbbec37e480e3382d",
-      "size": 793878
+      "size": 793878,
+      "sha256": "bfa0788c38e7096d4961aa0d1e86d3a6e7213b3333f406bbbbec37e480e3382d"
     },
     {
       "file": "YungsBetterMineshafts-26.1.2-NeoForge-6.1.1.jar",
-      "sha256": "76f4e7e2ff5ae35e408db09cc0536cffa83efa9ef50fbd5983072841093a6c70",
-      "size": 493958
+      "size": 493958,
+      "sha256": "76f4e7e2ff5ae35e408db09cc0536cffa83efa9ef50fbd5983072841093a6c70"
     },
     {
       "file": "YungsBetterNetherFortresses-26.1.2-NeoForge-4.1.1.jar",
-      "sha256": "2b9b5d3cd9df59e16e8738ebcab117391a697fbb2dc131b4f15e17568783ff66",
-      "size": 607168
+      "size": 607168,
+      "sha256": "2b9b5d3cd9df59e16e8738ebcab117391a697fbb2dc131b4f15e17568783ff66"
     },
     {
       "file": "YungsBetterOceanMonuments-26.1.2-NeoForge-5.1.1.jar",
-      "sha256": "b5dddb9cd13db393c8bef060f0f4f2cbd8f975450ff45c49b919fa51a3c13c5c",
-      "size": 1023804
+      "size": 1023804,
+      "sha256": "b5dddb9cd13db393c8bef060f0f4f2cbd8f975450ff45c49b919fa51a3c13c5c"
     },
     {
       "file": "YungsBetterStrongholds-26.1.2-NeoForge-6.1.1.jar",
-      "sha256": "86b970528f70e5fe019779a3c0ef6ddf07f476cd308640a675b1ea8514d9f22d",
-      "size": 459947
+      "size": 459947,
+      "sha256": "86b970528f70e5fe019779a3c0ef6ddf07f476cd308640a675b1ea8514d9f22d"
     },
     {
       "file": "YungsBetterWitchHuts-26.1.2-NeoForge-5.1.1.jar",
-      "sha256": "d684d11a9d5047fc92764d29df56544e030fa50c6cd00104bfa1184c70f11459",
-      "size": 173344
+      "size": 173344,
+      "sha256": "d684d11a9d5047fc92764d29df56544e030fa50c6cd00104bfa1184c70f11459"
     },
     {
       "file": "YungsBridges-26.1.2-NeoForge-6.1.0.jar",
-      "sha256": "a384098b746bd4d9c3c35a59aa4cef7610b2c48959926bd39af224139f469f3f",
-      "size": 136550
+      "size": 136550,
+      "sha256": "a384098b746bd4d9c3c35a59aa4cef7610b2c48959926bd39af224139f469f3f"
     },
     {
       "file": "YungsCaveBiomes-26.1.2-NeoForge-4.1.1.jar",
-      "sha256": "2bff32a14a2945adaa6aa752a0fa1a9da3d410cebaf1fe1b354a9a7ba820412b",
-      "size": 13010092
+      "size": 13010092,
+      "sha256": "2bff32a14a2945adaa6aa752a0fa1a9da3d410cebaf1fe1b354a9a7ba820412b"
     },
     {
       "file": "YungsExtras-26.1.2-NeoForge-6.1.0.jar",
-      "sha256": "be63723efcbe0050f5e04748e8a4a6359604a50b92d4fad51efa607e6a304687",
-      "size": 197503
+      "size": 197503,
+      "sha256": "be63723efcbe0050f5e04748e8a4a6359604a50b92d4fad51efa607e6a304687"
     }
   ]
 }

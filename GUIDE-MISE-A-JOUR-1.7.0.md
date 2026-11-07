@@ -105,3 +105,10 @@ En cas de conflit git avec le bot : `git checkout --ours kb-media.json`, `git ad
 4. Succès liés à un mod : ajoute une ligne dans `config.js` → `achievements.kannibaventure.list` avec `adv: "modid:chemin/avancement"` (l'identifiant se lit dans `world/advancements/<uuid>.json`).
 
 Sans ces deux étapes, tout fonctionne : seules les heures de jeu comptent pour les succès KannibAventure.
+
+
+## 1.9.9 — Rôles Discord (serveur)
+1. Remplace la ressource `b2_staffpanel` (fichier `server/main.lua`) puis `restart b2_staffpanel`.
+2. Le bot Discord (convar `anomia_discord_bot_token`) doit être présent sur les 3 serveurs (Kannibal Team, Anomia, KannibAventure) avec l'intent « Server Members » activé.
+3. Droits : fondateurs + admin Kannibal Team = tout ; admin Anomia = Anomia ; admin KannibAventure = KannibAventure ; modo Anomia = lecture seule (pas de maintenance). Rôles supplémentaires possibles : `set anomia_extra_admin_roles "guild:role,guild:role"`.
+4. Rôle Citoyen vérifié par la route `rolecheck` (convars facultatives `anomia_citizen_role_id`, `anomia_kb_citizen_role_id`).

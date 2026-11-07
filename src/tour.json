@@ -45,7 +45,7 @@
  {
   "title": "Connexion Discord",
   "selector": "#btn-discord-auth, #discord-auth-slot",
-  "text": "Connecte-toi avec Discord : c'est obligatoire. Chaque serveur vérifie ton rôle Discord pour t'autoriser à jouer, et ton profil, tes succès et ton temps de jeu y sont liés. Ton mot de passe n'est jamais vu par le launcher."
+  "text": "Lie ton compte Discord : c'est obligatoire. Chaque serveur vérifie ton rôle Discord pour t'autoriser à jouer, et ton profil, tes succès et ton temps de jeu y sont liés. Ton mot de passe n'est jamais vu par le launcher."
  },
  {
   "title": "Des onglets propres à chaque serveur",
