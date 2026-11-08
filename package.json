@@ -1,7 +1,7 @@
 {
   "name": "anomia-launcher",
   "productName": "Kannibal Launcher",
-  "version": "1.9.11",
+  "version": "2.0.0",
   "description": "Kannibal Launcher - le launcher des serveurs Kannibal Team (Anomia RP, KannibAventure)",
   "main": "main.js",
   "author": "B2OBI64",
