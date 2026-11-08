@@ -1682,9 +1682,9 @@ body::before {
 .topbar-right .discord-auth-slot { margin: 0; }
 .topbar-right .ext-link { width: 38px; height: 38px; }
 .topbar-right .ext-link .nav-label { display: none; }
-.topbar-right .discord-connect-btn { width: auto; padding: 0 12px; gap: 8px; }
+.topbar-right .discord-connect-btn { width: auto; min-width: max-content; flex-shrink: 0; padding: 0 16px; gap: 8px; overflow: visible; }
 .topbar-right .discord-connect-btn .nav-label {
-  display: inline; position: static; opacity: 1; transform: none; background: none; border: 0; padding: 0;
+  display: inline; visibility: visible; position: static; opacity: 1; transform: none; background: none; border: 0; padding: 0; clip-path: none; box-shadow: none; flex-shrink: 0;
   font-size: 12px; white-space: nowrap; pointer-events: none;
 }
 .topbar-right .discord-profile-flyout {
