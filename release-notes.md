@@ -1,6 +1,6 @@
-# 1.9.9 — Rôles Discord
+# 2.0.0 — Sortie officielle
 
-- Droits par rôle Discord : fondateurs et admins Kannibal Team = tous les droits ; admin Anomia = Anomia uniquement ; admin KannibAventure = KannibAventure uniquement.
-- Modérateur Anomia : voit le tableau de bord (joueurs, santé du serveur) comme un admin, mais ne peut pas activer la maintenance.
-- Rôle Citoyen : le bouton de connexion est bloqué (« Rôles requis ») si le rôle manque, avec l'infobulle « Rejoins le Discord pour passer ta douane ». Les admins ne sont pas concernés.
-- Vérifications Discord plus fiables (plusieurs serveurs, mise en cache).
+- Version 2.0.0 : sortie officielle du launcher pour tout le monde.
+- Mises à jour automatiques : au lancement, le launcher télécharge et installe tout seul la nouvelle version, sans cliquer.
+- Installation : l'ancienne version du launcher se ferme automatiquement pendant la mise à jour.
+- Droits par rôle Discord, rôle Citoyen requis pour se connecter, bouton « Lier Discord ».

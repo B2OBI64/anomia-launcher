@@ -149,6 +149,25 @@
   window.addEventListener("resize", () => { if (fxOn) fxResize(); });
   document.addEventListener("visibilitychange", () => { if (fxOn) { cancelAnimationFrame(fxRaf); if (!document.hidden) fxLoop(); } });
 
+  // ---------- Ouverture programmée de KannibAventure (minuteur) ----------
+  function fmtLeft(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000)), d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+    return d ? `${d} j ${String(h).padStart(2, "0")} h ${String(m).padStart(2, "0")} min` : `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}`;
+  }
+  window.kbOpening = function () {
+    const kb = typeof getServer === "function" ? getServer("kannibaventure") : null;
+    if (!kb) return { open: false, scheduled: false };
+    if (kb.status === "online") return { open: true, scheduled: false };
+    const o = kb.opening; if (!o || !o.public) return { open: false, scheduled: false };
+    const now = Date.now(), pub = Date.parse(o.public), sub = o.sub ? Date.parse(o.sub) : pub;
+    const isSub = Boolean(S.isSub);
+    if (now >= pub) return { open: true, scheduled: true };
+    if (isSub && now >= sub) return { open: true, scheduled: true, early: true };
+    const target = isSub ? sub : pub;
+    return { open: false, scheduled: true, isSub, msLeft: target - now, label: fmtLeft(target - now), subTip: !isSub && sub < pub ? "Accès anticipé pour les abonnés Twitch" : "" };
+  };
+  setInterval(() => { try { const o = window.kbOpening(); if (o.scheduled && !o.open) { refreshKbConnect(); if (window.refreshTicker) window.refreshTicker(); } } catch (e) {} }, 1000);
+
   // ---------- Rôle abonné (thème « Pluie de logos ») ----------
   async function checkSubRole() {
     let r; try { r = await api.checkSub(); } catch (e) { r = null; }
@@ -438,12 +457,13 @@
     if (!b || !kb) return;
     if (document.body.classList.contains("is-offline")) { b.disabled = true; b.textContent = "Hors ligne"; b.onclick = null; return; }
     const kbAdm = window.isKbAdmin && window.isKbAdmin();
-    const canPlay = (kbAdm || kb.status === "online") && kb.serverAddress;
+    const op = window.kbOpening ? window.kbOpening() : { open: kb.status === "online" };
+    const canPlay = (kbAdm || op.open) && kb.serverAddress;
     if (kbMaintenance && !kbAdm) { b.disabled = true; b.textContent = "Serveur en maintenance"; b.onclick = null; return; }
-    if (!canPlay) { b.disabled = true; b.textContent = kb.connectLabel || "Bientôt"; b.onclick = null; return; }
+    if (!canPlay) { b.disabled = true; b.textContent = op.scheduled ? `Ouverture dans ${op.label}` : (kb.connectLabel || "Bientôt"); b.title = op.subTip || ""; b.onclick = null; return; }
     if (window.__citizen && window.__citizen.kannibaventure === false && !kbAdm) { b.disabled = true; b.textContent = "Rôles requis"; b.title = "Rejoins le Discord pour passer ta douane"; b.onclick = null; return; }
     b.title = "";
-    b.disabled = false; b.textContent = kbAdm && kb.status !== "online" ? "Se connecter (admin)" : "Se connecter";
+    b.disabled = false; b.textContent = kbAdm && !op.open ? "Se connecter (admin)" : "Se connecter";
     b.onclick = async () => {
       if (typeof discordProfile !== "undefined" && !discordProfile && await api.isDiscordConfigured()) { showInfo("Connexion Discord requise", "<p>Lie ton compte Discord avant de rejoindre le serveur.</p>"); return; }
       b.disabled = true; b.textContent = "Lancement de Minecraft…";

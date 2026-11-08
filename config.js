@@ -42,6 +42,8 @@ module.exports = {
       color: "#a855f7",
       status: "soon",
       connectLabel: "Décembre",
+      // Minuteur d'ouverture : désactivé pour l'instant (dates secrètes). Format quand on le lancera : opening: { public: "AAAA-MM-JJTHH:MM:SS+01:00", sub: "AAAA-MM-JJTHH:MM:SS+01:00" }
+      opening: null,
       // Discord du serveur Minecraft (le rôle d'accès sera renseigné plus tard) :
       discordInvite: "https://discord.gg/fdSjJPRJy4",
       discordGuildId: "1357757210272469212",

@@ -1172,9 +1172,12 @@ function buildTickerSlides() {
   }
   const kb = getServer("kannibaventure");
   if (kb) {
-    const body = kb.status === "online"
+    const kop = window.kbOpening ? window.kbOpening() : { open: kb.status === "online" };
+    const body = kop.open
       ? `<b><i class="tk-dot"></i>Serveur ouvert</b><small>KANNIBAVENTURE</small>`
-      : `<b>${escapeHtml(kb.connectLabel || "Bientôt")}</b><small>OUVERTURE DE KANNIBAVENTURE</small>`;
+      : kop.scheduled
+        ? `<b>${escapeHtml(kop.label)}</b><small>${kop.isSub ? "ACCÈS ABONNÉ DANS" : "OUVERTURE DANS"}</small>`
+        : `<b>${escapeHtml(kb.connectLabel || "Bientôt")}</b><small>OUVERTURE DE KANNIBAVENTURE</small>`;
     slides.push({ key: "kb", html: `<img class="tk-logo" src="${escapeHtml(kb.logo || "../assets/kannibaventure.png")}" alt="" /><div class="tk-count">${body}</div>` });
   }
   return slides;
@@ -1597,7 +1600,7 @@ async function checkFiveM() {
 }
 checkFiveM();
 
-// --- Auto-update (facultatif : « Mettre à jour maintenant » ou « Plus tard ») ---
+// --- Auto-update : automatique au démarrage ; ensuite (session longue) « Mettre à jour maintenant » ou « Plus tard » ---
 const updateOverlay = document.getElementById("update-overlay");
 const updateMessage = document.getElementById("update-message");
 const updateChangelog = document.getElementById("update-changelog");
@@ -1610,6 +1613,7 @@ const updateDownloadBtnLabel = updateDownloadBtn.querySelector(".btn-neon-label"
 const updateRetryBtn = document.getElementById("update-retry-btn");
 const updateStatusLabel = document.getElementById("update-status");
 let pendingUpdateVersion = null;
+const LAUNCH_AT = Date.now(); // mise à jour automatique seulement au démarrage
 let updateFlowActive = false; // true seulement entre "update-available" et la fin du process
 
 function setUpdateChangelog(notes) {
@@ -1644,6 +1648,18 @@ window.anomia.onUpdateAvailable(async ({ version, releaseNotes }) => {
   updateStatusLabel.classList.add("clickable");
   // Si le joueur a déjà choisi « Plus tard » pour cette version, on ne rouvre pas la fenêtre (le badge du haut reste cliquable)
   let st = {}; try { st = (await window.anomia.getSettings()) || {}; } catch (e) { /* ignore */ }
+  // Au démarrage du launcher : téléchargement + installation automatiques, sans clic
+  if (Date.now() - LAUNCH_AT < 120000) {
+    updateDownloading = true;
+    updateOverlay.classList.remove("hidden");
+    updateMessage.textContent = `Mise à jour v${version} : téléchargement et installation automatiques…`;
+    updateLaterBtn.classList.add("hidden");
+    updateDownloadBtn.classList.add("hidden");
+    updateProgressTrack.classList.remove("hidden");
+    updateProgressFill.style.width = "0%";
+    window.anomia.downloadUpdate();
+    return;
+  }
   if (st.skippedUpdate !== version) updateOverlay.classList.remove("hidden");
 });
 
