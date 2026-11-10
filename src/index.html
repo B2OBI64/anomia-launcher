@@ -180,6 +180,13 @@
 
       <!-- VUE ACCUEIL GLOBAL (B2 Launcher) : slider des serveurs + streamers -->
       <section class="view" id="view-hub">
+        <div class="hub-layout">
+        <aside class="polls-panel hidden" id="polls-panel">
+          <div class="polls-head"><span class="polls-title">// SONDAGES</span></div>
+          <button class="btn-copy hidden" id="poll-new">+ Nouveau sondage</button>
+          <div class="polls-list" id="polls-list"></div>
+        </aside>
+        <div class="hub-main">
         <div class="hub-slider" id="hub-slider">
           <div class="hub-slides" id="hub-slides"></div>
           <button class="hub-arrow hub-prev" id="hub-prev" aria-label="Précédent">&#8249;</button>
@@ -204,6 +211,8 @@
         <div class="streamer-rail" id="streamer-rail"><span class="rail-label">STREAMERS<br>COMMUNAUTÉ</span><div class="streamer-grid" id="streamer-grid">
           <!-- injecté par renderer.js -->
         </div></div>
+        </div>
+        </div>
       </section>
 
       <!-- ACCUEIL : Communauté (serveurs Discord uniquement) -->
@@ -268,17 +277,35 @@
 
       <!-- VUES KANNIBAVENTURE -->
       <section class="view hidden" id="view-kb-home">
-        <div class="kb-hero">
-          <img src="../assets/kannibaventure.png" alt="KannibAventure" class="kb-hero-logo" />
-          <span class="kb-eyebrow">NOUVEAU SERVEUR MINECRAFT</span>
-          <h1 class="kb-title">KannibAventure</h1>
-          <div class="banner banner-maintenance hidden" id="kb-maintenance-banner" style="margin:10px 0;"><span>🛠️ KannibAventure est actuellement en maintenance — la connexion est temporairement fermée.</span></div>
-          <p class="kb-text">Une nouvelle aventure se prépare. Serveur Java avec mods et plugins. Ouverture prévue en décembre (date précise à venir). Reste connecté, les premières infos arrivent bientôt.</p>
-          <div class="kb-actions">
-            <button class="btn-connect" id="kb-connect" disabled>Décembre</button>
-            <button class="kb-discord-btn" id="kb-discord">Rejoindre le Discord</button>
+        <div class="banner banner-maintenance hidden" id="kb-maintenance-banner" style="margin:0 0 10px;"><span>🛠️ KannibAventure est actuellement en maintenance — la connexion est temporairement fermée.</span></div>
+        <div class="ah-hero kb-ah" id="kb-hero">
+          <img src="../assets/kb-hero-bg.jpg" alt="" class="ah-bg" onerror="this.style.display='none'" />
+          <div class="ah-shade"></div>
+          <div class="ah-content">
+            <img src="../assets/kannibaventure.png" alt="" class="ah-logo" />
+            <div class="ah-main">
+              <div class="status-row">
+                <span class="status-dot" id="kb-status-dot"></span>
+                <span id="kb-status-text">Vérification du statut…</span>
+              </div>
+              <h1 class="server-name">KannibAventure</h1>
+              <p class="server-desc">Serveur Minecraft Java — mods et plugins</p>
+              <div class="ah-chips">
+                <span class="ah-chip ah-players"><b id="kb-players-count">–</b> <span>joueurs connectés</span></span>
+                <span class="ah-chip ah-paused-chip" id="kb-soon-chip">🗓 Ouverture en décembre</span>
+                <span class="ah-chip hidden" id="kb-discord-chip"></span>
+                <span class="ah-chip ah-live hidden" id="kb-live-chip"></span>
+              </div>
+            </div>
+            <div class="ah-actions">
+              <button class="btn-connect" id="kb-connect" disabled>Décembre</button>
+              <button class="ah-secondary" id="kb-discord">Discord de KannibAventure</button>
+              <button class="ah-secondary" id="kb-rules-btn">Lire le règlement</button>
+            </div>
           </div>
         </div>
+        <div class="ah-livebar hidden" id="kb-livebar"><span id="kb-livebar-text"></span><button class="ah-secondary" id="kb-livebar-btn">Voir le live</button></div>
+
         <div class="telemetry-strip" id="kb-state">
           <div class="telemetry-item"><span class="telemetry-label">Statut</span><span class="telemetry-value" id="kbs-status">—</span></div>
           <div class="telemetry-item"><span class="telemetry-label">Joueurs</span><span class="telemetry-value" id="kbs-players">—</span></div>
@@ -735,7 +762,7 @@
         <p class="settings-hint" id="secret-code-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);"></p>
       </div>
 
-      <div class="settings-section">
+      <div class="settings-section hidden" id="settings-versions-section">
         <span class="settings-label">Versions</span>
         <button class="btn-copy" id="settings-versions" style="width:100%;">Revenir à une version précédente…</button>
       </div>

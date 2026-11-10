@@ -108,7 +108,9 @@ module.exports = {
     fallbackStreamers: [
       { channel: "b2obi64", displayName: "B2OBI64" },
       { channel: "toto_le_byr", displayName: "toto_le_byr" },
-      { channel: "romaintititox", displayName: "romaintititox" }
+      { channel: "romaintititox17", displayName: "romaintititox17" },
+      { channel: "deltaxhydraa", displayName: "deltaxhydraa" },
+      { channel: "martinmartin_m2x", displayName: "martinmartin_m2x" }
     ]
   },
 
@@ -303,6 +305,7 @@ module.exports = {
         { key: "hunter3", rarity: "bronze", label: "Chasseur de succès", description: "Débloquer 3 succès" },
         { key: "hunter10", rarity: "silver", label: "Chasseur de succès confirmé", description: "Débloquer 10 succès" },
         { key: "hunter25", rarity: "gold", label: "Chasseur de succès d'élite", description: "Débloquer 25 succès" },
+        { key: "peche", rarity: "secret", label: "T'aime la pêche", description: "Le B2oboi, espèce protégée sur la chaîne de deltaxhydraa", secret: true },
         { key: "polyvalent", rarity: "secret", label: "Polyvalent", description: "Jouer au moins une fois sur chacun des serveurs proposés", secret: true },
         { key: "viewer", rarity: "gold", label: "Viewers", description: "Regarder un live depuis le launcher" }
       ],

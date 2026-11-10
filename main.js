@@ -1587,6 +1587,17 @@ ipcMain.handle("role:citizen", async (e, server) => {
   } catch { return { ok: false, citizen: null }; }
 });
 
+// Sondages (serveur : b2_staffpanel). list/vote : compte Discord ; create/close/delete : fondateur/admin Kannibal Team (vérifié côté serveur)
+ipcMain.handle("polls:call", async (e, action, params) => {
+  if (!["list", "vote", "create", "close", "delete"].includes(action)) return { ok: false, error: "bad_action" };
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params || {})) { if (["id", "opt", "q", "o", "end"].includes(k)) qs.set(k, String(v).slice(0, 700)); }
+  try {
+    const r = await staffRequest(`polls/${action}?${qs.toString()}`, "discord");
+    return { ok: r.status === 200, status: r.status, body: r.body };
+  } catch { return { ok: false, status: 0, body: { error: "unreachable" } }; }
+});
+
 ipcMain.handle("sub:check", async () => {
   if (!discordToken) return { ok: false, sub: false };
   try {

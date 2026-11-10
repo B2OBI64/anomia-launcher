@@ -294,6 +294,16 @@
     kbMaintenance = !!r.maintenance;
     const kb = typeof getServer === "function" ? getServer("kannibaventure") : null;
     $("kb-maintenance-banner").classList.toggle("hidden", !kbMaintenance);
+    try {
+      const dot = $("kb-status-dot"), tx = $("kb-status-text");
+      const op = window.kbOpening ? window.kbOpening() : { open: r.online };
+      if (kbMaintenance) { dot.className = "status-dot maintenance"; tx.textContent = "Serveur en maintenance"; }
+      else if (r.online) { dot.className = "status-dot online"; tx.textContent = "Serveur en ligne"; }
+      else if (op.open) { dot.className = "status-dot offline"; tx.textContent = "Serveur hors ligne"; }
+      else { dot.className = "status-dot maintenance"; tx.textContent = "Ouverture prochainement"; }
+      $("kb-players-count").textContent = r.online ? `${r.players}/${r.maxPlayers}` : "–";
+      $("kb-soon-chip").classList.toggle("hidden", !!(r.online || op.open));
+    } catch (e) { /* ignore */ }
     st.classList.remove("maintenance-active");
     if (kbMaintenance) { st.textContent = "MAINTENANCE"; st.classList.add("maintenance-active"); }
     else if (r.online) st.textContent = "EN LIGNE";
@@ -331,7 +341,9 @@
     "7fa062c60ccc0f469427e8eecc53250bb252fbf0800503124136fb13f646745c": "gold",
     "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918": "matrix",
     "8f0b49be84aba883a225569f87359227261e79b4d76cff56888ca4ab9c7a15ee": "fx:creeper",
-    "4f3c4172a4fe308cebc840da665171f534849b1fca101eaf635d68fb453393db": "cubic"
+    "4f3c4172a4fe308cebc840da665171f534849b1fca101eaf635d68fb453393db": "cubic",
+    "0ab1b01ba5bfd5b5752d153f839112bdc137b3c8e57d374e6b3e5354e58f133a": "ach:peche",
+    "3b671c2c32bbf137b03a1320452fde0d737716ae469952ea721296cf1ed7faba": "anomia"
   };
   function unlockTheme(name) {
     const list = new Set(S.unlockedThemes || []); const fresh = !list.has(name); list.add(name);
@@ -344,7 +356,8 @@
     if (!code) return;
     try {
       const h = await sha256(code);
-      if (SECRET_HASHES[h] === "fx:creeper") { msg.textContent = "Sssssss…"; creeperBoom(); }
+      if (SECRET_HASHES[h] === "ach:peche") { msg.textContent = "🎣 Tu as trouvé le B2oboi !"; if (window.launcherAch) window.launcherAch.unlock("peche"); }
+      else if (SECRET_HASHES[h] === "fx:creeper") { msg.textContent = "Sssssss…"; creeperBoom(); }
       else if (SECRET_HASHES[h]) { if (SECRET_HASHES[h] === "matrix" && window.launcherAch) window.launcherAch.unlock("error404"); const fresh = unlockTheme(SECRET_HASHES[h]); { const lb = THEME_LABELS[SECRET_HASHES[h]] || "secret"; msg.textContent = fresh ? `✨ Thème ${lb} débloqué et appliqué !` : `Thème ${lb} déjà débloqué (réappliqué).`; } }
       else msg.textContent = "Ce code ne donne rien… pour l'instant.";
     } catch (e) { msg.textContent = "Code impossible à vérifier."; }
@@ -367,14 +380,6 @@
     document.body.appendChild(d); document.body.classList.add("shake");
     setTimeout(() => { d.remove(); document.body.classList.remove("shake"); }, 1700);
   }
-  // Séquence ↑ ↓ ← → ↑ ↓ ← → : thème Anomia
-  const ARROWS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
-  let apos = 0;
-  document.addEventListener("keydown", (e) => {
-    if (/INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || "")) return;
-    apos = e.key === ARROWS[apos] ? apos + 1 : (e.key === ARROWS[0] ? 1 : 0);
-    if (apos === ARROWS.length) { apos = 0; if (unlockTheme("anomia") && typeof showInfo === "function") showInfo("Combinaison secrète !", "<p>✦ Tu as débloqué le thème <b>Anomia</b>. Retrouve-le dans les options, section Ambiance.</p>"); }
-  });
   // 10 clics sur le logo B2 : mode arc-en-ciel pendant 10 s
   let logoClicks = 0, logoTimer = null;
   const tl = document.querySelector(".titlebar-logo");
@@ -388,6 +393,28 @@
       showInfo("Joyeux réveillon ! 🎄", "<p>Le thème <b>Noël</b> vient d'être débloqué (neige incluse). Retrouve-le dans les options, section Ambiance.</p>");
     const h = now.getHours(), key = now.toISOString().slice(0, 10);
     if (h >= 3 && h < 5 && S.nightSeen !== key) { save({ nightSeen: key }); if (typeof showInfo === "function") showInfo("Il est tard…", "<p>🌙 Il est entre 3 h et 5 h du matin. Même les Creepers dorment à cette heure. Va te reposer !</p>"); }
+  }
+
+  // ---------- Accueil KannibAventure (même présentation que celui d'Anomia) ----------
+  async function renderKbHome() {
+    const kb = typeof getServer === "function" ? getServer("kannibaventure") : null;
+    const rBtn = $("kb-rules-btn"); if (rBtn) rBtn.onclick = () => goToView("kb-rules");
+    try {
+      const comm = await api.getDiscordCommunities();
+      const a = (comm || []).find((c) => /kannibaventure/i.test(c.name || ""));
+      const chip = $("kb-discord-chip");
+      if (a && a.online != null) { chip.textContent = `● ${a.online} en ligne sur Discord`; chip.classList.remove("hidden"); } else chip.classList.add("hidden");
+    } catch (e) { /* ignore */ }
+    try { if (typeof loadStreamers === "function") await loadStreamers(); } catch (e) { /* ignore */ }
+    const live = (typeof STREAMER_DATA !== "undefined" ? STREAMER_DATA : []).filter((s) => s.live);
+    const bar = $("kb-livebar"), lchip = $("kb-live-chip");
+    if (live.length) {
+      const s = live[0];
+      lchip.textContent = `● ${s.displayName || s.channel} en live`; lchip.classList.remove("hidden");
+      $("kb-livebar-text").textContent = `● ${s.displayName || s.channel} est en live${s.game ? " sur " + s.game : ""} · ${Number(s.viewers) || 0} viewers`;
+      $("kb-livebar-btn").onclick = () => { selectStreamer(s); selectServer("hub"); };
+      bar.classList.remove("hidden");
+    } else { bar.classList.add("hidden"); lchip.classList.add("hidden"); }
   }
 
   // ---------- Accueil Anomia ----------
@@ -542,7 +569,7 @@
   function onViewShown(name) {
     if (name === "home") { renderAnomiaHome(); }
     if (name === "kb-settings") { const m = $("opt-kb-mem"); if (m) m.value = String(S.kbMemoryGb || 4); }
-    if (name === "kb-home") { loadKbPlaytime(); loadKbState(); }
+    if (name === "kb-home") { loadKbPlaytime(); loadKbState(); renderKbHome(); }
     if (name === "kb-admin") { loadKbAdmin(); clearInterval(kbTimer); kbTimer = setInterval(() => { if (!$("view-kb-admin").classList.contains("hidden")) loadKbAdmin(); }, 15000); } else if (kbTimer) { clearInterval(kbTimer); kbTimer = null; }
     if (name === "admin") { startHealthLoop(); } else stopHealthLoop();
   }
@@ -683,7 +710,124 @@
   $("btn-whatsnew").addEventListener("click", openWhatsNew);
   $("whatsnew-close").addEventListener("click", () => $("whatsnew-overlay").classList.add("hidden"));
 
-  // ---------- Versions précédentes ----------
+  // ---------- Sondages (colonne de gauche de l'accueil + fenêtre pop-up) ----------
+  const polls = { list: [], canManage: false, openId: null };
+  const pEsc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const linked = () => typeof discordProfile !== "undefined" && !!discordProfile;
+  function fmtEnd(p) {
+    if (p.closed) return "Sondage terminé";
+    if (!p.endsAt) return "Sans date de fin";
+    return "Se termine le " + new Date(p.endsAt * 1000).toLocaleString("fr-FR", { day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" });
+  }
+  function pollState(p) {
+    if (typeof p.myVote === "number") return { cls: "done", txt: "✓ Répondu" };
+    if (p.closed) return { cls: "closed", txt: "Terminé" };
+    return { cls: "new", txt: "● À répondre" };
+  }
+  function renderPolls() {
+    const panel = $("polls-panel"), box = $("polls-list");
+    $("poll-new").classList.toggle("hidden", !polls.canManage);
+    panel.classList.toggle("hidden", !polls.list.length && !polls.canManage);
+    box.innerHTML = "";
+    if (!polls.list.length) { box.innerHTML = `<p class="polls-empty">Aucun sondage en cours.</p>`; }
+    polls.list.forEach((p) => {
+      const st = pollState(p);
+      const el = document.createElement("button"); el.type = "button"; el.className = "poll-item " + st.cls; el.dataset.pid = p.id;
+      el.innerHTML = `<span class="poll-item-q">${pEsc(p.question)}</span><span class="poll-item-st">${st.txt}</span><span class="poll-item-end">${pEsc(fmtEnd(p))}</span>`;
+      box.appendChild(el);
+    });
+    if (polls.openId) { const p = polls.list.find((x) => x.id === polls.openId); if (p) renderPollModal(p); else closePollModal(); }
+  }
+  // --- pop-up : se ferme avec la croix, un clic à côté ou Échap ; ne bloque jamais le launcher ---
+  function closePollModal() { polls.openId = null; const m = $("poll-modal"); if (m) m.remove(); }
+  function renderPollModal(p) {
+    let ov = $("poll-modal");
+    if (!ov) {
+      ov = document.createElement("div"); ov.id = "poll-modal"; ov.className = "modal-overlay";
+      ov.addEventListener("mousedown", (e) => { if (e.target === ov) closePollModal(); });
+      document.body.appendChild(ov);
+    }
+    const voted = typeof p.myVote === "number", canVote = !voted && !p.closed && linked();
+    let html = `<div class="modal-box glass poll-pop"><button class="modal-close" id="poll-x" aria-label="Fermer">&#10005;</button><div class="poll-q">${pEsc(p.question)}</div>`;
+    p.options.forEach((o, i) => {
+      const pct = polls.canManage && p.total ? Math.round(((p.counts && p.counts[i]) || 0) * 100 / p.total) : 0;
+      const cnt = polls.canManage ? ` · ${(p.counts && p.counts[i]) || 0} vote(s)${p.total ? " (" + pct + "%)" : ""}` : "";
+      html += `<button class="poll-opt${p.myVote === i + 1 ? " mine" : ""}" data-pid="${pEsc(p.id)}" data-opt="${i + 1}" ${canVote ? "" : "disabled"}>${polls.canManage ? `<i class="bar" style="width:${pct}%"></i>` : ""}<span>${p.myVote === i + 1 ? "✓ " : ""}${pEsc(o)}${cnt}</span></button>`;
+    });
+    let meta = pEsc(fmtEnd(p));
+    if (polls.canManage) meta += ` · ${p.total || 0} vote(s) au total`;
+    if (voted) meta += ` · ✓ Ta réponse : « ${pEsc(p.options[p.myVote - 1])} »`;
+    else if (!p.closed && !linked()) meta += " · Lie ton Discord pour répondre";
+    html += `<div class="poll-meta">${meta}</div>`;
+    if (polls.canManage) html += `<div class="poll-actions">${p.closed ? "" : `<button class="btn-copy" data-act="close" data-pid="${pEsc(p.id)}">Terminer</button>`}<button class="btn-copy" data-act="delete" data-pid="${pEsc(p.id)}">Supprimer</button></div>`;
+    html += `</div>`;
+    ov.innerHTML = html;
+    ov.querySelector("#poll-x").addEventListener("click", closePollModal);
+  }
+  async function loadPolls() {
+    let r; try { r = await api.pollsCall("list", {}); } catch (e) { r = null; }
+    if (!r || !r.ok || !r.body) return;
+    polls.list = r.body.polls || []; polls.canManage = !!r.body.canManage;
+    renderPolls();
+  }
+  window.loadPolls = loadPolls;
+  $("polls-list").addEventListener("click", (e) => {
+    const it = e.target.closest(".poll-item"); if (!it) return;
+    const p = polls.list.find((x) => x.id === it.dataset.pid); if (!p) return;
+    polls.openId = p.id; renderPollModal(p);
+  });
+  document.addEventListener("click", async (e) => {
+    const ov = $("poll-modal"); if (!ov || !ov.contains(e.target)) return;
+    const opt = e.target.closest(".poll-opt"), act = e.target.closest("[data-act]");
+    if (opt && !opt.disabled) {
+      const r = await api.pollsCall("vote", { id: opt.dataset.pid, opt: opt.dataset.opt });
+      const err = r && r.body && r.body.error;
+      if (!(r && r.ok)) {
+        if (err === "not_in_guild") showInfo("Vote impossible", "<p>Rejoins le Discord Kannibal Team pour pouvoir répondre.</p>");
+        else if (err === "closed") showInfo("Sondage terminé", "<p>Ce sondage est déjà terminé.</p>");
+        else if (err !== "already_voted") showInfo("Vote impossible", "<p>Le serveur de sondages est injoignable, réessaie dans un instant.</p>");
+      }
+      loadPolls();
+    } else if (act) {
+      const label = act.dataset.act === "delete" ? "Supprimer ce sondage ? Les votes seront perdus." : "Terminer ce sondage maintenant ?";
+      if (!(await showConfirm("Sondage", label))) return;
+      await api.pollsCall(act.dataset.act, { id: act.dataset.pid });
+      if (act.dataset.act === "delete") closePollModal();
+      loadPolls();
+    }
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("poll-modal")) closePollModal(); });
+  $("poll-new").addEventListener("click", () => {
+    const ov = document.createElement("div"); ov.className = "modal-overlay";
+    ov.innerHTML = `<div class="modal-box glass poll-form" style="max-width:520px;"><button class="modal-close" aria-label="Fermer">&#10005;</button><h3>Nouveau sondage</h3>
+      <label>Question</label><input type="text" id="pf-q" maxlength="200" />
+      <label>Réponses (une par ligne, de 2 à 6)</label><textarea id="pf-o" maxlength="480"></textarea>
+      <label>Durée</label><label style="display:flex;gap:8px;align-items:center;color:var(--text);"><input type="checkbox" id="pf-inf" checked /> Sans date de fin</label>
+      <input type="datetime-local" id="pf-end" disabled />
+      <p id="pf-msg" style="color:#f87171;font-size:12px;min-height:16px;"></p>
+      <div class="poll-actions"><button class="btn-connect" id="pf-ok">Publier</button></div></div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.addEventListener("mousedown", (ev) => { if (ev.target === ov) close(); });
+    ov.querySelector(".modal-close").addEventListener("click", close);
+    ov.querySelector("#pf-inf").addEventListener("change", (ev) => { ov.querySelector("#pf-end").disabled = ev.target.checked; });
+    ov.querySelector("#pf-ok").addEventListener("click", async () => {
+      const q = ov.querySelector("#pf-q").value.trim(), opts = ov.querySelector("#pf-o").value.split("\n").map((x) => x.replace(/\|/g, "/").trim()).filter(Boolean);
+      const inf = ov.querySelector("#pf-inf").checked, endv = ov.querySelector("#pf-end").value, msg = ov.querySelector("#pf-msg");
+      if (!q) { msg.textContent = "Écris une question."; return; }
+      if (opts.length < 2 || opts.length > 6) { msg.textContent = "Il faut entre 2 et 6 réponses."; return; }
+      let end = 0;
+      if (!inf) { end = Math.floor(new Date(endv).getTime() / 1000); if (!endv || !(end > Date.now() / 1000)) { msg.textContent = "Choisis une date de fin dans le futur."; return; } }
+      const r = await api.pollsCall("create", { q, o: opts.join("|"), end });
+      if (r && r.ok) { close(); loadPolls(); } else msg.textContent = (r && r.body && r.body.error === "kt_admin_only") ? "Réservé aux fondateurs/admins Kannibal Team." : "Impossible de créer le sondage.";
+    });
+  });
+  setInterval(loadPolls, 60000);
+  setTimeout(loadPolls, 3500);
+
+  // ---------- Versions précédentes (réservé aux admins) ----------
+  window.syncVersionsBtn = () => { const s = $("settings-versions-section"); if (s) s.classList.toggle("hidden", staffRole !== "admin"); };
+  window.syncVersionsBtn();
   $("settings-versions").addEventListener("click", async () => {
     $("settings-overlay").classList.add("hidden");
     $("versions-overlay").classList.remove("hidden");

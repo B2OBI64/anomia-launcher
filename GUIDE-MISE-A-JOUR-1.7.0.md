@@ -112,3 +112,16 @@ Sans ces deux étapes, tout fonctionne : seules les heures de jeu comptent pour 
 2. Le bot Discord (convar `anomia_discord_bot_token`) doit être présent sur les 3 serveurs (Kannibal Team, Anomia, KannibAventure) avec l'intent « Server Members » activé.
 3. Droits : fondateurs + admin Kannibal Team = tout ; admin Anomia = Anomia ; admin KannibAventure = KannibAventure ; modo Anomia = lecture seule (pas de maintenance). Rôles supplémentaires possibles : `set anomia_extra_admin_roles "guild:role,guild:role"`.
 4. Rôle Citoyen vérifié par la route `rolecheck` (convars facultatives `anomia_citizen_role_id`, `anomia_kb_citizen_role_id`).
+
+
+## 2.0.1 — Sondages (serveur)
+1. Remplace `b2_staffpanel` (`server/main.lua`) puis `restart b2_staffpanel`. Les sondages sont enregistrés dans le stockage de la ressource (ils survivent aux redémarrages).
+2. Créer / terminer / supprimer : fondateurs et admins du Discord Kannibal Team uniquement. Voter : membre du Discord Kannibal Team avec compte Discord lié au launcher (1 vote par compte).
+3. Les résultats (nombre de votes) ne sont visibles que par les fondateurs/admins Kannibal Team.
+
+## 2.0.1 — Nouveaux streamers (live en direct)
+Dans le `server.cfg` du serveur Anomia, remplace la ligne par :
+```
+setr anomia_twitch_channels "b2obi64,toto_le_byr,romaintititox17,deltaxhydraa,martinmartin_m2x"
+```
+puis `restart b2_twitchstatus`. Sans ça, deltaxhydraa et martinmartin_m2x apparaissent dans le launcher mais sans le statut live.

@@ -24,7 +24,7 @@ aux joueurs.
    ```
    setr anomia_twitch_client_id "TON_CLIENT_ID"
    setr anomia_twitch_client_secret "TON_CLIENT_SECRET"
-   setr anomia_twitch_channels "b2obi64,toto_le_byr,romaintititox17"
+   setr anomia_twitch_channels "b2obi64,toto_le_byr,romaintititox17,deltaxhydraa,martinmartin_m2x"
    ensure b2_twitchstatus
    ```
    (la liste `anomia_twitch_channels` est séparée par des virgules, sans

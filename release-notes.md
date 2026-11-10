@@ -1,6 +1,8 @@
-# 2.0.0 — Sortie officielle
+# 2.0.1 — Sondages et nouveautés
 
-- Version 2.0.0 : sortie officielle du launcher pour tout le monde.
-- Mises à jour automatiques : au lancement, le launcher télécharge et installe tout seul la nouvelle version, sans cliquer.
-- Installation : l'ancienne version du launcher se ferme automatiquement pendant la mise à jour.
-- Droits par rôle Discord, rôle Citoyen requis pour se connecter, bouton « Lier Discord ».
+- Correction de bugs : quelques bugs qui traînaient ont été corrigés.
+- 1 nouveau succès à débloquer.
+- Nouveautés : les sondages.
+- 2 nouveaux streamers dans la liste.
+- KannibAventure : l'accueil ressemble maintenant à celui d'Anomia (mêmes boutons, joueurs en live).
+- KannibAventure : nouvelle note de développement.

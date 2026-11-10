@@ -19,7 +19,7 @@
 -- Configure ces convars dans ton server.cfg :
 --   setr anomia_twitch_client_id "TON_CLIENT_ID"
 --   setr anomia_twitch_client_secret "TON_CLIENT_SECRET"
---   setr anomia_twitch_channels "b2obi64,toto_le_byr,romaintititox17"
+--   setr anomia_twitch_channels "b2obi64,toto_le_byr,romaintititox17,deltaxhydraa,martinmartin_m2x"
 -- (Récupère client_id/secret sur dev.twitch.tv/console/apps -> Register Your Application)
 
 local function getConfig()

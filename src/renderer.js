@@ -28,6 +28,7 @@ async function refreshCitizen() {
       try { const r = await window.anomia.checkCitizen(sv); citizen[sv] = r && typeof r.citizen === "boolean" ? r.citizen : null; } catch { citizen[sv] = null; }
     }
   }
+  try { if (window.loadPolls) window.loadPolls(); } catch {}
   try { updateConnectButtonState(); } catch {}
   try { if (window.refreshKbConnect) window.refreshKbConnect(); } catch {}
 }
@@ -1090,6 +1091,11 @@ async function loadStreamers() {
   }
   // Les lives en premier
   [...STREAMER_DATA].sort((a, b) => (b.live ? 1 : 0) - (a.live ? 1 : 0)).forEach((s) => grid.appendChild(renderStreamerCard(s)));
+  // Chaînes de la liste locale absentes de la liste du serveur : ajoutées à la suite
+  (TWITCH.fallbackStreamers || []).forEach((s) => {
+    const c = String(s.channel || "").toLowerCase();
+    if (c && !STREAMER_DATA.some((d) => String(d.channel || "").toLowerCase() === c)) grid.appendChild(renderFallbackStreamerCard(s));
+  });
   renderFeatured();
 }
 // Actualisation automatique du live toutes les minutes tant que l'accueil est ouvert
@@ -1748,6 +1754,7 @@ document.getElementById("admin-cancel").addEventListener("click", () => {
 
 function applyStaffRole(result) {
   staffRole = result.role || "mod";
+  if (window.syncVersionsBtn) window.syncVersionsBtn();
   staffScopes = { anomia: !!(result.scopes && result.scopes.anomia), kb: !!(result.scopes && result.scopes.kb) };
   isAdminUnlocked = staffRole === "admin" && staffScopes.anomia; // droits admin sur Anomia
   document.getElementById("admin-only-block").classList.toggle("hidden", !(staffRole === "mod" || isAdminUnlocked));
@@ -1759,6 +1766,7 @@ function applyStaffRole(result) {
 
 function clearStaffRole() {
   staffRole = null;
+  if (window.syncVersionsBtn) window.syncVersionsBtn();
   staffScopes = { anomia: false, kb: false };
   isAdminUnlocked = false;
   document.getElementById("nav-admin").classList.add("hidden");

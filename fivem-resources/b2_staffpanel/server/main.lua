@@ -22,6 +22,7 @@
 --   GET /b2_staffpanel/health   -> sante du serveur (admin uniquement)
 --   GET /b2_staffpanel/kbstatus -> { kbMaintenance } (public) ; /kbmaintenance/on|off (admin) : maintenance KannibAventure
 --   GET /b2_staffpanel/rolecheck/anomia|kannibaventure -> { citizen: true|false|null } (role citoyen requis pour jouer)
+--   GET /b2_staffpanel/polls/list|vote|create|close|delete  -> sondages (list/vote : Discord ; create/close/delete : fondateur/admin Kannibal Team)
 --   GET /b2_staffpanel/subcheck -> { sub } (en-tete x-discord-token) : role abonne sur Kannibal Team (convar anomia_sub_role_id)
 -- Lecture seule : aucune action (kick/ban...) n'est possible depuis le launcher.
 -- ============================================================
@@ -160,7 +161,7 @@ local function getDiscordRole(token, cb)
         -- admin = fondateur ou admin sur l'un des 3 Discord (Kannibal Team, Anomia, KannibAventure)
         local list = adminRoleList()
         local i, firstSt = 0, nil
-        local scopes = { anomia = false, kb = false }
+        local scopes = { anomia = false, kb = false, kt = false }
         local isAdmin = false
         local function nextAdmin()
             i = i + 1
@@ -180,6 +181,7 @@ local function getDiscordRole(token, cb)
                     isAdmin = true
                     if e.scope == "all" or e.scope == "anomia" then scopes.anomia = true end
                     if e.scope == "all" or e.scope == "kb" then scopes.kb = true end
+                    if e.guild == STAFF_GUILD_DEFAULT then scopes.kt = true end -- fondateur/admin Kannibal Team : sondages
                 end
                 if i == 1 then firstSt = st end
                 if st == 200 then firstSt = 200 end
@@ -331,6 +333,135 @@ local function buildPlayers()
     return list
 end
 
+-- ============================================================
+-- Sondages (stockes dans le KVP de la ressource)
+-- ============================================================
+local POLLS_KEY = "b2sp_polls"
+local function urldecode(v)
+    if not v then return nil end
+    return (tostring(v):gsub("+", " "):gsub("%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end))
+end
+local function qparam(path, name)
+    local q = tostring(path or ""):match("%?(.*)") or ""
+    return urldecode(q:match("[&]?" .. name .. "=([^&]*)"))
+end
+local function loadPolls()
+    local raw = GetResourceKvpString(POLLS_KEY)
+    local ok, t = pcall(json.decode, raw or "[]")
+    if not ok or type(t) ~= "table" then return {} end
+    return t
+end
+local function savePolls(list) SetResourceKvp(POLLS_KEY, json.encode(list)) end
+local function pollClosed(p) return p.closed == true or (p.endsAt and p.endsAt > 0 and os.time() >= p.endsAt) end
+-- user Discord depuis le jeton OAuth : cb(id, username|nil)
+local function discordUser(token, cb)
+    if not token or token == "" or #token > 200 then cb(nil) return end
+    PerformHttpRequest("https://discord.com/api/v10/users/@me", function(status, body)
+        local ok, u = pcall(json.decode, body or "")
+        if status ~= 200 or not ok or not u or not u.id then cb(nil) return end
+        cb(tostring(u.id), tostring(u.global_name or u.username or "?"))
+    end, "GET", "", { ["Authorization"] = "Bearer " .. token })
+end
+local function pollView(p, uid, withCounts)
+    local v = { id = p.id, question = p.question, options = p.options, createdAt = p.createdAt, endsAt = p.endsAt or 0, createdBy = p.createdBy, closed = pollClosed(p) and true or false, myVote = (uid and p.votes[uid]) or nil }
+    if withCounts then
+        local counts, total = {}, 0
+        for i = 1, #p.options do counts[i] = 0 end
+        for _, opt in pairs(p.votes) do if counts[opt] then counts[opt] = counts[opt] + 1 total = total + 1 end end
+        v.counts, v.total = counts, total
+    end
+    return v
+end
+local function handlePolls(req, res, headers)
+    local path = tostring(req.path or "")
+    local action = path:match("polls/(%a+)") or "list"
+    local token = headers["x-discord-token"]
+    local function withKt(cb) -- fondateur/admin Kannibal Team uniquement
+        getDiscordRole(token, function(role, reason, scopes)
+            if role == "admin" and scopes and scopes.kt then cb() else send(res, 403, { error = "kt_admin_only" }) end
+        end)
+    end
+    if action == "list" then
+        local function respond(uid, isKt)
+            local out, now = {}, os.time()
+            for _, p in ipairs(loadPolls()) do
+                local closed = pollClosed(p)
+                -- les sondages termines restent visibles 3 jours
+                if not closed or (now - (p.endsAt and p.endsAt > 0 and p.endsAt or (p.closedAt or now))) < 3 * 86400 then
+                    out[#out + 1] = pollView(p, uid, isKt)
+                end
+            end
+            send(res, 200, { polls = out, canManage = isKt and true or false })
+        end
+        discordUser(token, function(uid)
+            if not uid then respond(nil, false) return end
+            getDiscordRole(token, function(role, _, scopes) respond(uid, role == "admin" and scopes and scopes.kt) end)
+        end)
+        return
+    end
+    if action == "vote" then
+        local id, opt = qparam(path, "id"), tonumber(qparam(path, "opt"))
+        discordUser(token, function(uid)
+            if not uid then send(res, 401, { error = "discord_required" }) return end
+            local botToken = GetConvar("anomia_discord_bot_token", "")
+            memberHasRole(botToken, STAFF_GUILD_DEFAULT, "0", uid, function(_, st)
+                if st ~= 200 then send(res, 403, { error = st == 404 and "not_in_guild" or "unavailable" }) return end
+                local list = loadPolls()
+                for _, p in ipairs(list) do
+                    if p.id == id then
+                        if pollClosed(p) then send(res, 409, { error = "closed" }) return end
+                        if not opt or opt < 1 or opt > #p.options or opt % 1 ~= 0 then send(res, 400, { error = "bad_option" }) return end
+                        if p.votes[uid] then send(res, 409, { error = "already_voted", myVote = p.votes[uid] }) return end
+                        p.votes[uid] = opt
+                        savePolls(list)
+                        send(res, 200, { ok = true, myVote = opt })
+                        return
+                    end
+                end
+                send(res, 404, { error = "not_found" })
+            end)
+        end)
+        return
+    end
+    if action == "create" then
+        withKt(function()
+            local q = qparam(path, "q")
+            local opts = {}
+            for raw in tostring(qparam(path, "o") or ""):gmatch("[^|]+") do
+                local o = raw:match("^%s*(.-)%s*$")
+                if o ~= "" then opts[#opts + 1] = o:sub(1, 80) end
+            end
+            local endsAt = tonumber(qparam(path, "end")) or 0
+            if not q or q:match("^%s*$") or #opts < 2 or #opts > 6 then send(res, 400, { error = "bad_poll" }) return end
+            if endsAt ~= 0 and endsAt <= os.time() then send(res, 400, { error = "bad_end" }) return end
+            local list = loadPolls()
+            if #list >= 30 then table.remove(list, 1) end
+            local id = ("%d%04d"):format(os.time(), math.random(0, 9999))
+            list[#list + 1] = { id = id, question = q:sub(1, 200), options = opts, createdAt = os.time(), endsAt = endsAt, createdBy = "Kannibal Team", votes = {} }
+            savePolls(list)
+            send(res, 200, { ok = true, id = id })
+        end)
+        return
+    end
+    if action == "close" or action == "delete" then
+        withKt(function()
+            local id = qparam(path, "id")
+            local list = loadPolls()
+            for i, p in ipairs(list) do
+                if p.id == id then
+                    if action == "delete" then table.remove(list, i) else p.closed = true p.closedAt = os.time() end
+                    savePolls(list)
+                    send(res, 200, { ok = true })
+                    return
+                end
+            end
+            send(res, 404, { error = "not_found" })
+        end)
+        return
+    end
+    send(res, 400, { error = "bad_action" })
+end
+
 SetHttpHandler(function(req, res)
     local addr = tostring(req.address or "?")
     if throttled(addr) then
@@ -375,6 +506,7 @@ SetHttpHandler(function(req, res)
         send(res, 200, v)
         return
     end
+    if ppath:find("polls", 1, true) then handlePolls(req, res, headers) return end
     if ppath:find("rolecheck", 1, true) then
         local srv = tostring(req.path or ""):find("kannibaventure", 1, true) and "kannibaventure" or "anomia"
         checkCitizen(headers["x-discord-token"], srv, function(v) send(res, 200, { citizen = v }) end)
