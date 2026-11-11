@@ -539,7 +539,7 @@ function sha256File(filePath) {
 // ============================================================
 // Statut serveur (API officielle CFX via le code cfx.re/join/xxxxx)
 // ============================================================
-ipcMain.handle("server:status", async () => {
+async function serverStatusImpl() {
   // Ping moyen + état maintenance + population par job via b2_pingstats (prioritaire dès qu'elle répond)
   let avgPing = null;
   let maintenance = false;
@@ -559,7 +559,7 @@ ipcMain.handle("server:status", async () => {
     let players = [];
     try {
       const rawPlayers = await fetchJson(config.server.directPlayersUrl, 5000);
-      players = (rawPlayers || []).map((p) => ({ name: p.name, ping: p.ping }));
+      players = (rawPlayers || []).map((p) => ({ name: p.name, ping: p.ping, anon: Array.isArray(p.identifiers) && p.identifiers.length === 0 }));
     } catch {
       // players.json peut être désactivé indépendamment de dynamic.json (souvent volontaire,
       // pour ne pas exposer la liste des joueurs) - on tente l'API CFX en repli juste pour le ping
@@ -603,6 +603,23 @@ ipcMain.handle("server:status", async () => {
       return { online: false, error: `${directErr.message} / ${fallbackErr.message}` };
     }
   }
+}
+// Remplace les noms FiveM par les pseudos Discord (liste fournie par b2_staffpanel, route publique « online »)
+ipcMain.handle("server:status", async () => {
+  const st = await serverStatusImpl();
+  try {
+    if (st && st.online && Array.isArray(st.players) && st.players.length) {
+      const r = await staffRequest("online", "public");
+      if (r.status === 200 && Array.isArray(r.body.players)) {
+        const map = new Map(r.body.players.map((p) => [String(p.name).toLowerCase(), p]));
+        st.players = st.players.map((p) => {
+          const m = map.get(String(p.name).toLowerCase());
+          return m && m.discordName ? { ...p, key: p.name, name: m.discordName } : p;
+        });
+      }
+    }
+  } catch { /* route absente (ancien b2_staffpanel) : on garde les noms FiveM */ }
+  return st;
 });
 
 // ============================================================

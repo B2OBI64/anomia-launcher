@@ -190,7 +190,11 @@ function rate(got, t0) { const s = (Date.now() - t0) / 1000; return s > 1 ? ` ·
 const normName = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
 
 async function listReleaseAssets({ owner, repo, tag, apiBase = "https://api.github.com" }) {
-  const rel = await getJson(`${apiBase}/repos/${owner}/${repo}/releases/tags/${tag}`);
+  // Les releases GitHub « immuables » ne permettent pas de réutiliser un tag supprimé : on prend donc la release
+  // la plus récente du dépôt (tag « latest » ou absent), ou le tag demandé s'il existe, sinon la plus récente.
+  let rel;
+  if (tag && tag !== "latest") { try { rel = await getJson(`${apiBase}/repos/${owner}/${repo}/releases/tags/${tag}`); } catch { rel = null; } }
+  if (!rel) rel = await getJson(`${apiBase}/repos/${owner}/${repo}/releases/latest`);
   const all = [];
   for (let page = 1; page < 10; page++) {
     const part = await getJson(`${apiBase}/repos/${owner}/${repo}/releases/${rel.id}/assets?per_page=100&page=${page}`);

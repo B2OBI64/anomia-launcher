@@ -6,7 +6,11 @@ const dir = process.argv[2];
 if (!dir || !fs.existsSync(dir)) { console.error('Usage : node tools\\make-kb-modpack.js "<dossier des mods>"'); process.exit(1); }
 const mods = [];
 for (const f of fs.readdirSync(dir).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))) {
-  if (!/\.jar$/i.test(f) || / \(\d+\)\.jar$/i.test(f)) continue; // ignore les doublons « (1) »
+  if (!/\.jar$/i.test(f)) continue;
+  // ignore les doublons « (1) », sauf si l'original n'existe pas (le fichier est alors le seul exemplaire)
+  const dup = f.match(/^(.*) \(\d+\)\.jar$/i);
+  if (dup && fs.existsSync(path.join(dir, dup[1] + ".jar"))) continue;
+  if (dup) console.log("Attention : « " + f + " » est gardé car l'original n'existe pas (renomme-le si tu veux)");
   const buf = fs.readFileSync(path.join(dir, f));
   mods.push({ file: f, size: buf.length, sha256: crypto.createHash("sha256").update(buf).digest("hex") });
 }

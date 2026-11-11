@@ -462,6 +462,49 @@ local function handlePolls(req, res, headers)
     send(res, 400, { error = "bad_action" })
 end
 
+-- ============================================================
+-- Joueurs en ligne avec pseudo Discord (route publique « online »)
+-- ============================================================
+local discordNameCache = {}  -- discordId -> { name, expires }
+local function discordIdOf(src)
+    for _, ident in ipairs(GetPlayerIdentifiers(src)) do
+        local d = ident:match("^discord:(%d+)$")
+        if d then return d end
+    end
+    return nil
+end
+local function resolveDiscordName(botToken, did, cb)
+    local c = discordNameCache[did]
+    if c and c.expires > os.time() then cb(c.name) return end
+    PerformHttpRequest("https://discord.com/api/v10/users/" .. did, function(st, body)
+        local name
+        if st == 200 and body then
+            local ok, u = pcall(json.decode, body)
+            if ok and type(u) == "table" then name = u.global_name or u.username end
+        end
+        discordNameCache[did] = { name = name, expires = os.time() + (name and 600 or 60) }
+        cb(name)
+    end, "GET", "", { ["Authorization"] = "Bot " .. botToken })
+end
+local function buildOnline(cb)
+    local botToken = GetConvar("anomia_discord_bot_token", "")
+    local list, pending = {}, 0
+    local ids = GetPlayers()
+    for _, id in ipairs(ids) do list[#list + 1] = { name = GetPlayerName(id) or "?", ping = GetPlayerPing(id) or 0, _did = discordIdOf(id) } end
+    for _, e in ipairs(list) do if e._did and botToken ~= "" then pending = pending + 1 end end
+    local function finish() for _, e in ipairs(list) do e._did = nil end cb(list) end
+    if pending == 0 then finish() return end
+    for _, e in ipairs(list) do
+        if e._did and botToken ~= "" then
+            resolveDiscordName(botToken, e._did, function(n)
+                e.discordName = n
+                pending = pending - 1
+                if pending == 0 then finish() end
+            end)
+        end
+    end
+end
+
 SetHttpHandler(function(req, res)
     local addr = tostring(req.address or "?")
     if throttled(addr) then
@@ -472,6 +515,10 @@ SetHttpHandler(function(req, res)
     local headers = req.headers or {}
     local ppath = tostring(req.path or "")
     -- Routes publiques (aucun role requis)
+    if ppath:find("/online", 1, true) and not ppath:find("kb", 1, true) then
+        buildOnline(function(list) send(res, 200, { players = list }) end)
+        return
+    end
     if ppath:find("kbstatus", 1, true) then
         local maint = GetResourceKvpString(KB_MAINT_KEY) == "true"
         refreshKb(function(kb) send(res, 200, { kbMaintenance = maint, kb = kb }) end)

@@ -1,14 +1,23 @@
 [
   {
+    "version": "2.0.2",
+    "date": "11 novembre 2026",
+    "title": "Mise à jour mineure",
+    "items": [
+      "Mise à jour mineure.",
+      "Correction de bugs multiples."
+    ]
+  },
+  {
     "version": "2.0.1",
     "date": "10 novembre 2026",
     "title": "Sondages et nouveautés",
     "items": [
       "Correction de bugs : quelques bugs qui traînaient ont été corrigés.",
       "1 nouveau succès à débloquer.",
-      "Nouveautés : les sondages.( En Beta )",
+      "Nouveautés : les sondages.",
       "2 nouveaux streamers dans la liste.",
-      "KannibAventure : Refonte de l'accueil .",
+      "KannibAventure : l'accueil ressemble maintenant à celui d'Anomia (mêmes boutons, joueurs en live).",
       "KannibAventure : nouvelle note de développement."
     ]
   },

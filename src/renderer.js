@@ -2984,18 +2984,28 @@ async function loadHubPlayers() {
   a.innerHTML = "";
   if (!st || !st.online) a.innerHTML = `<p class="hc-empty">Serveur hors ligne.</p>`;
   else if (!st.players || !st.players.length) a.innerHTML = `<p class="hc-empty">${st.clients ? "La liste des joueurs n'est pas publique." : "Personne en ligne."}</p>`;
-  else st.players.slice().sort((x, y) => String(x.name).localeCompare(String(y.name))).forEach((p) => a.appendChild(playerRow(p.name, "anomia", p.ping != null ? p.ping + " ms" : "")));
+  else st.players.slice().sort((x, y) => String(x.name).localeCompare(String(y.name))).forEach((p) => {
+    if (p.anon) { const d = document.createElement("div"); d.className = "player-row"; d.style.opacity = ".6"; d.innerHTML = `<span class="player-dot"></span><b>Joueur non identifié</b><small>connexion sans compte Cfx.re / Discord</small>`; a.appendChild(d); }
+    else { const row = playerRow(p.name, "anomia", p.ping != null ? p.ping + " ms" : ""); if (p.key) row.onclick = () => openPlayerProfile("anomia", p.key, p.name); a.appendChild(row); }
+  });
   document.getElementById("pl-anomia-count").textContent = st && st.online ? `(${st.clients ?? (st.players || []).length})` : "";
   k.innerHTML = "";
   if (!kb || !kb.ok) k.innerHTML = `<p class="hc-empty">Statut indisponible pour le moment.</p>`;
   else if (!kb.online) k.innerHTML = `<p class="hc-empty">Serveur hors ligne.</p>`;
   else if (!kb.names.length) k.innerHTML = `<p class="hc-empty">${kb.count ? "Les pseudos ne sont pas communiqués par le serveur." : "Personne en ligne."}</p>`;
-  else kb.names.slice().sort((x, y) => x.localeCompare(y)).forEach((n) => k.appendChild(playerRow(n, "kannibaventure")));
+  else {
+    // Le serveur Minecraft renvoie « Anonymous Player » pour les joueurs qui masquent leur pseudo : on ne les affiche pas comme des profils
+    const isAnon = (n) => /^(anonymous\s*player|player)$/i.test(String(n).trim());
+    const real = kb.names.filter((n) => !isAnon(n)), hidden = Math.max(kb.names.length - real.length, 0) + Math.max((kb.count || 0) - kb.names.length, 0);
+    real.sort((x, y) => x.localeCompare(y)).forEach((n) => k.appendChild(playerRow(n, "kannibaventure")));
+    if (hidden > 0) { const p = document.createElement("p"); p.className = "hc-empty"; p.textContent = real.length ? `+ ${hidden} joueur${hidden > 1 ? "s" : ""} avec pseudo masqué` : `${hidden} joueur${hidden > 1 ? "s" : ""} en ligne (pseudo masqué)`; k.appendChild(p); }
+  }
   document.getElementById("pl-kb-count").textContent = kb && kb.online ? `(${kb.count})` : "";
 }
-async function openPlayerProfile(server, name) {
+async function openPlayerProfile(server, key, shown) {
+  const name = shown || key;
   showInfo(name, `<p class="hc-empty">Chargement de la fiche…</p>`);
-  const p = await window.anomia.getPlayerProfile(server, name).catch(() => null);
+  const p = await window.anomia.getPlayerProfile(server, key).catch(() => null);
   const srvName = server === "kannibaventure" ? "KannibAventure" : "Anomia RP";
   if (!p || !p.ok) { showInfo(name, `<p>Fiche indisponible pour le moment.</p>`); return; }
   if (!p.linked) { showInfo(name, `<p style="color:var(--text-dim)">${srvName} · ce joueur n'a pas de profil lié (compte Discord ou Minecraft non synchronisé).</p>`); return; }
