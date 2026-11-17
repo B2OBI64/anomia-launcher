@@ -1,0 +1,85 @@
+{
+  "base": "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/music/",
+  "albums": [
+    {
+      "id": "anomia",
+      "title": "Anomia",
+      "artist": "b2obi64",
+      "source": "Anomia RP",
+      "cover": "covers/anomia.jpg",
+      "subOnly": false,
+      "tracks": [
+        {
+          "id": "anomia",
+          "title": "Anomia",
+          "file": "anomia.mp3",
+          "duration": 84
+        }
+      ]
+    },
+    {
+      "id": "anomia-city",
+      "title": "Anomia City",
+      "artist": "vito",
+      "source": "Anomia RP",
+      "cover": "covers/anomia-city.jpg",
+      "subOnly": false,
+      "tracks": [
+        {
+          "id": "anomia-city",
+          "title": "Anomia City",
+          "file": "anomia-city.mp3",
+          "duration": 67
+        }
+      ]
+    },
+    {
+      "id": "b2-anomia",
+      "title": "B2 Anomia",
+      "artist": "B2OBI64",
+      "source": "Anomia RP",
+      "cover": "covers/b2-anomia.jpg",
+      "subOnly": false,
+      "tracks": [
+        {
+          "id": "b2-anomia",
+          "title": "B2 Anomia",
+          "file": "b2-anomia.mp3",
+          "duration": 196
+        }
+      ]
+    },
+    {
+      "id": "b2-dans-la-matrice",
+      "title": "B2 dans la Matrice",
+      "artist": "b2obi64",
+      "source": "Kannibal Team",
+      "cover": "covers/b2-dans-la-matrice.jpg",
+      "subOnly": false,
+      "tracks": [
+        {
+          "id": "b2-dans-la-matrice",
+          "title": "B2 dans la Matrice",
+          "file": "b2-dans-la-matrice.mp3",
+          "duration": 125
+        }
+      ]
+    },
+    {
+      "id": "lettre-a-niamor",
+      "title": "Lettre à Niamor",
+      "artist": "sa_nyghtco",
+      "source": "Kannibal Team",
+      "cover": "covers/lettre-a-niamor.jpg",
+      "subOnly": true,
+      "tracks": [
+        {
+          "id": "lettre-a-niamor",
+          "title": "Lettre à Niamor",
+          "file": "lettre-a-niamor.mp3",
+          "duration": 223
+        }
+      ]
+    }
+  ]
+}

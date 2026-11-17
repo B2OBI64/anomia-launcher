@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage, powerMonitor } = require("electron");
 const path = require("path");
 
 // B2 Launcher : le produit a été renommé (avant : "Anomia Launcher"). On garde l'ancien
@@ -211,10 +211,18 @@ app.whenReady().then(async () => {
   });
 
   // Re-vérifie périodiquement pendant les sessions longues, en plus du check au lancement
+  // (toutes les 5 min, + au retour sur la fenêtre / au retour du réseau, pour qu'un launcher resté ouvert
+  // propose bien la nouvelle version dès sa publication ; jamais pendant un téléchargement)
   if (app.isPackaged) {
-    setInterval(() => {
-      autoUpdater.checkForUpdates().catch(() => {});
-    }, 15 * 60 * 1000);
+    let lastCheck = Date.now();
+    const recheck = (minGapMs) => {
+      if (updateDownloadingNow || Date.now() - lastCheck < minGapMs) return;
+      lastCheck = Date.now();
+      autoUpdater.checkForUpdates().catch((e) => console.error("[auto-update] re-check:", e && e.message));
+    };
+    setInterval(() => recheck(0), 5 * 60 * 1000);
+    app.on("browser-window-focus", () => recheck(90 * 1000));
+    powerMonitor.on("resume", () => setTimeout(() => recheck(0), 5000));
   }
 });
 
@@ -226,6 +234,7 @@ app.whenReady().then(async () => {
 // télécharge tant que le joueur n'a pas cliqué lui-même.
 // ============================================================
 autoUpdater.autoDownload = false;
+let updateDownloadingNow = false;
 
 // electron-updater expose releaseNotes soit en texte, soit en tableau
 // {version, note} selon les versions sautées - on normalise en une seule chaîne.
@@ -267,6 +276,7 @@ autoUpdater.on("update-downloaded", (info) => {
 });
 
 autoUpdater.on("error", (err) => {
+  updateDownloadingNow = false;
   console.error("[auto-update]", err.message);
   mainWindow?.webContents.send("update:error", { message: err.message });
 });
@@ -278,7 +288,9 @@ ipcMain.on("update:install", () => {
 });
 
 ipcMain.on("update:download", () => {
+  updateDownloadingNow = true;
   autoUpdater.downloadUpdate().catch((err) => {
+    updateDownloadingNow = false;
     mainWindow?.webContents.send("update:error", { message: err.message });
   });
 });
@@ -669,6 +681,72 @@ ipcMain.handle("news:get", async () => {
   }
 });
 
+ipcMain.handle("keybinds:get", async () => {
+  if (config.keybinds.remoteUrl) {
+    try { const remote = await fetchJsonCached(config.keybinds.remoteUrl); if (remote && remote.servers) return remote; } catch (err) { /* local */ }
+  }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, config.keybinds.localFallback), "utf-8")); } catch (err) { return { servers: {} }; }
+});
+
+ipcMain.handle("teaser:get", async () => {
+  if (config.teaser.remoteUrl) {
+    try { const remote = await fetchJsonCached(config.teaser.remoteUrl); if (remote && typeof remote === "object") return remote; } catch (err) { /* local */ }
+  }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, config.teaser.localFallback), "utf-8")); } catch (err) { return { enabled: false }; }
+});
+
+// ============================================================
+// Musique : liste d'albums, téléchargement d'un titre ou de tous les titres
+// ============================================================
+function musicHttpDownload(url, dest, redirects = 4) {
+  return new Promise((resolve, reject) => {
+    if (!/^https:\/\//i.test(url)) return reject(new Error("URL invalide"));
+    const tmp = dest + ".part";
+    https.get(url, { headers: { "User-Agent": "KannibalLauncher/2.0" } }, (res) => {
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirects > 0) {
+        res.resume();
+        return resolve(musicHttpDownload(new URL(res.headers.location, url).toString(), dest, redirects - 1));
+      }
+      if (res.statusCode !== 200) { res.resume(); return reject(new Error("HTTP " + res.statusCode)); }
+      const file = fs.createWriteStream(tmp);
+      res.pipe(file);
+      file.on("finish", () => file.close(() => fs.rename(tmp, dest, (e) => (e ? reject(e) : resolve()))));
+      file.on("error", (e) => { fs.unlink(tmp, () => {}); reject(e); });
+    }).on("error", (e) => { fs.unlink(tmp, () => {}); reject(e); });
+  });
+}
+const safeMusicName = (n) => String(n || "musique").replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, " ").trim().slice(0, 120) || "musique";
+ipcMain.handle("music:get", async () => {
+  if (config.music && config.music.remoteUrl) {
+    try { const remote = await fetchJsonCached(config.music.remoteUrl); if (remote && Array.isArray(remote.albums)) return remote; } catch (err) { /* local */ }
+  }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, config.music.localFallback), "utf-8")); } catch (err) { return { albums: [] }; }
+});
+ipcMain.handle("music:download", async (event, url, name) => {
+  try {
+    const file = safeMusicName(name) + ".mp3";
+    const res = await dialog.showSaveDialog(mainWindow, { title: "Enregistrer la musique", defaultPath: path.join(app.getPath("music"), file), filters: [{ name: "Musique MP3", extensions: ["mp3"] }] });
+    if (res.canceled || !res.filePath) return { ok: false, canceled: true };
+    await musicHttpDownload(String(url), res.filePath);
+    shell.showItemInFolder(res.filePath);
+    return { ok: true, path: res.filePath };
+  } catch (err) { return { ok: false, error: err.message }; }
+});
+ipcMain.handle("music:downloadAll", async (event, items) => {
+  try {
+    const list = (Array.isArray(items) ? items : []).filter((x) => x && typeof x.url === "string").slice(0, 200);
+    if (!list.length) return { ok: false, error: "Aucune musique à télécharger" };
+    const res = await dialog.showOpenDialog(mainWindow, { title: "Choisir le dossier de destination", defaultPath: app.getPath("music"), properties: ["openDirectory", "createDirectory"] });
+    if (res.canceled || !res.filePaths[0]) return { ok: false, canceled: true };
+    let done = 0, failed = 0;
+    for (const it of list) {
+      try { await musicHttpDownload(it.url, path.join(res.filePaths[0], safeMusicName(it.name) + ".mp3")); done++; } catch (e) { failed++; }
+    }
+    shell.openPath(res.filePaths[0]);
+    return { ok: true, done, failed, dir: res.filePaths[0] };
+  } catch (err) { return { ok: false, error: err.message }; }
+});
+
 // ============================================================
 // Liens externes génériques (Discord, Twitch, etc.)
 // ============================================================
@@ -1015,13 +1093,15 @@ let cachedStaffRole = null; // "admin" | "mod"
 let cachedStaffScopes = { anomia: false, kb: false };
 let cachedStaffCode = null; // code staff (admin ou modo), en mémoire uniquement
 
-function staffRequest(urlPath, code) {
+function staffRequest(urlPath, code, jsonBody) {
   return new Promise((resolve, reject) => {
     const url = new URL(urlPath, config.server.staffPanelUrl);
     const headers = { "User-Agent": "B2Launcher/1.0" };
     if (code === "discord") headers["x-discord-token"] = discordToken || "";
     else headers["x-staff-code"] = code;
-    const req = http.get(url, { headers, timeout: 6000 }, (res) => {
+    let payload = null;
+    if (jsonBody) { payload = Buffer.from(JSON.stringify(jsonBody)); headers["Content-Type"] = "application/json"; headers["Content-Length"] = payload.length; }
+    const req = http.request(url, { method: payload ? "POST" : "GET", headers, timeout: payload ? 20000 : 6000 }, (res) => {
       let data = "";
       res.on("data", (c) => (data += c));
       res.on("end", () => {
@@ -1030,6 +1110,8 @@ function staffRequest(urlPath, code) {
     });
     req.on("timeout", () => req.destroy(new Error("timeout")));
     req.on("error", reject);
+    if (payload) req.write(payload);
+    req.end();
   });
 }
 
@@ -1611,6 +1693,23 @@ ipcMain.handle("polls:call", async (e, action, params) => {
   for (const [k, v] of Object.entries(params || {})) { if (["id", "opt", "q", "o", "end"].includes(k)) qs.set(k, String(v).slice(0, 700)); }
   try {
     const r = await staffRequest(`polls/${action}?${qs.toString()}`, "discord");
+    return { ok: r.status === 200, status: r.status, body: r.body };
+  } catch { return { ok: false, status: 0, body: { error: "unreachable" } }; }
+});
+
+// Événements (serveur : b2_staffpanel). list/join/leave : compte Discord ; create/delete : admin Kannibal Team (vérifié côté serveur)
+ipcMain.handle("events:call", async (e, action, params) => {
+  if (!["list", "join", "leave", "create", "delete", "img"].includes(action)) return { ok: false, error: "bad_action" };
+  params = params || {};
+  try {
+    let r;
+    if (action === "create") {
+      const img = typeof params.img === "string" ? params.img : "";
+      if (img && (img.length > 290000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(img))) return { ok: false, status: 400, body: { error: "bad_image" } };
+      r = await staffRequest("events/create", "discord", { t: String(params.t || "").slice(0, 80), d: String(params.d || "").slice(0, 600), at: Number(params.at) || 0, img });
+    } else {
+      r = await staffRequest(`events/${action}?id=${encodeURIComponent(String(params.id || "").slice(0, 40))}`, "discord");
+    }
     return { ok: r.status === 200, status: r.status, body: r.body };
   } catch { return { ok: false, status: 0, body: { error: "unreachable" } }; }
 });

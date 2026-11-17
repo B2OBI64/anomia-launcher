@@ -51,10 +51,7 @@
           <span class="whatsnew-dot hidden" id="whatsnew-dot"></span>
           <span class="nav-label">Quoi de neuf</span>
         </button>
-        <button class="ext-link" id="btn-discord">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-          <span class="nav-label">Discord</span>
-        </button>
+        
         <button class="ext-link" id="btn-settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span class="nav-label">Réglages</span>
@@ -178,14 +175,35 @@
         </div>
       </section>
 
+      <!-- ÉVÉNEMENTS -->
+      <section class="view hidden" id="view-events">
+        <div class="section-header"><div><span class="section-eyebrow">// ÉVÉNEMENTS</span><h2>Événements</h2></div><button class="btn-copy hidden" id="ev-new">+ Nouvel événement</button></div>
+        <p class="hc-empty hidden" id="ev-empty">Aucun événement prévu pour le moment.</p>
+        <div class="ev-list" id="ev-list"></div>
+      </section>
+
       <!-- VUE ACCUEIL GLOBAL (B2 Launcher) : slider des serveurs + streamers -->
       <section class="view" id="view-hub">
         <div class="hub-layout">
+        <div class="hub-side">
         <aside class="polls-panel hidden" id="polls-panel">
-          <div class="polls-head"><span class="polls-title">// SONDAGES</span></div>
+          <div class="polls-head" id="polls-head"><span class="polls-title">// SONDAGES</span></div>
           <button class="btn-copy hidden" id="poll-new">+ Nouveau sondage</button>
           <div class="polls-list" id="polls-list"></div>
         </aside>
+        <aside class="polls-panel teaser-panel hidden" id="teaser-panel">
+          <div class="polls-head"><span class="polls-title">// ANNONCE IMPORTANTE</span></div>
+          <div class="teaser-card hidden" id="teaser-card"></div>
+        </aside>
+        <aside class="polls-panel mu-home hidden" id="music-panel">
+          <div class="polls-head"><span class="polls-title">// EN LECTURE</span><button class="mu-x" id="mh-close" aria-label="Fermer le lecteur" title="Fermer le lecteur">&#10005;</button></div>
+          <div class="mu-hcover" id="mh-cover"></div>
+          <div class="mu-ht" id="mh-title">—</div><div class="mu-ha" id="mh-artist"></div>
+          <div class="mu-prog" id="mh-prog"><i></i></div>
+          <div class="mu-times"><span id="mh-cur">0:00</span><span id="mh-dur">0:00</span></div>
+          <div class="mu-btns"><button data-mu="repeat" title="Répétition">&#128257;</button><button data-mu="prev" title="Précédent">&#9198;</button><button data-mu="toggle" class="mu-play" title="Lecture / pause">&#9654;</button><button data-mu="next" title="Suivant">&#9197;</button></div>
+        </aside>
+        </div>
         <div class="hub-main">
         <div class="hub-slider" id="hub-slider">
           <div class="hub-slides" id="hub-slides"></div>
@@ -258,6 +276,20 @@
         <h1 class="view-title">Clips de la communauté</h1>
         <p id="clips-empty" class="hidden" style="color:var(--text-dim);font-size:13px;">Aucun clip pour le moment.</p>
         <div class="clip-grid" id="clip-grid"></div>
+      </section>
+
+      <!-- ACCUEIL : Musique -->
+      <section class="view hidden" id="view-hub-music">
+        <div id="music-list-view">
+          <span class="section-eyebrow">// MUSIQUE</span>
+          <h1 class="view-title">Musique</h1>
+          <p class="section-hint">Écoute les musiques de la communauté, ou télécharge-les.</p>
+          <div class="mu-chips" id="music-filter"></div>
+          <div class="mu-actions"><button class="btn-copy" id="music-dl-all">&#11015; Tout télécharger</button></div>
+          <p class="hc-empty hidden" id="music-empty">Aucune musique pour le moment.</p>
+          <div class="mu-grid" id="music-grid"></div>
+        </div>
+        <div id="music-detail" class="hidden"></div>
       </section>
 
       <!-- ACCUEIL : Succès (Anomia + KannibAventure + Launcher) -->
@@ -401,6 +433,22 @@
         </div>
       </section>
 
+      <section class="view hidden" id="view-kb-modinfo">
+        <span class="section-eyebrow">// MODS</span>
+        <h1 class="view-title">Les mods de KannibAventure</h1>
+        <p class="settings-hint" id="kb-modinfo-notes" style="margin:0 0 12px;"></p>
+        <input type="text" id="kb-modinfo-search" class="kb-modinfo-search" placeholder="Rechercher un mod…" autocomplete="off" />
+        <p class="hc-empty hidden" id="kb-modinfo-empty">La liste détaillée des mods arrive bientôt.</p>
+        <div class="kb-modinfo-grid" id="kb-modinfo-list"></div>
+      </section>
+
+      <section class="view hidden" id="view-kb-keys">
+        <span class="section-eyebrow">// TOUCHES</span>
+        <h1 class="view-title">Touches en jeu</h1>
+        <p class="settings-hint keys-note" id="kb-keys-note"></p>
+        <div class="keys-groups" id="kb-keys-list"></div>
+      </section>
+
       <section class="view hidden" id="view-kb-rules">
         <span class="section-eyebrow">// RÈGLES</span>
         <h1 class="view-title">Règlement KannibAventure</h1>
@@ -462,6 +510,13 @@
       </section>
 
       <!-- VUE RÈGLEMENT -->
+      <section class="view hidden" id="view-keys">
+        <span class="section-eyebrow">// TOUCHES</span>
+        <h1 class="view-title">Touches en jeu</h1>
+        <p class="settings-hint keys-note" id="keys-note"></p>
+        <div class="keys-groups" id="keys-list"></div>
+      </section>
+
       <section class="view hidden" id="view-rules">
         <span class="section-eyebrow">// A LIRE</span>
         <h1 class="view-title">Règlement</h1>
@@ -740,6 +795,7 @@
           <button class="theme-chip hidden" data-theme="anomia" style="--c:#2dd4bf"><i></i>Anomia ✦</button>
           <button class="theme-chip hidden" data-theme="cubic" style="--c:#f97316"><i></i>Cubique ▣</button>
           <button class="theme-chip hidden" data-theme="noel" style="--c:#ef4444"><i></i>Noël 🎄</button>
+          <button class="theme-chip hidden" data-theme="ggpadur" style="--c:#c04df0"><i></i>GG Padur 💜</button>
           <button class="theme-chip hidden" data-theme="subman" style="--c:#a855f7"><i></i>Subman 💜</button>
           <button class="theme-chip hidden" data-theme="gold" style="--c:#facc15"><i></i>Or ✨</button>
           <button class="theme-chip hidden" data-theme="matrix" style="--c:#00ff41"><i></i>Matrix ▮</button>
@@ -753,7 +809,7 @@
           <select id="opt-auto-pause-min" style="background:var(--panel-solid);color:var(--text);border:1px solid var(--border);padding:4px 8px;margin-left:auto;"><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option></select></label>
         <label class="opt-row"><input type="checkbox" id="opt-session-summary" /><span>Résumé à la fin d'une session de jeu</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-hide-offline" /><span>Masquer les streamers hors live</span></label>
-        <label class="opt-row"><input type="checkbox" id="opt-streamer-mode" /><span>Mode présentation (cache pseudo, avatar et IP)</span></label>
+        <label class="opt-row"><input type="checkbox" id="opt-streamer-mode" /><span>Mode streamer (floute pseudos, avatars, notes et chemins du PC)</span></label>
       </div>
 
       <div class="settings-section">
@@ -856,10 +912,19 @@
     </div>
   </div>
 
+  <div class="pbar hidden" id="music-bar">
+    <div class="pb-l"><div class="pb-cov" id="mb-cover"></div><div class="pb-lt"><div class="pb-t" id="mb-title">—</div><div class="pb-a" id="mb-artist"></div></div></div>
+    <div class="pb-c">
+      <div class="pb-btns"><button data-mu="repeat" title="Répétition">&#128257;</button><button data-mu="prev" title="Précédent">&#9198;</button><button data-mu="toggle" class="play" title="Lecture / pause">&#9654;</button><button data-mu="next" title="Suivant">&#9197;</button></div>
+      <div class="pb-prog"><span id="mb-cur">0:00</span><div id="mb-prog"><i></i></div><span id="mb-dur">0:00</span></div>
+    </div>
+    <div class="pb-r"><span>&#128266;</span><input type="range" id="mb-vol" min="0" max="100" value="70" aria-label="Volume" /><button id="mb-dl" title="Télécharger">&#11015;</button><button id="mb-close" title="Fermer le lecteur">&#10005;</button></div>
+  </div>
   <script src="perf.js"></script>
   <script src="renderer.js"></script>
   <script src="features.js"></script>
   <script src="lightbox.js"></script>
+  <!-- Musique : reportée à la 2.0.5 (src/music.js conservé, non chargé) -->
   <script src="eggs.js"></script>
 </body>
 </html>

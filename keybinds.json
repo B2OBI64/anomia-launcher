@@ -1,0 +1,131 @@
+{
+  "servers": {
+    "anomia": {
+      "note": "Les touches propres à Anomia RP (téléphone, inventaire, menus…) seront ajoutées ici. Tu peux les modifier dans Paramètres de FiveM (Échap → Paramètres → Raccourcis clavier → FiveM).",
+      "groups": [
+        {
+          "title": "Bases FiveM",
+          "keys": [
+            {
+              "key": "T",
+              "action": "Ouvrir le chat"
+            },
+            {
+              "key": "N",
+              "action": "Parler (push-to-talk, touche par défaut)"
+            },
+            {
+              "key": "F8",
+              "action": "Console FiveM (pour les logs en cas de souci)"
+            }
+          ]
+        }
+      ]
+    },
+    "kannibaventure": {
+      "note": "Touches de base de Minecraft. Les touches propres aux mods du serveur seront ajoutées ici.",
+      "groups": [
+        {
+          "title": "Déplacement",
+          "keys": [
+            {
+              "key": "W / A / S / D",
+              "action": "Avancer, aller à gauche, reculer, aller à droite"
+            },
+            {
+              "key": "Espace",
+              "action": "Sauter (maintenu : nager vers le haut)"
+            },
+            {
+              "key": "Maj gauche",
+              "action": "Se baisser / descendre dans l'eau"
+            },
+            {
+              "key": "Ctrl gauche",
+              "action": "Courir"
+            }
+          ]
+        },
+        {
+          "title": "Actions",
+          "keys": [
+            {
+              "key": "Clic gauche",
+              "action": "Attaquer / casser un bloc"
+            },
+            {
+              "key": "Clic droit",
+              "action": "Utiliser un objet / poser un bloc"
+            },
+            {
+              "key": "Clic molette",
+              "action": "Prendre le bloc visé"
+            },
+            {
+              "key": "F",
+              "action": "Échanger l'objet entre les deux mains"
+            },
+            {
+              "key": "Q",
+              "action": "Jeter l'objet en main"
+            },
+            {
+              "key": "1 à 9",
+              "action": "Choisir un emplacement de la barre d'objets"
+            }
+          ]
+        },
+        {
+          "title": "Interface",
+          "keys": [
+            {
+              "key": "E",
+              "action": "Ouvrir l'inventaire"
+            },
+            {
+              "key": "T",
+              "action": "Ouvrir le chat"
+            },
+            {
+              "key": "/",
+              "action": "Ouvrir le chat avec une commande"
+            },
+            {
+              "key": "Tab",
+              "action": "Liste des joueurs connectés"
+            },
+            {
+              "key": "Échap",
+              "action": "Menu pause"
+            }
+          ]
+        },
+        {
+          "title": "Affichage",
+          "keys": [
+            {
+              "key": "F1",
+              "action": "Cacher / afficher l'interface"
+            },
+            {
+              "key": "F2",
+              "action": "Capture d'écran"
+            },
+            {
+              "key": "F3",
+              "action": "Écran de debug (coordonnées…)"
+            },
+            {
+              "key": "F5",
+              "action": "Changer de vue (1re / 3e personne)"
+            },
+            {
+              "key": "F11",
+              "action": "Plein écran"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -22,6 +22,7 @@
 --   GET /b2_staffpanel/health   -> sante du serveur (admin uniquement)
 --   GET /b2_staffpanel/kbstatus -> { kbMaintenance } (public) ; /kbmaintenance/on|off (admin) : maintenance KannibAventure
 --   GET /b2_staffpanel/rolecheck/anomia|kannibaventure -> { citizen: true|false|null } (role citoyen requis pour jouer)
+--   GET /b2_staffpanel/events/list|join|leave|create|delete  -> evenements (create/delete : admin Kannibal Team)
 --   GET /b2_staffpanel/polls/list|vote|create|close|delete  -> sondages (list/vote : Discord ; create/close/delete : fondateur/admin Kannibal Team)
 --   GET /b2_staffpanel/subcheck -> { sub } (en-tete x-discord-token) : role abonne sur Kannibal Team (convar anomia_sub_role_id)
 -- Lecture seule : aucune action (kick/ban...) n'est possible depuis le launcher.
@@ -463,6 +464,120 @@ local function handlePolls(req, res, headers)
 end
 
 -- ============================================================
+-- Evenements (stockes dans le KVP) : les admins Kannibal Team creent, les joueurs participent
+-- ============================================================
+local EVENTS_KEY = "b2sp_events"
+local function loadEvents()
+    local raw = GetResourceKvpString(EVENTS_KEY)
+    local ok, t = pcall(json.decode, raw or "[]")
+    if not ok or type(t) ~= "table" then return {} end
+    return t
+end
+local function saveEvents(list) SetResourceKvp(EVENTS_KEY, json.encode(list)) end
+local function countGoing(e) local n = 0 for _ in pairs(e.going or {}) do n = n + 1 end return n end
+local function handleEvents(req, res, headers)
+    local path = tostring(req.path or "")
+    local action = path:match("events/(%a+)") or "list"
+    local token = headers["x-discord-token"]
+    local function withKt(cb)
+        getDiscordRole(token, function(role, reason, scopes)
+            if role == "admin" and scopes and scopes.kt then cb() else send(res, 403, { error = "kt_admin_only" }) end
+        end)
+    end
+    if action == "list" then
+        local function respond(uid, isKt)
+            local out, now = {}, os.time()
+            for _, e in ipairs(loadEvents()) do
+                -- visible jusqu'a 6 h apres le debut
+                if (e.startsAt or 0) + 6 * 3600 > now then
+                    local v = { id = e.id, title = e.title, desc = e.desc, hasImg = e.hasImg and true or false, startsAt = e.startsAt, max = e.max or 0, going = countGoing(e), mine = (uid and e.going[uid]) and true or false }
+                    if isKt then local names = {} for _, n in pairs(e.going) do names[#names + 1] = n end table.sort(names) v.names = names end
+                    out[#out + 1] = v
+                end
+            end
+            table.sort(out, function(a, b) return a.startsAt < b.startsAt end)
+            send(res, 200, { events = out, canManage = isKt and true or false })
+        end
+        discordUser(token, function(uid)
+            if not uid then respond(nil, false) return end
+            getDiscordRole(token, function(role, _, scopes) respond(uid, role == "admin" and scopes and scopes.kt) end)
+        end)
+        return
+    end
+    if action == "join" or action == "leave" then
+        local id = qparam(path, "id")
+        discordUser(token, function(uid, uname)
+            if not uid then send(res, 401, { error = "discord_required" }) return end
+            local function apply()
+                local list = loadEvents()
+                for _, e in ipairs(list) do
+                    if e.id == id then
+                        e.going = e.going or {}
+                        if action == "join" then
+                            if (e.startsAt or 0) + 6 * 3600 <= os.time() then send(res, 409, { error = "ended" }) return end
+                            if not e.going[uid] and (e.max or 0) > 0 and countGoing(e) >= e.max then send(res, 409, { error = "full" }) return end
+                            e.going[uid] = uname or "?"
+                        else
+                            e.going[uid] = nil
+                        end
+                        saveEvents(list)
+                        send(res, 200, { ok = true, going = countGoing(e), mine = e.going[uid] and true or false })
+                        return
+                    end
+                end
+                send(res, 404, { error = "not_found" })
+            end
+            if action == "leave" then apply() return end
+            local botToken = GetConvar("anomia_discord_bot_token", "")
+            memberHasRole(botToken, STAFF_GUILD_DEFAULT, "0", uid, function(_, st)
+                if st ~= 200 then send(res, 403, { error = st == 404 and "not_in_guild" or "unavailable" }) return end
+                apply()
+            end)
+        end)
+        return
+    end
+    if action == "img" then
+        local id = qparam(path, "id")
+        send(res, 200, { img = GetResourceKvpString("b2sp_evimg_" .. tostring(id or "")) or "" })
+        return
+    end
+    if action == "create" then
+        -- corps JSON (POST) : { t, d, at, img }  (img = data URL jpeg/png/webp, 300 Ko max)
+        withKt(function()
+            req.setDataHandler(function(body)
+                local ok, j = pcall(json.decode, body or "")
+                if not ok or type(j) ~= "table" then send(res, 400, { error = "bad_body" }) return end
+                local t, d, at = tostring(j.t or ""), tostring(j.d or ""), tonumber(j.at) or 0
+                local img = tostring(j.img or "")
+                if t:match("^%s*$") then send(res, 400, { error = "bad_event" }) return end
+                if at <= os.time() then send(res, 400, { error = "bad_date" }) return end
+                if img ~= "" and (#img > 300000 or not img:match("^data:image/[%w%+]+;base64,[%w%+/=]+$")) then send(res, 400, { error = "bad_image" }) return end
+                local list = loadEvents()
+                if #list >= 40 then local old = table.remove(list, 1) DeleteResourceKvp("b2sp_evimg_" .. tostring(old.id)) end
+                local id = ("%d%04d"):format(os.time(), math.random(0, 9999))
+                list[#list + 1] = { id = id, title = t:sub(1, 80), desc = d:sub(1, 600), startsAt = at, hasImg = img ~= "", going = {}, createdAt = os.time() }
+                if img ~= "" then SetResourceKvp("b2sp_evimg_" .. id, img) end
+                saveEvents(list)
+                send(res, 200, { ok = true, id = id })
+            end)
+        end)
+        return
+    end
+    if action == "delete" then
+        withKt(function()
+            local id = qparam(path, "id")
+            local list = loadEvents()
+            for i, e in ipairs(list) do
+                if e.id == id then table.remove(list, i) saveEvents(list) DeleteResourceKvp("b2sp_evimg_" .. tostring(id)) send(res, 200, { ok = true }) return end
+            end
+            send(res, 404, { error = "not_found" })
+        end)
+        return
+    end
+    send(res, 400, { error = "bad_action" })
+end
+
+-- ============================================================
 -- Joueurs en ligne avec pseudo Discord (route publique « online »)
 -- ============================================================
 local discordNameCache = {}  -- discordId -> { name, expires }
@@ -554,6 +669,7 @@ SetHttpHandler(function(req, res)
         return
     end
     if ppath:find("polls", 1, true) then handlePolls(req, res, headers) return end
+    if ppath:find("events", 1, true) then handleEvents(req, res, headers) return end
     if ppath:find("rolecheck", 1, true) then
         local srv = tostring(req.path or ""):find("kannibaventure", 1, true) and "kannibaventure" or "anomia"
         checkCitizen(headers["x-discord-token"], srv, function(v) send(res, 200, { citizen = v }) end)

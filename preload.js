@@ -38,6 +38,11 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // News
   getNews: () => ipcRenderer.invoke("news:get"),
+  getKeybinds: () => ipcRenderer.invoke("keybinds:get"),
+  getTeaser: () => ipcRenderer.invoke("teaser:get"),
+  getMusic: () => ipcRenderer.invoke("music:get"),
+  downloadMusic: (url, name) => ipcRenderer.invoke("music:download", url, name),
+  downloadAllMusic: (items) => ipcRenderer.invoke("music:downloadAll", items),
 
   // Liens externes
   openExternal: (url) => ipcRenderer.send("shell:openExternal", url),
@@ -74,6 +79,7 @@ contextBridge.exposeInMainWorld("anomia", {
   checkSub: () => ipcRenderer.invoke("sub:check"),
   checkCitizen: (server) => ipcRenderer.invoke("role:citizen", server),
   pollsCall: (action, params) => ipcRenderer.invoke("polls:call", action, params),
+  eventsCall: (action, params) => ipcRenderer.invoke("events:call", action, params),
   toggleMaintenance: (enable) => ipcRenderer.invoke("admin:toggleMaintenance", enable),
   isOnline: () => ipcRenderer.invoke("network:isOnline"),
   onSessionEnded: (cb) => { ipcRenderer.removeAllListeners("session:ended"); ipcRenderer.on("session:ended", (e, d) => cb(d)); },

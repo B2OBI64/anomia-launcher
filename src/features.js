@@ -15,8 +15,8 @@
   const fmtDur = (ms) => { const m = Math.max(0, Math.floor(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`; };
 
   // ---------- Thèmes ----------
-  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41", b2logo: "#a78bfa", anomia: "#2dd4bf", cubic: "#f97316", noel: "#ef4444", subman: "#a855f7" };
-  const THEME_LABELS = { gold: "Or", matrix: "Matrix", anomia: "Anomia", cubic: "Cubique", noel: "Noël", subman: "Subman" };
+  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41", b2logo: "#a78bfa", anomia: "#2dd4bf", cubic: "#f97316", noel: "#ef4444", subman: "#a855f7", ggpadur: "#c04df0" };
+  const THEME_LABELS = { gold: "Or", matrix: "Matrix", anomia: "Anomia", cubic: "Cubique", noel: "Noël", subman: "Subman", ggpadur: "GG Padur" };
   function applyTheme(name, persist) {
     if (!THEMES[name] || (name === "subman" && !S.isSub && !allThemes())) name = "default";
     document.documentElement.setAttribute("data-theme", name);
@@ -26,7 +26,7 @@
     if (hx) hx.textContent = THEMES[name].toUpperCase();
     document.querySelectorAll(".theme-chip").forEach((c) => c.classList.toggle("active", c.dataset.theme === name));
     syncFx();
-    if (persist) { save({ theme: name, accentColor: THEMES[name] }); }
+    if (persist) { save({ theme: name, accentColor: THEMES[name], customAccent: "" }); }
   }
   // Les admins ont tous les thèmes débloqués automatiquement (état mémorisé pour le prochain démarrage)
   const allThemes = () => Boolean(S.themesAll);
@@ -39,14 +39,13 @@
   function refreshThemeChips() {
     const lr = $("theme-chips") && $("theme-chips").querySelector('[data-theme="subman"]');
     if (lr) lr.classList.toggle("hidden", !(S.isSub || allThemes()));
-    ["gold", "matrix", "anomia", "cubic", "noel"].forEach((t) => {
+    ["gold", "matrix", "anomia", "cubic", "noel", "ggpadur"].forEach((t) => {
       const chip = $("theme-chips") && $("theme-chips").querySelector(`[data-theme="${t}"]`);
       if (chip) chip.classList.toggle("hidden", !(allThemes() || (S.unlockedThemes || []).includes(t)));
     });
   }
   document.querySelectorAll(".theme-chip").forEach((c) => c.addEventListener("click", () => { applyTheme(c.dataset.theme, true); if (window.launcherAch) window.launcherAch.unlock("themeSwitch"); }));
-  // un accent choisi à la main sort du thème (les couleurs restent libres)
-  document.querySelectorAll(".accent-swatch").forEach((b) => b.addEventListener("click", () => { document.documentElement.setAttribute("data-theme", "custom"); document.querySelectorAll(".theme-chip").forEach((c) => c.classList.remove("active")); save({ theme: "custom" }); }));
+  // un accent choisi à la main ne change PAS le thème : il ne recolore que les cadres/boutons (customAccent)
 
   // ---------- Fond animé ----------
   const fx = $("fx-bg");
@@ -56,6 +55,8 @@
   let rain = [], snow = [];
   const pong = { balls: [], l: 0, r: 0 };
   const LOGO_SRC = ["../assets/kannibaventure.png", "../assets/anomia-logo.png", "../assets/logo.png"] // 0 = KannibAventure, 1 = Anomia, 2 = Kannibal Team;
+  const GG_IMG = new Image(); GG_IMG.src = "../assets/ggpadur.png";
+  let ggs = [];
   const LOGO_IMGS = LOGO_SRC.map((src) => { const i = new Image(); i.src = src; return i; });
   function fxLoop() {
     if (!fxOn) return;
@@ -68,6 +69,18 @@
         f.y += f.vy; f.x += Math.sin((f.y + f.ph) / 40) * 0.4;
         if (f.y > fx.height + 6) { f.y = -6; f.x = Math.random() * fx.width; }
         ctx.globalAlpha = f.a; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.2832); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      fxRaf = requestAnimationFrame(fxLoop);
+      return;
+    }
+    if (document.documentElement.getAttribute("data-theme") === "ggpadur") {
+      // GG Padur : l'emote monte du bas vers le haut de l'écran
+      if (!ggs.length) ggs = Array.from({ length: 16 }, () => ({ x: Math.random() * fx.width, y: Math.random() * fx.height, vy: 0.5 + Math.random() * 1.3, s: 38 + Math.random() * 62, a: 0.16 + Math.random() * 0.26, ph: Math.random() * 100 }));
+      if (GG_IMG.complete && GG_IMG.naturalWidth) ggs.forEach((g) => {
+        g.y -= g.vy; g.x += Math.sin((g.y + g.ph) / 55) * 0.5;
+        if (g.y < -g.s) { g.y = fx.height + g.s; g.x = Math.random() * fx.width; }
+        ctx.globalAlpha = g.a; ctx.drawImage(GG_IMG, g.x - g.s / 2, g.y - g.s / 2, g.s, g.s);
       });
       ctx.globalAlpha = 1;
       fxRaf = requestAnimationFrame(fxLoop);
@@ -133,14 +146,14 @@
     fxRaf = requestAnimationFrame(fxLoop);
   }
   window.addEventListener("zen", (e) => { if (e.detail) setAnimatedBg(true); else syncFx(); });
-  function syncFx() { setAnimatedBg(Boolean(S.animatedBg) || ["matrix", "noel", "subman"].includes(document.documentElement.getAttribute("data-theme"))); }
+  function syncFx() { setAnimatedBg(Boolean(S.animatedBg) || ["matrix", "noel", "subman", "ggpadur"].includes(document.documentElement.getAttribute("data-theme"))); }
   function setAnimatedBg(on) {
     fxOn = on; fx.style.display = on ? "block" : "none";
     cancelAnimationFrame(fxRaf);
     if (on) {
       fxResize();
       snow = Array.from({ length: 90 }, () => ({ x: Math.random() * fx.width, y: Math.random() * fx.height, vy: 0.5 + Math.random() * 1.2, r: 1 + Math.random() * 2.2, a: 0.25 + Math.random() * 0.5, ph: Math.random() * 100 }));
-      pong.balls = [];
+      pong.balls = []; ggs = [];
       rain = Array.from({ length: Math.ceil(fx.width / 16) }, () => ({ y: -Math.random() * fx.height, speed: 1.2 + Math.random() * 2.6, len: 8 + Math.floor(Math.random() * 14), glyphs: Array.from({ length: 24 }, () => RAIN_CHARS[Math.floor(Math.random() * RAIN_CHARS.length)]) }));
       parts = Array.from({ length: 55 }, () => ({ x: Math.random() * fx.width, y: Math.random() * fx.height, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, r: 0.8 + Math.random() * 1.8, a: 0.12 + Math.random() * 0.3 }));
       fxLoop();
@@ -158,15 +171,44 @@
     const kb = typeof getServer === "function" ? getServer("kannibaventure") : null;
     if (!kb) return { open: false, scheduled: false };
     if (kb.status === "online") return { open: true, scheduled: false };
-    const o = kb.opening; if (!o || !o.public) return { open: false, scheduled: false };
+    const o = kb.opening;
+    if (!o || !o.public) return { open: false, scheduled: false };
     const now = Date.now(), pub = Date.parse(o.public), sub = o.sub ? Date.parse(o.sub) : pub;
     const isSub = Boolean(S.isSub);
     if (now >= pub) return { open: true, scheduled: true };
     if (isSub && now >= sub) return { open: true, scheduled: true, early: true };
     const target = isSub ? sub : pub;
-    return { open: false, scheduled: true, isSub, msLeft: target - now, label: fmtLeft(target - now), subTip: !isSub && sub < pub ? "Accès anticipé pour les abonnés Twitch" : "" };
+    const visible = !kb.timerAppearsAt || now >= Date.parse(kb.timerAppearsAt); // le compte à rebours n'est montré qu'à partir de cette date
+    return { open: false, scheduled: true, visible, hasEarly: sub < pub, sub, pub, isSub, target, msLeft: target - now, label: fmtLeft(target - now), subTip: !isSub && sub < pub ? "Accès anticipé pour les abonnés Twitch" : "" };
   };
-  setInterval(() => { try { const o = window.kbOpening(); if (o.scheduled && !o.open) { refreshKbConnect(); if (window.refreshTicker) window.refreshTicker(); } } catch (e) {} }, 1000);
+  // Voile du minuteur : visible UNIQUEMENT sur l'accueil de KannibAventure, il masque toutes ses infos (les onglets restent visibles).
+  // Il apparaît à partir de kb.timerAppearsAt (si défini) et jusqu'à l'ouverture ; les admins KannibAventure ne le voient pas.
+  function updateKbLock() {
+    const view = $("view-kb-home"); if (!view) return;
+    const kb = typeof getServer === "function" ? getServer("kannibaventure") : null;
+    let lock = $("kb-lock");
+    const op = window.kbOpening ? window.kbOpening() : { open: true };
+    const started = op.visible !== false;
+    const show = Boolean(kb && op.scheduled && !op.open && started && !(window.isKbAdmin && window.isKbAdmin()));
+    if (!show) { if (lock) lock.remove(); return; }
+    if (!lock) {
+      lock = document.createElement("div"); lock.id = "kb-lock"; lock.className = "kb-lock";
+      lock.innerHTML = `<img class="kb-lock-logo" src="${esc(kb.logo || "../assets/kannibaventure.png")}" alt="" /><div class="kb-lock-eyebrow" id="kb-lock-eyebrow"></div><div class="kb-lock-count" id="kb-lock-count"></div><div class="kb-lock-sub">KannibAventure</div><div class="kb-lock-hint hidden" id="kb-lock-hint"></div>`;
+      view.appendChild(lock);
+    }
+    const s = Math.max(0, Math.floor(op.msLeft / 1000)), parts = [["jours", Math.floor(s / 86400)], ["heures", Math.floor((s % 86400) / 3600)], ["minutes", Math.floor((s % 3600) / 60)], ["secondes", s % 60]];
+    const fmtD = (t) => { const d = new Date(t); return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); };
+    const hint = $("kb-lock-hint");
+    if (op.hasEarly) {
+      const days = Math.max(1, Math.round((op.pub - op.sub) / 86400000));
+      hint.innerHTML = op.isSub ? `<b>⭐ Avantage abonné</b> : tu entres ${days} jour${days > 1 ? "s" : ""} avant tout le monde.<br><small>Ouverture publique : ${fmtD(op.pub)}</small>` : `<b>⭐ Abonné Twitch ?</b> Tu peux entrer ${days} jour${days > 1 ? "s" : ""} avant, dès le ${fmtD(op.sub)}.<br><small>Ouverture pour tous : ${fmtD(op.pub)}</small>`;
+      hint.classList.remove("hidden");
+    } else hint.classList.add("hidden");
+    $("kb-lock-eyebrow").textContent = op.isSub ? "ACCÈS ABONNÉ DANS" : "OUVERTURE DANS";
+    $("kb-lock-count").innerHTML = parts.map(([l, v]) => `<div class="kb-lock-u"><b>${String(v).padStart(2, "0")}</b><small>${l}</small></div>`).join("");
+  }
+  window.updateKbLock = updateKbLock;
+  setInterval(() => { try { updateKbLock(); const o = window.kbOpening(); if (o.scheduled && !o.open) refreshKbConnect(); } catch (e) {} }, 1000);
 
   // ---------- Rôle abonné (thème « Pluie de logos ») ----------
   async function checkSubRole() {
@@ -343,7 +385,8 @@
     "8f0b49be84aba883a225569f87359227261e79b4d76cff56888ca4ab9c7a15ee": "fx:creeper",
     "4f3c4172a4fe308cebc840da665171f534849b1fca101eaf635d68fb453393db": "cubic",
     "0ab1b01ba5bfd5b5752d153f839112bdc137b3c8e57d374e6b3e5354e58f133a": "ach:peche",
-    "3b671c2c32bbf137b03a1320452fde0d737716ae469952ea721296cf1ed7faba": "anomia"
+    "3b671c2c32bbf137b03a1320452fde0d737716ae469952ea721296cf1ed7faba": "anomia",
+    "805c05f36a21937c9f33760391b932615bce2598b9ac90266889078658a6bbbd": "ggpadur"
   };
   function unlockTheme(name) {
     const list = new Set(S.unlockedThemes || []); const fresh = !list.has(name); list.add(name);
@@ -358,6 +401,10 @@
       const h = await sha256(code);
       if (SECRET_HASHES[h] === "ach:peche") { msg.textContent = "🎣 Tu as trouvé le B2oboi !"; if (window.launcherAch) window.launcherAch.unlock("peche"); }
       else if (SECRET_HASHES[h] === "fx:creeper") { msg.textContent = "Sssssss…"; creeperBoom(); }
+      else if (SECRET_HASHES[h] === "ggpadur") {
+        const fresh = unlockTheme("ggpadur"); msg.textContent = fresh ? "💜 GG Padur ! Thème débloqué et appliqué." : "Thème GG Padur réappliqué.";
+        if (window.launcherAch) { window.launcherAch.unlock("riendur"); window.launcherAch.egg("ggpadur", "💜", "GG Padur !"); }
+      }
       else if (SECRET_HASHES[h]) { if (SECRET_HASHES[h] === "matrix" && window.launcherAch) window.launcherAch.unlock("error404"); const fresh = unlockTheme(SECRET_HASHES[h]); { const lb = THEME_LABELS[SECRET_HASHES[h]] || "secret"; msg.textContent = fresh ? `✨ Thème ${lb} débloqué et appliqué !` : `Thème ${lb} déjà débloqué (réappliqué).`; } }
       else msg.textContent = "Ce code ne donne rien… pour l'instant.";
     } catch (e) { msg.textContent = "Code impossible à vérifier."; }
@@ -487,7 +534,7 @@
     const op = window.kbOpening ? window.kbOpening() : { open: kb.status === "online" };
     const canPlay = (kbAdm || op.open) && kb.serverAddress;
     if (kbMaintenance && !kbAdm) { b.disabled = true; b.textContent = "Serveur en maintenance"; b.onclick = null; return; }
-    if (!canPlay) { b.disabled = true; b.textContent = op.scheduled ? `Ouverture dans ${op.label}` : (kb.connectLabel || "Bientôt"); b.title = op.subTip || ""; b.onclick = null; return; }
+    if (!canPlay) { b.disabled = true; b.textContent = op.scheduled && op.visible ? `Ouverture dans ${op.label}` : (kb.connectLabel || "Bientôt"); b.title = op.subTip || ""; b.onclick = null; return; }
     if (window.__citizen && window.__citizen.kannibaventure === false && !kbAdm) { b.disabled = true; b.textContent = "Rôles requis"; b.title = "Rejoins le Discord pour passer ta douane"; b.onclick = null; return; }
     b.title = "";
     b.disabled = false; b.textContent = kbAdm && !op.open ? "Se connecter (admin)" : "Se connecter";
@@ -710,6 +757,74 @@
   $("btn-whatsnew").addEventListener("click", openWhatsNew);
   $("whatsnew-close").addEventListener("click", () => $("whatsnew-overlay").classList.add("hidden"));
 
+  // ---------- Annonces importantes : plusieurs annonces (flou + compteur puis révélation), défilement auto + flèches ----------
+  (function teaserInit() {
+    let items = [], idx = 0, rotMs = 8000, tickTimer = null, rotTimer = null, pausedUntil = 0;
+    const esc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const p2 = (n) => String(n).padStart(2, "0");
+    const units = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return [[Math.floor(s / 86400), "jours"], [Math.floor(s % 86400 / 3600), "heures"], [Math.floor(s % 3600 / 60), "min"], [s % 60, "sec"]].map(([n, l]) => `<span class="tc-u"><b>${p2(n)}</b><small>${l}</small></span>`).join(""); };
+    const at = (t) => (t.revealAt ? new Date(t.revealAt).getTime() : 0);
+    const isLocked = (t) => at(t) && at(t) > Date.now();
+    function slideHtml(t, i) {
+      return `<div class="ann-slide" data-i="${i}"><div class="teaser-body">${t.image ? `<img class="teaser-img" src="${esc(t.image)}" alt="${esc(t.title)}" draggable="false" />` : `<div class="teaser-title">${esc(t.title)}</div><p>${esc(t.text)}</p>${t.code ? `<div class="teaser-code">${esc(t.code)}</div>` : ""}`}
+        ${t.code ? `<button class="btn-copy" data-copy="${i}">Copier le code</button>` : ""}${t.link ? `<button class="btn-copy" data-link="${i}">${esc(t.linkLabel || "Ouvrir")}</button>` : ""}</div>
+        <div class="teaser-lock"><div class="teaser-lock-ico">&#128274;</div><div class="teaser-lock-txt">${esc(t.lockedText || "Dévoilement dans")}</div><div class="teaser-count"></div></div></div>`;
+    }
+    function show(i, manual) {
+      if (!items.length) return;
+      idx = (i + items.length) % items.length;
+      const card = $("teaser-card");
+      card.querySelectorAll(".ann-slide").forEach((s) => s.classList.toggle("on", +s.dataset.i === idx));
+      card.querySelectorAll(".ann-dot").forEach((d) => d.classList.toggle("on", +d.dataset.i === idx));
+      $("ann-title").textContent = items[idx].label || "";
+      if (manual) pausedUntil = Date.now() + 25000; // le joueur a choisi : on laisse l'annonce affichée un moment
+      tick();
+    }
+    function tick() {
+      const card = $("teaser-card"); if (!card) return;
+      items.forEach((t, i) => {
+        const s = card.querySelector(`.ann-slide[data-i="${i}"]`); if (!s) return;
+        const left = at(t) - Date.now();
+        if (at(t) && left > 0) { s.classList.add("locked"); s.querySelector(".teaser-count").innerHTML = units(left); }
+        else if (s.classList.contains("locked")) { s.classList.remove("locked"); s.classList.add("revealing"); }
+      });
+    }
+    function build() {
+      const card = $("teaser-card");
+      clearInterval(tickTimer); clearInterval(rotTimer);
+      card.innerHTML = `<div class="ann-label" id="ann-title"></div><div class="ann-stage">${items.map(slideHtml).join("")}</div>
+        ${items.length > 1 ? `<button class="ann-arrow l" data-dir="-1" aria-label="Précédente">&#10094;</button><button class="ann-arrow r" data-dir="1" aria-label="Suivante">&#10095;</button>
+        <div class="ann-dots">${items.map((_, i) => `<button class="ann-dot" data-i="${i}" aria-label="Annonce ${i + 1}"></button>`).join("")}</div>` : ""}`;
+      card.classList.remove("hidden");
+      show(Math.min(idx, items.length - 1));
+      tickTimer = setInterval(tick, 1000);
+      // défilement automatique (compteurs actifs ou non), sauf juste après un choix manuel du joueur
+      if (items.length > 1) rotTimer = setInterval(() => { if (Date.now() > pausedUntil && !card.matches(":hover") && !$("lightbox")) show(idx + 1); }, rotMs);
+    }
+    async function loadTeaser() {
+      let t; try { t = await api.getTeaser(); } catch (e) { t = null; }
+      const list = t && Array.isArray(t.announcements) ? t.announcements : (t && t.enabled ? [t] : []);
+      items = list.filter((x) => x && x.enabled !== false && (x.image || x.code || x.title));
+      rotMs = Math.max(3, (t && +t.rotateSeconds) || 8) * 1000;
+      window.__teaserOn = items.length > 0;
+      $("teaser-panel").classList.toggle("hidden", !window.__teaserOn);
+      if (!window.__teaserOn) { $("teaser-card").classList.add("hidden"); clearInterval(tickTimer); clearInterval(rotTimer); return; }
+      build();
+    }
+    document.addEventListener("click", (e) => {
+      const card = $("teaser-card"); if (!card || !card.contains(e.target)) return;
+      const ar = e.target.closest(".ann-arrow"), dot = e.target.closest(".ann-dot"), cp = e.target.closest("[data-copy]"), lk = e.target.closest("[data-link]"), im = e.target.closest(".teaser-img");
+      if (ar) show(idx + +ar.dataset.dir, true);
+      else if (dot) show(+dot.dataset.i, true);
+      else if (cp) { const t = items[+cp.dataset.copy]; try { navigator.clipboard.writeText(t.code); } catch (er) {} cp.textContent = "Copié ✓"; setTimeout(() => (cp.textContent = "Copier le code"), 1800); }
+      else if (lk) api.openExternal(items[+lk.dataset.link].link);
+      else if (im && !im.closest(".ann-slide").classList.contains("locked") && window.openLightbox) window.openLightbox([{ url: im.src, author: items[idx].title || "", date: "" }], 0);
+    });
+    window.loadTeaser = loadTeaser;
+    setTimeout(loadTeaser, 1500);
+    setInterval(loadTeaser, 10 * 60 * 1000);
+  })();
+
   // ---------- Sondages (colonne de gauche de l'accueil + fenêtre pop-up) ----------
   const polls = { list: [], canManage: false, openId: null };
   const pEsc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -824,6 +939,122 @@
   });
   setInterval(loadPolls, 60000);
   setTimeout(loadPolls, 3500);
+  // ---------- Événements ----------
+  const evs = { list: [], canManage: false };
+  const evImgCache = new Map();
+  const fmtEvDate = (ts) => { const d = new Date(ts * 1000); return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", "h"); };
+  const evSeen = () => new Set(Array.isArray(S.eventsSeen) ? S.eventsSeen : []);
+  // Pastille « 1 » façon Discord : événements que le joueur n'a encore jamais vus
+  function updateEvBadge() {
+    const b = $("ev-badge"); if (!b) return;
+    const seen = evSeen(), n = evs.list.filter((e) => !seen.has(e.id)).length;
+    b.textContent = n > 9 ? "9+" : String(n); b.classList.toggle("hidden", n === 0);
+  }
+  function markEventsSeen() {
+    const seen = evSeen(); evs.list.forEach((e) => seen.add(e.id));
+    const keep = [...seen].filter((id) => evs.list.some((e) => e.id === id)); // on oublie les événements disparus
+    S.eventsSeen = keep; save({ eventsSeen: keep }); updateEvBadge();
+  }
+  async function fillEvImage(el, id) {
+    if (!evImgCache.has(id)) { const r = await api.eventsCall("img", { id }).catch(() => null); evImgCache.set(id, r && r.ok && r.body && r.body.img ? r.body.img : ""); }
+    const img = evImgCache.get(id); if (img && /^data:image\//.test(img)) { el.style.backgroundImage = `url('${img}')`; el.classList.add("on"); }
+  }
+  function renderEvents() {
+    const box = $("ev-list"); if (!box) return;
+    $("ev-new").classList.toggle("hidden", !evs.canManage);
+    $("ev-empty").classList.toggle("hidden", evs.list.length > 0);
+    updateEvBadge();
+    const seenNow = !$("view-events").classList.contains("hidden");
+    box.innerHTML = evs.list.map((e) => {
+      const live = e.startsAt * 1000 <= Date.now();
+      return `<article class="ev-card glass${e.mine ? " mine" : ""}">
+        ${e.hasImg ? `<div class="ev-img" data-evimg="${esc(e.id)}"></div>` : ""}
+        <div class="ev-body">
+          <div class="ev-when">${live ? "EN COURS" : esc(fmtEvDate(e.startsAt))}</div>
+          <h3>${esc(e.title)}</h3>
+          ${e.desc ? `<p class="ev-desc">${esc(e.desc)}</p>` : ""}
+          <div class="ev-foot"><span class="ev-count">👥 ${e.going} participant${e.going > 1 ? "s" : ""}</span>
+            <span class="ev-btns">${e.mine ? `<button class="btn-copy" data-ev="leave" data-id="${esc(e.id)}">✓ Inscrit</button>` : `<button class="btn-connect" data-ev="join" data-id="${esc(e.id)}">Je participe</button>`}
+            ${evs.canManage ? `<button class="btn-copy" data-ev="delete" data-id="${esc(e.id)}">Supprimer</button>` : ""}</span></div>
+          ${evs.canManage && e.names && e.names.length ? `<div class="ev-names">${e.names.map(esc).join(", ")}</div>` : ""}
+        </div></article>`;
+    }).join("");
+    box.querySelectorAll("[data-evimg]").forEach((el) => fillEvImage(el, el.dataset.evimg));
+    if (seenNow) markEventsSeen();
+  }
+  async function loadEvents() {
+    let r; try { r = await api.eventsCall("list", {}); } catch (e) { r = null; }
+    if (!r || !r.ok || !r.body) return;
+    evs.list = r.body.events || []; evs.canManage = !!r.body.canManage; renderEvents();
+  }
+  window.loadEvents = loadEvents;
+  $("ev-list").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-ev]"); if (!b || b.disabled) return;
+    b.disabled = true;
+    const r = await api.eventsCall(b.dataset.ev, { id: b.dataset.id });
+    if (r && !r.ok && r.body) {
+      const err = r.body.error;
+      showInfo("Événement", err === "discord_required" ? "Connecte ton compte Discord pour participer." : err === "not_in_guild" ? "Tu dois être membre du Discord Kannibal Team pour participer." : err === "ended" ? "Cet événement est terminé." : "Action impossible pour le moment.");
+    }
+    loadEvents();
+  });
+  // Réduit l'image (max 960 px, JPEG) pour qu'elle reste légère à stocker et à envoyer
+  function fileToEventImage(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//.test(file.type)) return reject(new Error("Ce fichier n'est pas une image."));
+      // FileReader (data:) : la CSP du launcher n'autorise pas les URL blob:
+      const fr = new FileReader(), im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, 960 / Math.max(im.width, im.height)), cv = document.createElement("canvas");
+        cv.width = Math.max(1, Math.round(im.width * k)); cv.height = Math.max(1, Math.round(im.height * k));
+        const cx = cv.getContext("2d"); cx.fillStyle = "#000"; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height);
+        let q = 0.85, out = cv.toDataURL("image/jpeg", q);
+        while (out.length > 280000 && q > 0.35) { q -= 0.1; out = cv.toDataURL("image/jpeg", q); }
+        out.length > 290000 ? reject(new Error("Image trop lourde, choisis-en une plus simple.")) : resolve(out);
+      };
+      im.onerror = () => reject(new Error("Image illisible."));
+      fr.onerror = () => reject(new Error("Image illisible."));
+      fr.onload = () => { im.src = String(fr.result); };
+      fr.readAsDataURL(file);
+    });
+  }
+  $("ev-new").addEventListener("click", () => {
+    const ov = document.createElement("div"); ov.className = "modal-overlay";
+    ov.innerHTML = `<div class="modal-box glass poll-form" style="max-width:520px;"><button class="modal-close" aria-label="Fermer">&#10005;</button><h3>Nouvel événement</h3>
+      <label>Image (glisse-la ici ou clique)</label>
+      <div class="ev-drop" id="ef-drop"><span id="ef-drop-txt">🖼️ Glisse une image ici</span><button type="button" class="btn-copy" id="ef-pick">Choisir une image</button><input type="file" id="ef-file" accept="image/*" hidden /></div>
+      <label>Titre</label><input type="text" id="ef-t" maxlength="80" />
+      <label>Description</label><textarea id="ef-d" maxlength="600"></textarea>
+      <label>Date et heure</label><input type="datetime-local" id="ef-at" />
+      <p id="ef-msg" style="color:#f87171;font-size:12px;min-height:16px;"></p>
+      <div class="poll-actions"><button class="btn-connect" id="ef-ok">Publier</button></div></div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove(), msg = ov.querySelector("#ef-msg"), drop = ov.querySelector("#ef-drop");
+    let image = "";
+    const take = async (file) => {
+      try { image = await fileToEventImage(file); drop.style.backgroundImage = `url('${image}')`; drop.classList.add("has"); ov.querySelector("#ef-drop-txt").textContent = ""; msg.textContent = ""; }
+      catch (err) { image = ""; msg.textContent = err.message; }
+    };
+    ov.querySelector("#ef-pick").addEventListener("click", () => ov.querySelector("#ef-file").click());
+    ov.querySelector("#ef-file").addEventListener("change", (e) => take(e.target.files[0]));
+    ["dragenter", "dragover"].forEach((n) => drop.addEventListener(n, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+    ["dragleave", "drop"].forEach((n) => drop.addEventListener(n, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+    drop.addEventListener("drop", (e) => take(e.dataTransfer.files[0]));
+    ov.addEventListener("mousedown", (ev) => { if (ev.target === ov) close(); });
+    ov.querySelector(".modal-close").addEventListener("click", close);
+    ov.querySelector("#ef-ok").addEventListener("click", async () => {
+      const t = ov.querySelector("#ef-t").value.trim();
+      const at = Math.floor(new Date(ov.querySelector("#ef-at").value).getTime() / 1000);
+      if (!t) { msg.textContent = "Écris un titre."; return; }
+      if (!(at > Date.now() / 1000)) { msg.textContent = "Choisis une date dans le futur."; return; }
+      const btn = ov.querySelector("#ef-ok"); btn.disabled = true;
+      const r = await api.eventsCall("create", { t, d: ov.querySelector("#ef-d").value.trim(), at, img: image });
+      if (r && r.ok) { close(); loadEvents(); } else { btn.disabled = false; msg.textContent = (r && r.body && r.body.error === "kt_admin_only") ? "Réservé aux fondateurs/admins Kannibal Team." : (r && r.body && r.body.error === "bad_image") ? "Image refusée (trop lourde ou format non géré)." : "Impossible de créer l'événement."; }
+    });
+  });
+  setInterval(loadEvents, 120000);
+  setTimeout(loadEvents, 4500);
+
 
   // ---------- Versions précédentes (réservé aux admins) ----------
   window.syncVersionsBtn = () => { const s = $("settings-versions-section"); if (s) s.classList.toggle("hidden", staffRole !== "admin"); };
@@ -859,8 +1090,11 @@
     try { appVersion = await api.getAppVersion(); } catch (e) { appVersion = ""; }
     chosenTitleKey = S.chosenTitle || "";
     if (S.theme === "logorain") S.theme = "default";
-    const theme = THEMES[S.theme] ? S.theme : (S.theme === "custom" ? "custom" : "default");
-    if (theme === "custom") { document.documentElement.setAttribute("data-theme", "custom"); } else applyTheme(theme, false);
+    // ancien réglage "custom" : on revient au thème par défaut en gardant la couleur choisie
+    if (S.theme === "custom") { S.customAccent = S.customAccent || S.accentColor || ""; save({ theme: "default", customAccent: S.customAccent }); S.theme = "default"; }
+    const theme = THEMES[S.theme] ? S.theme : "default";
+    applyTheme(theme, false);
+    if (S.customAccent) { applyAccentColor(S.customAccent); const cp = $("color-picker"), hx = $("color-picker-hex"); if (cp) cp.value = S.customAccent; if (hx) hx.textContent = S.customAccent.toUpperCase(); }
     refreshThemeChips();
     dateEasterEggs();
     $("opt-animated-bg").checked = Boolean(S.animatedBg); syncFx();

@@ -11,7 +11,7 @@ let featuredNow = null;
 const CHANNEL_RE = /^[A-Za-z0-9_]{1,25}$/;
 let profileShowcaseKeys = null; // succès choisis pour le profil (null = automatique : les 3 plus rares)
 let achCache = { at: 0, promise: null };
-let streamerMode = false; // mode présentation : masque pseudo/avatar
+let streamerMode = false; // mode streamer : masque pseudo/avatar
 let chosenTitleKey = ""; // titre choisi par le joueur
 let isAdminUnlocked = false; // admin complet (bypass connexion, maintenance)
 let staffRole = null; // "admin" | "mod"
@@ -157,6 +157,7 @@ function goToView(name) {
     }
   });
   if (name === "hub") { loadStreamers(); loadHomeMe(); loadDiscordCommunities(); startHubSlider(); } else { stopHubSlider(); }
+  if (name === "events" && window.loadEvents) window.loadEvents();
   if (name === "hub-community") loadDiscordCommunities();
   if (name === "hub-clips") loadClips();
   if (name === "hub-players") loadHubPlayers();
@@ -171,6 +172,8 @@ function goToView(name) {
   if (name === "media") loadMedia();
   if (name === "admin") { refreshAdminStats(); refreshStaffPlayers(); }
   if (name === "kb-devlog") loadKbDevlog();
+  if (name === "kb-modinfo") loadKbModInfo();
+  if (name === "keys" || name === "kb-keys") loadKeys(name);
   if (name === "kb-rules") loadKbRules();
   if (name === "kb-faq") loadKbFaq();
   if (name === "faq") loadAnomiaFaq();
@@ -193,10 +196,19 @@ function selectServer(id) {
       btn.className = "tab-item";
       btn.dataset.view = tab.view;
       btn.textContent = tab.label;
-      btn.addEventListener("click", () => goToView(tab.view));
+      if (tab.adminOnly) btn.dataset.adminOnly = "1";
+      btn.addEventListener("click", () => { if (btn.classList.contains("locked")) return; goToView(tab.view); });
       tabsEl.appendChild(btn);
     });
+    refreshTabLocks();
   };
+
+  if (id === "events") {
+    tabbar.classList.add("hidden");
+    navAdmin.style.display = "none";
+    goToView("events");
+    return;
+  }
 
   if (id === "hub") {
     tabbar.classList.remove("hidden");
@@ -231,6 +243,10 @@ function renderServerBar() {
   bar.innerHTML = `
     <button class="server-btn" data-server="hub" title="Accueil">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+    </button>
+    <button class="server-btn" data-server="events" title="Événements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg>
+      <span class="ev-badge hidden" id="ev-badge"></span>
     </button>
     <span class="server-sep"></span>
   `;
@@ -327,6 +343,33 @@ async function loadKbDevlog() {
   kbDevlogLoaded = true;
   data.forEach((item) => list.appendChild(renderNewsCard(item)));
 }
+
+let keysData = null;
+async function loadKeys(view) {
+  if (!keysData) keysData = (await window.anomia.getKeybinds().catch(() => null)) || { servers: {} };
+  const srv = (keysData.servers && keysData.servers[view === "kb-keys" ? "kannibaventure" : "anomia"]) || { groups: [] };
+  document.getElementById(`${view}-note`).textContent = srv.note || "";
+  document.getElementById(`${view}-list`).innerHTML = (srv.groups || []).map((g) => `<div class="keys-group glass"><h3>${escapeHtml(g.title || "")}</h3>${(g.keys || []).map((k) => `<div class="keys-row"><span class="keys-cap">${escapeHtml(k.key || "")}</span><span class="keys-act">${escapeHtml(k.action || "")}</span></div>`).join("")}</div>`).join("") || `<p class="hc-empty">La liste des touches arrive bientôt.</p>`;
+}
+let kbModInfo = null;
+function renderKbModInfo() {
+  const list = document.getElementById("kb-modinfo-list"), q = document.getElementById("kb-modinfo-search").value.trim().toLowerCase();
+  const mods = ((kbModInfo && kbModInfo.mods) || []).filter((m) => !q || (m.name + " " + (m.description || "")).toLowerCase().includes(q));
+  document.getElementById("kb-modinfo-empty").classList.toggle("hidden", !!((kbModInfo && kbModInfo.mods) || []).length);
+  list.innerHTML = mods.map((m, i) => `<article class="kb-modinfo-card glass">
+      ${m.icon && /^https:\/\//.test(m.icon) ? `<img class="kb-modinfo-icon" src="${escapeHtml(m.icon)}" alt="" loading="lazy" />` : `<div class="kb-modinfo-icon ph">${escapeHtml((m.name || "?").charAt(0).toUpperCase())}</div>`}
+      <div class="kb-modinfo-txt"><h3>${escapeHtml(m.name || "")}</h3><p>${escapeHtml(m.description || "")}</p>
+      ${m.url && /^https:\/\//.test(m.url) ? `<button class="btn-copy" data-modurl="${i}">Voir le mod ↗</button>` : ""}</div></article>`).join("");
+  list.querySelectorAll("[data-modurl]").forEach((b) => b.addEventListener("click", () => window.anomia.openExternal(mods[Number(b.dataset.modurl)].url)));
+}
+async function loadKbModInfo() {
+  if (!kbModInfo) {
+    kbModInfo = (await window.anomia.getKbContent("modsinfo").catch(() => null)) || { mods: [] };
+    document.getElementById("kb-modinfo-notes").textContent = kbModInfo.notes || "";
+  }
+  renderKbModInfo();
+}
+document.getElementById("kb-modinfo-search").addEventListener("input", renderKbModInfo);
 
 let kbRulesLoaded = false;
 async function loadKbRules() {
@@ -547,9 +590,7 @@ document.getElementById("kb-discord").addEventListener("click", () => {
 });
 
 // --- Discord ---
-document.getElementById("btn-discord").addEventListener("click", () => {
-  window.anomia.openExternal((TWITCH && TWITCH.discordInvite) || "https://discord.gg/nABGrX9Hu2");
-});
+
 
 // --- Connexion serveur ---
 document.getElementById("btn-connect").addEventListener("click", async (e) => {
@@ -1181,8 +1222,6 @@ function buildTickerSlides() {
     const kop = window.kbOpening ? window.kbOpening() : { open: kb.status === "online" };
     const body = kop.open
       ? `<b><i class="tk-dot"></i>Serveur ouvert</b><small>KANNIBAVENTURE</small>`
-      : kop.scheduled
-        ? `<b>${escapeHtml(kop.label)}</b><small>${kop.isSub ? "ACCÈS ABONNÉ DANS" : "OUVERTURE DANS"}</small>`
         : `<b>${escapeHtml(kb.connectLabel || "Bientôt")}</b><small>OUVERTURE DE KANNIBAVENTURE</small>`;
     slides.push({ key: "kb", html: `<img class="tk-logo" src="${escapeHtml(kb.logo || "../assets/kannibaventure.png")}" alt="" /><div class="tk-count">${body}</div>` });
   }
@@ -1634,6 +1673,7 @@ function setUpdateChangelog(notes) {
 const updateLaterBtn = document.getElementById("update-later-btn");
 let updateDownloading = false;
 window.anomia.onUpdateAvailable(async ({ version, releaseNotes }) => {
+  if (updateDownloading) return; // re-vérification pendant un téléchargement : on ne touche à rien
   updateFlowActive = true;
   pendingUpdateVersion = version;
   updateDownloading = false;
@@ -1752,11 +1792,22 @@ document.getElementById("admin-cancel").addEventListener("click", () => {
   document.getElementById("admin-passphrase").value = "";
 });
 
+// Onglets réservés aux admins : visibles mais grisés et non cliquables pour les autres joueurs
+function refreshTabLocks() {
+  const ok = window.isKbAdmin ? window.isKbAdmin() : false;
+  document.querySelectorAll("#tabbar-tabs .tab-item[data-admin-only]").forEach((b) => {
+    b.classList.toggle("locked", !ok);
+    b.title = ok ? "" : "Bientôt disponible";
+    b.setAttribute("aria-disabled", ok ? "false" : "true");
+  });
+}
+
 function applyStaffRole(result) {
   staffRole = result.role || "mod";
   if (window.syncVersionsBtn) window.syncVersionsBtn();
   staffScopes = { anomia: !!(result.scopes && result.scopes.anomia), kb: !!(result.scopes && result.scopes.kb) };
   isAdminUnlocked = staffRole === "admin" && staffScopes.anomia; // droits admin sur Anomia
+  refreshTabLocks();
   document.getElementById("admin-only-block").classList.toggle("hidden", !(staffRole === "mod" || isAdminUnlocked));
   const mb = document.getElementById("admin-maint-block"); if (mb) mb.classList.toggle("hidden", !isAdminUnlocked);
   document.getElementById("admin-title").textContent = isAdminUnlocked ? "Tableau de bord · Admin" : "Tableau de bord · Modération";
@@ -1769,6 +1820,7 @@ function clearStaffRole() {
   if (window.syncVersionsBtn) window.syncVersionsBtn();
   staffScopes = { anomia: false, kb: false };
   isAdminUnlocked = false;
+  refreshTabLocks();
   document.getElementById("nav-admin").classList.add("hidden");
   if (currentServerId === "anomia" && !document.getElementById("view-admin").classList.contains("hidden")) goToView("home");
   updateConnectButtonState();
@@ -2066,7 +2118,7 @@ document.querySelectorAll(".accent-swatch").forEach((btn) => {
     const color = btn.dataset.color;
     applyAccentColor(color);
     syncColorPicker(color);
-    window.anomia.setSettings({ accentColor: color });
+    window.anomia.setSettings({ accentColor: color, customAccent: color });
   });
 });
 
@@ -2084,7 +2136,7 @@ colorPicker.addEventListener("input", () => {
   document.getElementById("color-picker-hex").textContent = colorPicker.value.toUpperCase();
 });
 colorPicker.addEventListener("change", () => {
-  window.anomia.setSettings({ accentColor: colorPicker.value });
+  window.anomia.setSettings({ accentColor: colorPicker.value, customAccent: colorPicker.value });
 });
 
 // --- Page Staff ---
@@ -2150,7 +2202,7 @@ async function loadStaff() {
 
 // --- Succès ---
 const ACHIEVEMENT_ICONS = {
-  secretSeeker: "🕵️", polyvalent: "🎭", viewer: "📺", kbHours1: "⏱️", kbHours10: "⏱️", kbHours25: "⏱️", kbHours50: "⏱️", kbHours100: "⌛", kbHours250: "⌛", kbAdvNether: "🔥", kbAdvDiamond: "💎", kbAdvTrade: "🤝", kbAdvBeacon: "🔆", kbAdvEnd: "🌌", kbAdvElytra: "🪽", kbAdvWither: "💀", kbAdvDragon: "🐉", kbAdvHunter: "🗡️", kbAdvCount10: "📜", kbAdvCount30: "📚", kbAdvCount60: "🎓", error404: "🚫", hunter3: "🎯", hunter10: "🏹", hunter25: "👑", tourDone: "🧭", themeSwitch: "🎨",
+  secretSeeker: "🕵️", polyvalent: "🎭", viewer: "📺", kbHours1: "⏱️", kbHours10: "⏱️", kbHours25: "⏱️", kbHours50: "⏱️", kbHours100: "⌛", kbHours250: "⌛", kbAdvNether: "🔥", kbAdvDiamond: "💎", kbAdvTrade: "🤝", kbAdvBeacon: "🔆", kbAdvEnd: "🌌", kbAdvElytra: "🪽", kbAdvWither: "💀", kbAdvDragon: "🐉", kbAdvHunter: "🗡️", kbAdvCount10: "📜", kbAdvCount30: "📚", kbAdvCount60: "🎓", error404: "🚫", hunter3: "🎯", hunter10: "🏹", hunter25: "👑", tourDone: "🧭", themeSwitch: "🎨", riendur: "💜",
   firstCharacter: "🧍", tutorialDone: "🎓", hasJob: "💼", hasVehicle: "🚗", hasHouse: "🏠",
   jobPromotion: "📈", money30k: "💵", money100k: "💰",
   drivingDistance100: "🛣️", drivingDistance500: "🛣️", drivingDistance1000: "🛣️",

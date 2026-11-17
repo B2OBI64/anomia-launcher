@@ -28,6 +28,7 @@ module.exports = {
         { view: "media", label: "Média" },
         { view: "staff", label: "Staff" },
         { view: "achievements", label: "Succès" },
+        { view: "keys", label: "Touches" },
         { view: "rules", label: "Règlement" },
         { view: "faq", label: "F.A.Q" },
         { view: "map", label: "Carte" },
@@ -43,7 +44,10 @@ module.exports = {
       status: "soon",
       connectLabel: "Décembre",
       // Minuteur d'ouverture : désactivé pour l'instant (dates secrètes). Format quand on le lancera : opening: { public: "AAAA-MM-JJTHH:MM:SS+01:00", sub: "AAAA-MM-JJTHH:MM:SS+01:00" }
-      opening: null,
+      // Accès abonnés le 18/12 à 23h, ouverture publique le 21/12 à 20h30 (heure de Paris)
+      opening: { sub: "2026-12-18T23:00:00+01:00", public: "2026-12-21T20:30:00+01:00" },
+      // Le minuteur (voile sur l'accueil KannibAventure) apparaît à cette date ISO (null = dès que "opening" est renseigné).
+      timerAppearsAt: "2026-11-18T20:30:00+01:00",
       // Discord du serveur Minecraft (le rôle d'accès sera renseigné plus tard) :
       discordInvite: "https://discord.gg/fdSjJPRJy4",
       discordGuildId: "1357757210272469212",
@@ -62,7 +66,10 @@ module.exports = {
         { view: "kb-media", label: "Média" },
         { view: "kb-map", label: "Carte" },
         { view: "kb-files", label: "Fichiers" },
+        // Catégorie « Mods » : ce que fait chaque mod + lien. Réservée aux admins KannibAventure pour l'instant (grisée pour les joueurs)
+        { view: "kb-modinfo", label: "Mods", adminOnly: true },
         { view: "kb-settings", label: "Paramètres" },
+        { view: "kb-keys", label: "Touches" },
         { view: "kb-rules", label: "Règlement" },
         { view: "kb-faq", label: "FAQ" }
       ]
@@ -110,14 +117,16 @@ module.exports = {
       { channel: "toto_le_byr", displayName: "toto_le_byr" },
       { channel: "romaintititox17", displayName: "romaintititox17" },
       { channel: "deltaxhydraa", displayName: "deltaxhydraa" },
-      { channel: "martinmartin_m2x", displayName: "martinmartin_m2x" }
+      { channel: "martinmartin_m2x", displayName: "martinmartin_m2x" },
+      { channel: "alexiahhhh38", displayName: "alexiahhhh38" },
+      { channel: "zylex71", displayName: "zylex71" }
     ]
   },
 
   // --- Contenu des pages KannibAventure (modifiable sur GitHub sans republier) ---
   kannibaventure: {
     remoteBase: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/src/",
-    files: { devlog: "kb-devlog.json", faq: "kb-faq.json", anomiafaq: "anomia-faq.json", rules: "kb-rules.json", mods: "kb-mods.json" }
+    files: { devlog: "kb-devlog.json", faq: "kb-faq.json", anomiafaq: "anomia-faq.json", rules: "kb-rules.json", mods: "kb-mods.json", modsinfo: "kb-modsinfo.json" }
   },
 
   // --- Connexion serveur FiveM ---
@@ -196,6 +205,18 @@ module.exports = {
   // discord-news-sync/README.md pour la mise en place), remplace remoteUrl
   // par l'URL brute GitHub une fois ton repo créé, exemple :
   // "https://raw.githubusercontent.com/TON_USER/anomia-launcher-news/main/news.json"
+  // Cadre d'annonce (teaser) de l'accueil : modifiable à distance via teaser.json à la racine du dépôt GitHub
+  teaser: {
+    remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/teaser.json",
+    localFallback: "src/teaser.json"
+  },
+  // Musiques : liste (albums) modifiable à distance via music.json à la racine du dépôt GitHub
+  // Touches en jeu (modifiable sans republier : keybinds.json à la racine du dépôt GitHub)
+  keybinds: { remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/keybinds.json", localFallback: "src/keybinds.json" },
+  music: {
+    remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/music.json",
+    localFallback: "src/music.json"
+  },
   news: {
     remoteUrl: "https://raw.githubusercontent.com/B2OBI64/anomia-launcher/main/news.json",
     localFallback: "src/news.json"
@@ -295,7 +316,7 @@ module.exports = {
     // Même format que les succès Anomia. "exclusiveTitle" = titre réservé.
     launcher: {
       eggsRequired: 6, // nombre d'easter eggs à trouver pour « Chercheur de secrets »
-      eggs: ["konami", "logo", "version", "kannibal", "anomia", "creeper", "noctambule"],
+      eggs: ["konami", "logo", "version", "kannibal", "anomia", "creeper", "noctambule", "ggpadur"],
       hunters: [{ key: "hunter3", n: 3 }, { key: "hunter10", n: 10 }, { key: "hunter25", n: 25 }],
       list: [
         { key: "secretSeeker", rarity: "secret", label: "Chercheur de secrets", description: "Trouver des easter eggs cachés dans le launcher", secret: true },
@@ -306,6 +327,7 @@ module.exports = {
         { key: "hunter10", rarity: "silver", label: "Chasseur de succès confirmé", description: "Débloquer 10 succès" },
         { key: "hunter25", rarity: "gold", label: "Chasseur de succès d'élite", description: "Débloquer 25 succès" },
         { key: "peche", rarity: "secret", label: "T'aime la pêche", description: "Le B2oboi, espèce protégée sur la chaîne de deltaxhydraa", secret: true },
+        { key: "riendur", rarity: "secret", label: "Rien est trop dur", description: "GG Padur !", secret: true },
         { key: "polyvalent", rarity: "secret", label: "Polyvalent", description: "Jouer au moins une fois sur chacun des serveurs proposés", secret: true },
         { key: "viewer", rarity: "gold", label: "Viewers", description: "Regarder un live depuis le launcher" }
       ],
