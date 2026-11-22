@@ -103,6 +103,7 @@
     $("music-bar").classList.toggle("hidden", !showBar);
     $("music-panel").classList.toggle("hidden", !showCard);
     document.body.classList.toggle("music-bar-on", showBar);
+    const dot = $("mu-dot"); if (dot) dot.classList.toggle("hidden", !playing);
     if (it) {
       ["mb", "mh"].forEach((p) => {
         const cv = $(p + "-cover"); if (cv) cv.style.backgroundImage = `url("${url(it.album.cover).replace(/"/g, "%22")}")`;
@@ -216,7 +217,7 @@
     updateUI();
   };
   const _selectServer = selectServer;
-  selectServer = function (id) { _selectServer(id); M.view = id === "hub" ? "hub" : ""; updateUI(); };
+  selectServer = function (id) { _selectServer(id); M.view = id === "hub" ? "hub" : (id === "music" ? "hub-music" : ""); updateUI(); };
 
   // ---------- Réglage : couper la musique quand le jeu se lance (désactivé par défaut) ----------
   function onGameLaunch(e) {

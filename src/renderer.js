@@ -20,6 +20,17 @@ let staffScopes = { anomia: false, kb: false };
 const citizen = { anomia: null, kannibaventure: null };
 const CITIZEN_TIP = "Rejoins le Discord pour passer ta douane";
 window.__citizen = citizen;
+window.friendsAvailable = () => staffRole === "admin"; // amis : réservé aux admins en service (les autres voient « Arrive prochainement »)
+function refreshFriendsLock() {
+  const b = document.querySelector('.server-btn[data-server="friends"]'); if (!b) return;
+  const ok = window.friendsAvailable();
+  b.classList.toggle("soon", !ok); b.title = ok ? "Amis" : "Amis : arrive prochainement";
+  b.setAttribute("aria-disabled", ok ? "false" : "true");
+  if (!ok) { const bd = document.getElementById("fr-badge"); if (bd) bd.classList.add("hidden"); }
+  if (!ok && typeof currentServerId !== "undefined" && currentServerId === "friends") selectServer("hub");
+  if (ok && window.loadFriends) window.loadFriends();
+}
+window.refreshFriendsLock = refreshFriendsLock;
 window.isKbAdmin = () => staffRole === "admin" && !!staffScopes.kb;
 async function refreshCitizen() {
   if (typeof discordProfile === "undefined" || !discordProfile) { citizen.anomia = null; citizen.kannibaventure = null; }
@@ -158,6 +169,8 @@ function goToView(name) {
   });
   if (name === "hub") { loadStreamers(); loadHomeMe(); loadDiscordCommunities(); startHubSlider(); } else { stopHubSlider(); }
   if (name === "events" && window.loadEvents) window.loadEvents();
+  if (name === "friends" && window.loadFriends) window.loadFriends();
+  if (name === "kb-devlog" && window.refreshDevAdmin) window.refreshDevAdmin();
   if (name === "hub-community") loadDiscordCommunities();
   if (name === "hub-clips") loadClips();
   if (name === "hub-players") loadHubPlayers();
@@ -203,6 +216,21 @@ function selectServer(id) {
     refreshTabLocks();
   };
 
+  if (id === "music") {
+    tabbar.classList.add("hidden");
+    navAdmin.style.display = "none";
+    goToView("hub-music");
+    return;
+  }
+
+  if (id === "friends") {
+    if (!window.friendsAvailable()) { showInfo("Amis", "Arrive prochainement"); return; }
+    tabbar.classList.add("hidden");
+    navAdmin.style.display = "none";
+    goToView("friends");
+    return;
+  }
+
   if (id === "events") {
     tabbar.classList.add("hidden");
     navAdmin.style.display = "none";
@@ -247,6 +275,14 @@ function renderServerBar() {
     <button class="server-btn" data-server="events" title="Événements">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg>
       <span class="ev-badge hidden" id="ev-badge"></span>
+    </button>
+    <button class="server-btn" data-server="friends" title="Amis">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M17 5.5a3.2 3.2 0 010 6M18.5 14.3c1.9.7 3 2.4 3 5.7"/></svg>
+      <span class="ev-badge fr-badge hidden" id="fr-badge"></span>
+    </button>
+    <button class="server-btn" data-server="music" title="Musique">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <span class="mu-dot hidden" id="mu-dot"></span>
     </button>
     <span class="server-sep"></span>
   `;
@@ -323,7 +359,7 @@ window.anomia.getServers().then((cfg) => {
   HUB = cfg.hub || HUB;
   if (cfg.twitch) TWITCH = cfg.twitch;
   initTwitchPanel();
-  renderServerBar();
+  renderServerBar(); refreshFriendsLock();
   renderHubSlider();
   if (typeof restoreLast === "function") restoreLast(); else selectServer("hub");
   updateConnectButtonState(); // applique l'état "en pause" d'Anomia si besoin
@@ -341,8 +377,14 @@ async function loadKbDevlog() {
     return;
   }
   kbDevlogLoaded = true;
-  data.forEach((item) => list.appendChild(renderNewsCard(item)));
+  const adm = window.isKbAdmin && window.isKbAdmin();
+  data.forEach((item) => {
+    const card = renderNewsCard(item);
+    if (adm && item.sid) { const b = document.createElement("button"); b.className = "btn-copy dev-del"; b.dataset.devdel = item.sid; b.textContent = "Supprimer"; card.appendChild(b); }
+    list.appendChild(card);
+  });
 }
+window.reloadKbDevlog = () => { kbDevlogLoaded = false; return loadKbDevlog(); };
 
 let keysData = null;
 async function loadKeys(view) {
@@ -1807,7 +1849,7 @@ function applyStaffRole(result) {
   if (window.syncVersionsBtn) window.syncVersionsBtn();
   staffScopes = { anomia: !!(result.scopes && result.scopes.anomia), kb: !!(result.scopes && result.scopes.kb) };
   isAdminUnlocked = staffRole === "admin" && staffScopes.anomia; // droits admin sur Anomia
-  refreshTabLocks();
+  refreshTabLocks(); refreshFriendsLock();
   document.getElementById("admin-only-block").classList.toggle("hidden", !(staffRole === "mod" || isAdminUnlocked));
   const mb = document.getElementById("admin-maint-block"); if (mb) mb.classList.toggle("hidden", !isAdminUnlocked);
   document.getElementById("admin-title").textContent = isAdminUnlocked ? "Tableau de bord · Admin" : "Tableau de bord · Modération";
@@ -1819,7 +1861,7 @@ function clearStaffRole() {
   staffRole = null;
   if (window.syncVersionsBtn) window.syncVersionsBtn();
   staffScopes = { anomia: false, kb: false };
-  isAdminUnlocked = false;
+  isAdminUnlocked = false; refreshFriendsLock();
   refreshTabLocks();
   document.getElementById("nav-admin").classList.add("hidden");
   if (currentServerId === "anomia" && !document.getElementById("view-admin").classList.contains("hidden")) goToView("home");

@@ -23,6 +23,9 @@
 --   GET /b2_staffpanel/kbstatus -> { kbMaintenance } (public) ; /kbmaintenance/on|off (admin) : maintenance KannibAventure
 --   GET /b2_staffpanel/rolecheck/anomia|kannibaventure -> { citizen: true|false|null } (role citoyen requis pour jouer)
 --   GET /b2_staffpanel/events/list|join|leave|create|delete  -> evenements (create/delete : admin Kannibal Team)
+--   GET /b2_staffpanel/friends/ping|list|add|accept|decline|cancel|remove -> amis (compte Discord)
+--   GET /b2_staffpanel/announce/list|img|create|delete -> annonces importantes (create/delete : admin Kannibal Team)
+--   GET /b2_staffpanel/kbdevlog/list|create|delete -> journal de dev KannibAventure (create/delete : admin KB)
 --   GET /b2_staffpanel/polls/list|vote|create|close|delete  -> sondages (list/vote : Discord ; create/close/delete : fondateur/admin Kannibal Team)
 --   GET /b2_staffpanel/subcheck -> { sub } (en-tete x-discord-token) : role abonne sur Kannibal Team (convar anomia_sub_role_id)
 -- Lecture seule : aucune action (kick/ban...) n'est possible depuis le launcher.
@@ -360,7 +363,7 @@ local function discordUser(token, cb)
     PerformHttpRequest("https://discord.com/api/v10/users/@me", function(status, body)
         local ok, u = pcall(json.decode, body or "")
         if status ~= 200 or not ok or not u or not u.id then cb(nil) return end
-        cb(tostring(u.id), tostring(u.global_name or u.username or "?"))
+        cb(tostring(u.id), tostring(u.global_name or u.username or "?"), tostring(u.username or ""))
     end, "GET", "", { ["Authorization"] = "Bearer " .. token })
 end
 local function pollView(p, uid, withCounts)
@@ -578,6 +581,230 @@ local function handleEvents(req, res, headers)
 end
 
 -- ============================================================
+-- Amis (presence en memoire + liens en KVP). Reposent sur les comptes Discord relies au launcher.
+-- ============================================================
+local USERS_KEY = "b2sp_users"          -- uid -> { n = pseudo, u = username, t = derniere activite }
+local presence = {}                     -- uid -> { s = "launcher"|"anomia"|"kb", t = os.time(), inv = bool }
+local PRESENCE_TTL = 150                -- secondes sans ping => hors ligne
+local function loadJsonKey(key, default)
+    local ok, t = pcall(json.decode, GetResourceKvpString(key) or "")
+    if not ok or type(t) ~= "table" then return default end
+    return t
+end
+local function frKey(uid) return "b2sp_fr_" .. uid end
+local function loadFr(uid)
+    local t = loadJsonKey(frKey(uid), {})
+    t.friends, t.inc, t.out = t.friends or {}, t.inc or {}, t.out or {}
+    return t
+end
+local function saveFr(uid, t) SetResourceKvp(frKey(uid), json.encode(t)) end
+local function listHas(l, uid) for _, v in ipairs(l) do if v == uid then return true end end return false end
+local function listDel(l, uid) for i, v in ipairs(l) do if v == uid then table.remove(l, i) return end end end
+local function userName(users, uid) return (users[uid] and users[uid].n) or "?" end
+local function isOnline(uid)
+    local p = presence[uid]
+    if not p or p.inv then return false end
+    return (os.time() - p.t) <= PRESENCE_TTL
+end
+local function handleFriends(req, res, headers)
+    local path = tostring(req.path or "")
+    local action = path:match("friends/(%a+)") or "list"
+    local token = headers["x-discord-token"]
+    discordUser(token, function(me, myName, myUser)
+        if not me then send(res, 401, { error = "discord_required" }) return end
+        local users = loadJsonKey(USERS_KEY, {})
+        local u = users[me]
+        local now = os.time()
+        if not u or u.n ~= myName or u.u ~= myUser or (now - (u.t or 0)) > 3600 then
+            users[me] = { n = myName, u = myUser, t = now }
+            SetResourceKvp(USERS_KEY, json.encode(users))
+        end
+        local fr = loadFr(me)
+        if action == "ping" then
+            local st = qparam(path, "s")
+            if st ~= "anomia" and st ~= "kb" then st = "launcher" end
+            presence[me] = { s = st, t = now, inv = qparam(path, "inv") == "1" }
+            send(res, 200, { ok = true })
+            return
+        end
+        if action == "list" then
+            local out = { me = { uid = me, name = myName }, friends = {}, incoming = {}, outgoing = {} }
+            for _, id in ipairs(fr.friends) do
+                local on = isOnline(id)
+                out.friends[#out.friends + 1] = { uid = id, name = userName(users, id), online = on, s = on and presence[id].s or nil }
+            end
+            table.sort(out.friends, function(a, b)
+                if a.online ~= b.online then return a.online end
+                return tostring(a.name):lower() < tostring(b.name):lower()
+            end)
+            for _, id in ipairs(fr.inc) do out.incoming[#out.incoming + 1] = { uid = id, name = userName(users, id) } end
+            for _, id in ipairs(fr.out) do out.outgoing[#out.outgoing + 1] = { uid = id, name = userName(users, id) } end
+            send(res, 200, out)
+            return
+        end
+        local function link(a, b) -- devient amis
+            local fa, fb = loadFr(a), loadFr(b)
+            listDel(fa.inc, b) listDel(fa.out, b) listDel(fb.inc, a) listDel(fb.out, a)
+            if not listHas(fa.friends, b) then fa.friends[#fa.friends + 1] = b end
+            if not listHas(fb.friends, a) then fb.friends[#fb.friends + 1] = a end
+            saveFr(a, fa) saveFr(b, fb)
+        end
+        if action == "add" then
+            local q = (qparam(path, "name") or ""):lower():gsub("^@", ""):gsub("^%s+", ""):gsub("%s+$", "")
+            if q == "" or #q > 64 then send(res, 400, { error = "bad_name" }) return end
+            local found, count = nil, 0
+            for id, info in pairs(users) do
+                if id ~= me and ((info.n or ""):lower() == q or (info.u or ""):lower() == q) then found, count = id, count + 1 end
+            end
+            if count == 0 then
+                local self = ((myName or ""):lower() == q or (myUser or ""):lower() == q)
+                send(res, 404, { error = self and "self" or "not_found" }) return
+            end
+            if count > 1 then send(res, 409, { error = "ambiguous" }) return end
+            if listHas(fr.friends, found) then send(res, 409, { error = "already_friends" }) return end
+            if #fr.friends >= 100 then send(res, 409, { error = "too_many" }) return end
+            if listHas(fr.inc, found) then link(me, found) send(res, 200, { ok = true, accepted = true, name = userName(users, found) }) return end
+            if not listHas(fr.out, found) then
+                local ft = loadFr(found)
+                if #ft.inc < 50 and not listHas(ft.inc, me) then ft.inc[#ft.inc + 1] = me saveFr(found, ft) end
+                fr.out[#fr.out + 1] = found saveFr(me, fr)
+            end
+            send(res, 200, { ok = true, pending = true, name = userName(users, found) })
+            return
+        end
+        local target = qparam(path, "uid")
+        if not target or not users[target] then send(res, 404, { error = "not_found" }) return end
+        if action == "accept" then
+            if not listHas(fr.inc, target) then send(res, 404, { error = "no_request" }) return end
+            link(me, target) send(res, 200, { ok = true }) return
+        end
+        if action == "decline" or action == "cancel" then
+            local ft = loadFr(target)
+            listDel(fr.inc, target) listDel(fr.out, target) listDel(ft.inc, me) listDel(ft.out, me)
+            saveFr(me, fr) saveFr(target, ft) send(res, 200, { ok = true }) return
+        end
+        if action == "remove" then
+            local ft = loadFr(target)
+            listDel(fr.friends, target) listDel(ft.friends, me)
+            saveFr(me, fr) saveFr(target, ft) send(res, 200, { ok = true }) return
+        end
+        send(res, 400, { error = "bad_action" })
+    end)
+end
+
+-- ============================================================
+-- Annonces importantes (creees par les admins Kannibal Team) : fusionnees avec teaser.json dans le launcher
+-- ============================================================
+local ANN_KEY = "b2sp_ann"
+local function handleAnnounce(req, res, headers)
+    local path = tostring(req.path or "")
+    local action = path:match("announce/(%a+)") or "list"
+    local token = headers["x-discord-token"]
+    local function withKt(cb)
+        getDiscordRole(token, function(role, reason, scopes)
+            if role == "admin" and scopes and scopes.kt then cb() else send(res, 403, { error = "kt_admin_only" }) end
+        end)
+    end
+    if action == "list" then
+        local function respond(isKt)
+            local list = loadJsonKey(ANN_KEY, {})
+            local out = {}
+            for _, a in ipairs(list) do
+                out[#out + 1] = { id = a.id, title = a.title, text = a.text, link = a.link, revealAt = a.revealAt or 0, hasImg = a.hasImg and true or false }
+            end
+            send(res, 200, { announcements = out, canManage = isKt and true or false })
+        end
+        if not token or token == "" then respond(false) return end
+        getDiscordRole(token, function(role, _, scopes) respond(role == "admin" and scopes and scopes.kt) end)
+        return
+    end
+    if action == "img" then
+        send(res, 200, { img = GetResourceKvpString("b2sp_annimg_" .. tostring(qparam(path, "id") or "")) or "" })
+        return
+    end
+    if action == "create" then
+        withKt(function()
+            req.setDataHandler(function(body)
+                local ok, j = pcall(json.decode, body or "")
+                if not ok or type(j) ~= "table" then send(res, 400, { error = "bad_body" }) return end
+                local img = tostring(j.img or "")
+                if not img:match("^data:image/[%w%+]+;base64,[%w%+/=]+$") or #img > 300000 then send(res, 400, { error = "bad_image" }) return end
+                local link = tostring(j.link or "")
+                if link ~= "" and not link:match("^https://") then link = "" end
+                local list = loadJsonKey(ANN_KEY, {})
+                if #list >= 6 then local old = table.remove(list, 1) DeleteResourceKvp("b2sp_annimg_" .. tostring(old.id)) end
+                local id = ("%d%04d"):format(os.time(), math.random(0, 9999))
+                list[#list + 1] = { id = id, title = tostring(j.title or ""):sub(1, 60), text = tostring(j.text or ""):sub(1, 800), link = link:sub(1, 200), revealAt = math.floor(tonumber(j.at) or 0), hasImg = true, createdAt = os.time() }
+                SetResourceKvp("b2sp_annimg_" .. id, img)
+                SetResourceKvp(ANN_KEY, json.encode(list))
+                send(res, 200, { ok = true, id = id })
+            end)
+        end)
+        return
+    end
+    if action == "delete" then
+        withKt(function()
+            local id = qparam(path, "id")
+            local list = loadJsonKey(ANN_KEY, {})
+            for i, a in ipairs(list) do
+                if a.id == id then table.remove(list, i) SetResourceKvp(ANN_KEY, json.encode(list)) DeleteResourceKvp("b2sp_annimg_" .. tostring(id)) send(res, 200, { ok = true }) return end
+            end
+            send(res, 404, { error = "not_found" })
+        end)
+        return
+    end
+    send(res, 400, { error = "bad_action" })
+end
+
+-- ============================================================
+-- Journal de dev KannibAventure (entrees creees par les admins KB, fusionnees avec kb-devlog.json)
+-- ============================================================
+local KBDEV_KEY = "b2sp_kbdevlog"
+local function handleKbDevlog(req, res, headers)
+    local path = tostring(req.path or "")
+    local action = path:match("kbdevlog/(%a+)") or "list"
+    local token = headers["x-discord-token"]
+    local function withKb(cb)
+        getDiscordRole(token, function(role, reason, scopes)
+            if role == "admin" and scopes and scopes.kb then cb() else send(res, 403, { error = "kb_admin_only" }) end
+        end)
+    end
+    if action == "list" then
+        send(res, 200, { entries = loadJsonKey(KBDEV_KEY, {}) })
+        return
+    end
+    if action == "create" then
+        withKb(function()
+            req.setDataHandler(function(body)
+                local ok, j = pcall(json.decode, body or "")
+                if not ok or type(j) ~= "table" then send(res, 400, { error = "bad_body" }) return end
+                local title, content = tostring(j.title or ""), tostring(j.content or "")
+                if title:match("^%s*$") or content:match("^%s*$") then send(res, 400, { error = "bad_entry" }) return end
+                local list = loadJsonKey(KBDEV_KEY, {})
+                if #list >= 60 then table.remove(list, 1) end
+                local id = ("%d%04d"):format(os.time(), math.random(0, 9999))
+                list[#list + 1] = { id = id, date = os.date("%Y-%m-%d"), tag = tostring(j.tag or "ANNONCE"):upper():sub(1, 20), title = title:sub(1, 90), content = content:sub(1, 3000) }
+                SetResourceKvp(KBDEV_KEY, json.encode(list))
+                send(res, 200, { ok = true, id = id })
+            end)
+        end)
+        return
+    end
+    if action == "delete" then
+        withKb(function()
+            local id = qparam(path, "id")
+            local list = loadJsonKey(KBDEV_KEY, {})
+            for i, e in ipairs(list) do
+                if e.id == id then table.remove(list, i) SetResourceKvp(KBDEV_KEY, json.encode(list)) send(res, 200, { ok = true }) return end
+            end
+            send(res, 404, { error = "not_found" })
+        end)
+        return
+    end
+    send(res, 400, { error = "bad_action" })
+end
+
+-- ============================================================
 -- Joueurs en ligne avec pseudo Discord (route publique « online »)
 -- ============================================================
 local discordNameCache = {}  -- discordId -> { name, expires }
@@ -670,6 +897,9 @@ SetHttpHandler(function(req, res)
     end
     if ppath:find("polls", 1, true) then handlePolls(req, res, headers) return end
     if ppath:find("events", 1, true) then handleEvents(req, res, headers) return end
+    if ppath:find("friends/", 1, true) then handleFriends(req, res, headers) return end
+    if ppath:find("announce/", 1, true) then handleAnnounce(req, res, headers) return end
+    if ppath:find("kbdevlog/", 1, true) then handleKbDevlog(req, res, headers) return end
     if ppath:find("rolecheck", 1, true) then
         local srv = tostring(req.path or ""):find("kannibaventure", 1, true) and "kannibaventure" or "anomia"
         checkCitizen(headers["x-discord-token"], srv, function(v) send(res, 200, { citizen = v }) end)

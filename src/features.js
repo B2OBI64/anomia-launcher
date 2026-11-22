@@ -595,7 +595,7 @@
   // ---------- Reprendre où tu en étais ----------
   const _selectServer = selectServer, _goToView = goToView;
   let restoring = false;
-  selectServer = function (id) { _selectServer(id); document.body.dataset.server = id; if (id === "kannibaventure") loadKbState(); refreshKbAdminTab(); if (!restoring) save({ lastServer: id, lastView: null }); };
+  selectServer = function (id) { if (id === "friends" && !(window.friendsAvailable && window.friendsAvailable())) { if (!restoring) _selectServer(id); return; } _selectServer(id); document.body.dataset.server = id; if (id === "kannibaventure") loadKbState(); refreshKbAdminTab(); if (!restoring) save({ lastServer: id, lastView: null }); };
   goToView = function (name) { _goToView(name); if (!restoring && name !== "admin" && (currentServerId !== "hub" || name.startsWith("hub-"))) save({ lastView: name }); onViewShown(name); };
   window.restoreLast = async function () {
     await ready;
@@ -801,14 +801,18 @@
       // défilement automatique (compteurs actifs ou non), sauf juste après un choix manuel du joueur
       if (items.length > 1) rotTimer = setInterval(() => { if (Date.now() > pausedUntil && !card.matches(":hover") && !$("lightbox")) show(idx + 1); }, rotMs);
     }
+    let canManage = false;
+    const updateDel = () => { const b = $("ann-del"); if (b) b.disabled = !(items[idx] && items[idx].sid); };
     async function loadTeaser() {
       let t; try { t = await api.getTeaser(); } catch (e) { t = null; }
       const list = t && Array.isArray(t.announcements) ? t.announcements : (t && t.enabled ? [t] : []);
       items = list.filter((x) => x && x.enabled !== false && (x.image || x.code || x.title));
       rotMs = Math.max(3, (t && +t.rotateSeconds) || 8) * 1000;
       window.__teaserOn = items.length > 0;
-      $("teaser-panel").classList.toggle("hidden", !window.__teaserOn);
-      if (!window.__teaserOn) { $("teaser-card").classList.add("hidden"); clearInterval(tickTimer); clearInterval(rotTimer); return; }
+      canManage = !!(t && t.canManage);
+      $("ann-admin").classList.toggle("hidden", !canManage);
+      $("teaser-panel").classList.toggle("hidden", !window.__teaserOn && !canManage);
+      if (!window.__teaserOn) { $("teaser-card").classList.add("hidden"); clearInterval(tickTimer); clearInterval(rotTimer); updateDel(); return; }
       build();
     }
     document.addEventListener("click", (e) => {
@@ -819,6 +823,38 @@
       else if (cp) { const t = items[+cp.dataset.copy]; try { navigator.clipboard.writeText(t.code); } catch (er) {} cp.textContent = "Copié ✓"; setTimeout(() => (cp.textContent = "Copier le code"), 1800); }
       else if (lk) api.openExternal(items[+lk.dataset.link].link);
       else if (im && !im.closest(".ann-slide").classList.contains("locked") && window.openLightbox) window.openLightbox([{ url: im.src, author: items[idx].title || "", date: "" }], 0);
+    });
+
+    // Création / suppression d'annonces par les admins Kannibal Team (le serveur vérifie le rôle)
+    $("ann-new").addEventListener("click", () => {
+      const ov = document.createElement("div"); ov.className = "modal-overlay";
+      ov.innerHTML = `<div class="modal-box glass poll-form" style="max-width:520px;"><button class="modal-close" aria-label="Fermer">&#10005;</button><h3>Nouvelle annonce importante</h3>
+        <label>Image (obligatoire)</label>${window.imageDropHtml("an")}
+        <label>Titre (facultatif)</label><input type="text" id="an-t" maxlength="60" placeholder="Annonce importante" />
+        <label>Texte révélé au dévoilement (facultatif)</label><textarea id="an-d" maxlength="800"></textarea>
+        <label>Lien (facultatif, https://…)</label><input type="text" id="an-l" maxlength="200" />
+        <label>Date de dévoilement (vide = visible tout de suite)</label><input type="datetime-local" id="an-at" />
+        <p id="an-msg" style="color:#f87171;font-size:12px;min-height:16px;"></p>
+        <div class="poll-actions"><button class="btn-connect" id="an-ok">Publier</button></div></div>`;
+      document.body.appendChild(ov);
+      const close = () => ov.remove(), msg = ov.querySelector("#an-msg"); let image = "";
+      window.bindImageDrop(ov, "an", (i) => { image = i; if (i) msg.textContent = ""; }, (m) => { msg.textContent = m; });
+      ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(); });
+      ov.querySelector(".modal-close").addEventListener("click", close);
+      ov.querySelector("#an-ok").addEventListener("click", async () => {
+        if (!image) { msg.textContent = "Ajoute une image."; return; }
+        const raw = ov.querySelector("#an-at").value, at = raw ? Math.floor(new Date(raw).getTime() / 1000) : 0;
+        const link = ov.querySelector("#an-l").value.trim();
+        if (link && !/^https:\/\//.test(link)) { msg.textContent = "Le lien doit commencer par https://"; return; }
+        const btn = ov.querySelector("#an-ok"); btn.disabled = true;
+        const r = await api.adminContent("announce", "create", { img: image, title: ov.querySelector("#an-t").value.trim(), text: ov.querySelector("#an-d").value.trim(), link, at });
+        if (r && r.ok) { close(); loadTeaser(); } else { btn.disabled = false; msg.textContent = (r && r.body && r.body.error === "kt_admin_only") ? "Réservé aux admins Kannibal Team." : (r && r.body && r.body.error === "bad_image") ? "Image refusée (trop lourde ?)." : "Impossible de publier l'annonce."; }
+      });
+    });
+    $("ann-del").addEventListener("click", async () => {
+      const it = items[idx]; if (!it || !it.sid) return;
+      if (!confirm("Supprimer cette annonce ?")) return;
+      const r = await api.adminContent("announce", "delete", { id: it.sid }); if (r && r.ok) loadTeaser();
     });
     window.loadTeaser = loadTeaser;
     setTimeout(loadTeaser, 1500);
@@ -1018,6 +1054,20 @@
       fr.readAsDataURL(file);
     });
   }
+  // Zone « glisser une image ou choisir un fichier » réutilisable (annonces…) : retourne le HTML, puis bindImageDrop() la branche
+  window.imageDropHtml = (p) => `<div class="ev-drop" id="${p}-drop"><span id="${p}-drop-txt">🖼️ Glisse une image ici</span><button type="button" class="btn-copy" id="${p}-pick">Choisir une image</button><input type="file" id="${p}-file" accept="image/*" hidden /></div>`;
+  window.bindImageDrop = (ov, p, onImage, onError) => {
+    const drop = ov.querySelector(`#${p}-drop`);
+    const take = async (file) => {
+      try { const img = await fileToEventImage(file); drop.style.backgroundImage = `url('${img}')`; drop.classList.add("has"); ov.querySelector(`#${p}-drop-txt`).textContent = ""; onImage(img); }
+      catch (err) { onImage(""); onError(err.message); }
+    };
+    ov.querySelector(`#${p}-pick`).addEventListener("click", () => ov.querySelector(`#${p}-file`).click());
+    ov.querySelector(`#${p}-file`).addEventListener("change", (e) => take(e.target.files[0]));
+    ["dragenter", "dragover"].forEach((n) => drop.addEventListener(n, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+    ["dragleave", "drop"].forEach((n) => drop.addEventListener(n, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+    drop.addEventListener("drop", (e) => take(e.dataTransfer.files[0]));
+  };
   $("ev-new").addEventListener("click", () => {
     const ov = document.createElement("div"); ov.className = "modal-overlay";
     ov.innerHTML = `<div class="modal-box glass poll-form" style="max-width:520px;"><button class="modal-close" aria-label="Fermer">&#10005;</button><h3>Nouvel événement</h3>

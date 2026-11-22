@@ -688,11 +688,30 @@ ipcMain.handle("keybinds:get", async () => {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, config.keybinds.localFallback), "utf-8")); } catch (err) { return { servers: {} }; }
 });
 
-ipcMain.handle("teaser:get", async () => {
-  if (config.teaser.remoteUrl) {
-    try { const remote = await fetchJsonCached(config.teaser.remoteUrl); if (remote && typeof remote === "object") return remote; } catch (err) { /* local */ }
+// Annonces créées par les admins (serveur) : images mises en cache en mémoire, fusionnées avec teaser.json
+const annImgCache = new Map();
+async function serverAnnouncements() {
+  const r = await staffRequest("announce/list", "discord");
+  if (r.status !== 200 || !r.body) return { list: [], canManage: false };
+  const list = [];
+  for (const a of r.body.announcements || []) {
+    if (a.hasImg && !annImgCache.has(a.id)) {
+      try { const ri = await staffRequest(`announce/img?id=${encodeURIComponent(a.id)}`, "discord"); if (ri.body && ri.body.img) annImgCache.set(a.id, ri.body.img); } catch { /* sans image */ }
+    }
+    list.push({ enabled: true, revealAt: a.revealAt ? new Date(a.revealAt * 1000).toISOString() : "", label: "", title: a.title || "Annonce importante", text: a.text || "", code: "", image: annImgCache.get(a.id) || "", link: a.link || "", lockedText: "Dévoilement dans", sid: a.id });
   }
-  try { return JSON.parse(fs.readFileSync(path.join(__dirname, config.teaser.localFallback), "utf-8")); } catch (err) { return { enabled: false }; }
+  return { list, canManage: !!r.body.canManage };
+}
+ipcMain.handle("teaser:get", async () => {
+  let base = null;
+  if (config.teaser.remoteUrl) {
+    try { const remote = await fetchJsonCached(config.teaser.remoteUrl); if (remote && typeof remote === "object") base = remote; } catch (err) { /* local */ }
+  }
+  if (!base) { try { base = JSON.parse(fs.readFileSync(path.join(__dirname, config.teaser.localFallback), "utf-8")); } catch (err) { base = { enabled: false }; } }
+  let extra = { list: [], canManage: false };
+  try { extra = await serverAnnouncements(); } catch { /* serveur injoignable : on garde les annonces du fichier */ }
+  const own = Array.isArray(base.announcements) ? base.announcements : (base.enabled ? [base] : []);
+  return { ...base, announcements: [...own, ...extra.list], canManage: extra.canManage };
 });
 
 // ============================================================
@@ -1697,6 +1716,66 @@ ipcMain.handle("polls:call", async (e, action, params) => {
   } catch { return { ok: false, status: 0, body: { error: "unreachable" } }; }
 });
 
+// ---- Notifications Windows : désactivées par défaut, le joueur choisit les types dans Paramètres > Notifications ----
+function notifAllowed(type) {
+  const n = (loadSettings().notifs) || {};
+  return n.master === true && n[type] === true;
+}
+ipcMain.handle("notify:show", (e, payload) => {
+  const { Notification } = require("electron");
+  const type = payload && String(payload.type || "");
+  if (!type || !notifAllowed(type) || !Notification.isSupported()) return false;
+  const n = new Notification({ title: String(payload.title || "Kannibal Launcher").slice(0, 80), body: String(payload.body || "").slice(0, 200), silent: false });
+  n.on("click", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.show(); mainWindow.focus(); mainWindow.webContents.send("notify:clicked", type); }
+  });
+  n.show();
+  return true;
+});
+
+// ---- Amis : présence (ping toutes les minutes) + appels au serveur ----
+async function presenceState() {
+  try { if (readKbSessions().some((x) => x.open && x.pid && pidAlive(x.pid))) return "kb"; } catch { /* ignore */ }
+  try { if (await isFiveMRunning()) return "anomia"; } catch { /* ignore */ }
+  return "launcher";
+}
+async function sendPresence() {
+  if (!discordToken) return;
+  try { const st = await presenceState(); await staffRequest(`friends/ping?s=${st}&inv=${loadSettings().friendsInvisible ? 1 : 0}`, "discord"); } catch { /* hors ligne */ }
+}
+app.whenReady().then(() => { setTimeout(sendPresence, 8000); setInterval(sendPresence, 60000); });
+ipcMain.handle("friends:call", async (e, action, params) => {
+  if (!["list", "add", "accept", "decline", "cancel", "remove"].includes(action)) return { ok: false, error: "bad_action" };
+  params = params || {};
+  const qs = new URLSearchParams();
+  if (params.name) qs.set("name", String(params.name).slice(0, 64));
+  if (params.uid) qs.set("uid", String(params.uid).replace(/\D/g, "").slice(0, 25));
+  try { const r = await staffRequest(`friends/${action}?${qs.toString()}`, "discord"); return { ok: r.status === 200, status: r.status, body: r.body }; }
+  catch { return { ok: false, status: 0, body: { error: "unreachable" } }; }
+});
+
+// ---- Annonces importantes / journal de dev KB créés par les admins (corps JSON, vérifié côté serveur) ----
+ipcMain.handle("admin:content", async (e, kind, action, params) => {
+  const routes = { announce: ["create", "delete", "list"], kbdevlog: ["create", "delete", "list"] };
+  if (!routes[kind] || !routes[kind].includes(action)) return { ok: false, body: { error: "bad_action" } };
+  params = params || {};
+  try {
+    let r;
+    if (action === "create") {
+      if (kind === "announce") {
+        const img = typeof params.img === "string" ? params.img : "";
+        if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(img) || img.length > 290000) return { ok: false, status: 400, body: { error: "bad_image" } };
+        r = await staffRequest("announce/create", "discord", { img, title: String(params.title || "").slice(0, 60), text: String(params.text || "").slice(0, 800), link: String(params.link || "").slice(0, 200), at: Number(params.at) || 0 });
+      } else {
+        r = await staffRequest("kbdevlog/create", "discord", { tag: String(params.tag || "ANNONCE").slice(0, 20), title: String(params.title || "").slice(0, 90), content: String(params.content || "").slice(0, 3000) });
+      }
+    } else {
+      r = await staffRequest(`${kind}/${action}?id=${encodeURIComponent(String(params.id || "").slice(0, 40))}`, "discord");
+    }
+    return { ok: r.status === 200, status: r.status, body: r.body };
+  } catch { return { ok: false, status: 0, body: { error: "unreachable" } }; }
+});
+
 // Événements (serveur : b2_staffpanel). list/join/leave : compte Discord ; create/delete : admin Kannibal Team (vérifié côté serveur)
 ipcMain.handle("events:call", async (e, action, params) => {
   if (!["list", "join", "leave", "create", "delete", "img"].includes(action)) return { ok: false, error: "bad_action" };
@@ -1869,7 +1948,7 @@ function emitSessionEnded(game, seconds, todaySeconds) {
     try {
       if (!mainWindow.isFocused()) {
         const { Notification } = require("electron");
-        if (Notification.isSupported()) new Notification({ title: `Session ${label} terminée`, body: `Tu as joué ${Math.floor(seconds / 3600) ? Math.floor(seconds / 3600) + " h " : ""}${Math.floor((seconds % 3600) / 60)} min.` }).show();
+        if (notifAllowed("sessionEnd") && Notification.isSupported()) new Notification({ title: `Session ${label} terminée`, body: `Tu as joué ${Math.floor(seconds / 3600) ? Math.floor(seconds / 3600) + " h " : ""}${Math.floor((seconds % 3600) / 60)} min.` }).show();
       }
     } catch {}
   }
@@ -2193,13 +2272,23 @@ ipcMain.handle("kb:getContent", async (_event, name) => {
     try { return JSON.parse(fs.readFileSync(path.join(__dirname, "src", fileName), "utf-8")); }
     catch { return null; }
   };
+  let data = null;
   try {
     const remote = await fetchJsonCached(config.kannibaventure.remoteBase + fileName);
-    if (remote) return remote;
+    if (remote) data = remote;
   } catch {
     // on retombe sur le fichier local
   }
-  return readLocal();
+  if (!data) data = readLocal();
+  // Journal de dev : on ajoute les entrées créées par les admins KB depuis le launcher
+  if (name === "devlog" && Array.isArray(data)) {
+    try {
+      const r = await staffRequest("kbdevlog/list", "discord");
+      const extra = r.status === 200 && r.body && Array.isArray(r.body.entries) ? r.body.entries.map((e) => ({ ...e, sid: e.id })) : [];
+      data = [...extra, ...data].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    } catch { /* serveur injoignable */ }
+  }
+  return data;
 });
 
 // --- KannibAventure : installateur de mods ---

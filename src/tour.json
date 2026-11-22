@@ -191,6 +191,21 @@
     "text": "L'onglet Communauté ouvre les Discord de la communauté : Kannibal Team et ceux de chaque serveur. C'est aussi là qu'on demande de l'aide."
   },
   {
+    "title": "Tes amis",
+    "selector": ".server-btn[data-server=\"friends\"]",
+    "text": "Bientôt pour tous : ajoute des joueurs par leur pseudo Discord et vois qui est en ligne et sur quel serveur. Pour l'instant, c'est réservé aux admins en service."
+  },
+  {
+    "title": "Notifications Windows",
+    "selector": "#btn-settings",
+    "text": "Dans les options, le bouton Notifications te laisse choisir les alertes (événement, ami connecté, annonce…). Elles sont désactivées par défaut."
+  },
+  {
+    "title": "Accueil à ta façon",
+    "selector": "#btn-settings",
+    "text": "Dans les options, « Organiser l'accueil » permet de déplacer les cadres et de les redimensionner en tirant leur coin ; « Remettre par défaut » rétablit l'accueil d'origine."
+  },
+  {
     "title": "Personnalise ton launcher",
     "selector": "#btn-settings",
     "text": "Fond clair, noir ou noir violet, thèmes spéciaux (dont « Pluie de logos » pour les abonnés Twitch) et couleur d'accent : l'accent ne change que les cadres et les boutons, jamais le thème choisi. Tu y trouves aussi le fond animé, la pause automatique quand tu es inactif et le mode streamer pour tes lives (il floute pseudos, avatars, notes et chemins de ton PC)."
