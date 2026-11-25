@@ -339,10 +339,10 @@
     try {
       const dot = $("kb-status-dot"), tx = $("kb-status-text");
       const op = window.kbOpening ? window.kbOpening() : { open: r.online };
-      if (kbMaintenance) { dot.className = "status-dot maintenance"; tx.textContent = "Serveur en maintenance"; }
-      else if (r.online) { dot.className = "status-dot online"; tx.textContent = "Serveur en ligne"; }
-      else if (op.open) { dot.className = "status-dot offline"; tx.textContent = "Serveur hors ligne"; }
-      else { dot.className = "status-dot maintenance"; tx.textContent = "Ouverture prochainement"; }
+      // vert = ouvert · jaune = maintenance · rouge = serveur off (y compris avant l'ouverture)
+      if (kbMaintenance) { dot.className = "status-dot maintenance"; tx.textContent = "Serveur en maintenance"; window.setServerDot("kannibaventure", "maintenance"); }
+      else if (r.online) { dot.className = "status-dot online"; tx.textContent = "Serveur en ligne"; window.setServerDot("kannibaventure", "online"); }
+      else { dot.className = "status-dot offline"; tx.textContent = op.open ? "Serveur hors ligne" : "Ouverture prochainement"; window.setServerDot("kannibaventure", "offline"); }
       $("kb-players-count").textContent = r.online ? `${r.players}/${r.maxPlayers}` : "–";
       $("kb-soon-chip").classList.toggle("hidden", !!(r.online || op.open));
     } catch (e) { /* ignore */ }
@@ -417,7 +417,7 @@
     if (/INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || "")) return;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     kpos = k === KONAMI[kpos] ? kpos + 1 : (k === KONAMI[0] ? 1 : 0);
-    if (kpos === KONAMI.length) { kpos = 0; if (unlockTheme("gold") && typeof showInfo === "function") showInfo("Code Konami !", "<p>✨ Tu as débloqué le thème <b>Or</b>. Retrouve-le dans les options, section Ambiance.</p>"); }
+    if (kpos === KONAMI.length) { kpos = 0; if (unlockTheme("gold") && typeof showInfo === "function") showInfo("Code Konami !", "<p>✨ Tu as débloqué le thème <b>Or</b>. Retrouve-le dans les options, section Thème.</p>"); }
   });
 
   // ---------- Easter eggs 1.7.4 ----------
@@ -437,7 +437,7 @@
   function dateEasterEggs() {
     const now = new Date();
     if (now.getMonth() === 11 && now.getDate() === 24 && unlockTheme("noel") && typeof showInfo === "function")
-      showInfo("Joyeux réveillon ! 🎄", "<p>Le thème <b>Noël</b> vient d'être débloqué (neige incluse). Retrouve-le dans les options, section Ambiance.</p>");
+      showInfo("Joyeux réveillon ! 🎄", "<p>Le thème <b>Noël</b> vient d'être débloqué (neige incluse). Retrouve-le dans les options, section Thème.</p>");
     const h = now.getHours(), key = now.toISOString().slice(0, 10);
     if (h >= 3 && h < 5 && S.nightSeen !== key) { save({ nightSeen: key }); if (typeof showInfo === "function") showInfo("Il est tard…", "<p>🌙 Il est entre 3 h et 5 h du matin. Même les Creepers dorment à cette heure. Va te reposer !</p>"); }
   }
@@ -777,6 +777,7 @@
       card.querySelectorAll(".ann-slide").forEach((s) => s.classList.toggle("on", +s.dataset.i === idx));
       card.querySelectorAll(".ann-dot").forEach((d) => d.classList.toggle("on", +d.dataset.i === idx));
       $("ann-title").textContent = items[idx].label || "";
+      updateDel();
       if (manual) pausedUntil = Date.now() + 25000; // le joueur a choisi : on laisse l'annonce affichée un moment
       tick();
     }
@@ -802,7 +803,7 @@
       if (items.length > 1) rotTimer = setInterval(() => { if (Date.now() > pausedUntil && !card.matches(":hover") && !$("lightbox")) show(idx + 1); }, rotMs);
     }
     let canManage = false;
-    const updateDel = () => { const b = $("ann-del"); if (b) b.disabled = !(items[idx] && items[idx].sid); };
+    const updateDel = () => { const b = $("ann-del"); if (b) b.disabled = !(items[idx] && (items[idx].sid || items[idx].key)); };
     async function loadTeaser() {
       let t; try { t = await api.getTeaser(); } catch (e) { t = null; }
       const list = t && Array.isArray(t.announcements) ? t.announcements : (t && t.enabled ? [t] : []);
@@ -852,9 +853,11 @@
       });
     });
     $("ann-del").addEventListener("click", async () => {
-      const it = items[idx]; if (!it || !it.sid) return;
-      if (!confirm("Supprimer cette annonce ?")) return;
-      const r = await api.adminContent("announce", "delete", { id: it.sid }); if (r && r.ok) loadTeaser();
+      const it = items[idx]; if (!it || !(it.sid || it.key)) return;
+      if (!confirm("Supprimer cette annonce pour tout le monde ?")) return;
+      const r = it.sid ? await api.adminContent("announce", "delete", { id: it.sid }) : await api.adminContent("announce", "hide", { key: it.key });
+      if (r && r.ok) { idx = 0; loadTeaser(); }
+      else showInfo("Annonce", (r && r.body && r.body.error === "kt_admin_only") ? "Réservé aux admins Kannibal Team." : "Suppression impossible : vérifie que le serveur (b2_staffpanel) est à jour et en ligne.");
     });
     window.loadTeaser = loadTeaser;
     setTimeout(loadTeaser, 1500);
@@ -1107,7 +1110,7 @@
 
 
   // ---------- Versions précédentes (réservé aux admins) ----------
-  window.syncVersionsBtn = () => { const s = $("settings-versions-section"); if (s) s.classList.toggle("hidden", staffRole !== "admin"); };
+  window.syncVersionsBtn = () => { const adm = staffRole === "admin", tb = $("set-tab-version"); if (tb) tb.classList.toggle("hidden", !adm); if (!adm && window.setSettingsTab && document.querySelector(".set-tab.active") === tb) window.setSettingsTab("look"); };
   window.syncVersionsBtn();
   $("settings-versions").addEventListener("click", async () => {
     $("settings-overlay").classList.add("hidden");

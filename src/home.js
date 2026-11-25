@@ -1,5 +1,6 @@
 // ============================================================
-// 2.0.5 : accueil personnalisable (ordre, largeur et hauteur des cadres)
+// Accueil personnalisable : placement libre (colonne, ligne), largeur et hauteur de chaque cadre
+// Grille de 12 colonnes × lignes de 10 px ; les cadres qui se chevauchent sont repoussés vers le bas.
 // ============================================================
 (function () {
   "use strict";
@@ -7,81 +8,112 @@
   const api = window.anomia;
   const layoutEl = document.querySelector("#view-hub .hub-layout");
   if (!layoutEl) return;
-  const IDS = ["polls-panel", "hub-slider", "teaser-panel", "twitch-panel", "music-panel", "partner-panel", "streamer-rail"]; // ordre par défaut (colonne de 3 + zone de 9)
-  const DEF_W = { "polls-panel": 3, "teaser-panel": 3, "music-panel": 3, "partner-panel": 3, "hub-slider": 9, "twitch-panel": 9, "streamer-rail": 9 };
+  const IDS = ["polls-panel", "hub-slider", "teaser-panel", "twitch-panel", "music-panel", "partner-panel", "streamer-rail"];
+  const ROW = 10, GAP = 12, COLS = 12;
   const settings = () => (typeof window.getLauncherSettings === "function" ? window.getLauncherSettings() : {}) || {};
   let L = null, editing = false;
+
   const clean = (l) => {
-    if (!l || typeof l !== "object") return null;
-    const order = Array.isArray(l.order) ? l.order.filter((x) => IDS.includes(x)) : [];
-    IDS.forEach((x) => { if (!order.includes(x)) order.push(x); });
-    const w = {}, h = {};
-    IDS.forEach((x) => { const a = Number(l.w && l.w[x]), b = Number(l.h && l.h[x]); w[x] = a >= 2 && a <= 12 ? Math.round(a) : DEF_W[x]; if (b >= 60 && b <= 1200) h[x] = Math.round(b); });
-    return { order, w, h };
+    if (!l || l.v !== 2 || typeof l.items !== "object") return null;
+    const items = {};
+    for (const id of IDS) {
+      const o = l.items[id]; if (!o) return null;
+      const w = Math.max(2, Math.min(COLS, Math.round(+o.w) || 3)), c = Math.max(1, Math.min(COLS - w + 1, Math.round(+o.c) || 1));
+      items[id] = { c, r: Math.max(1, Math.round(+o.r) || 1), w, h: Math.max(6, Math.min(200, Math.round(+o.h) || 10)) };
+    }
+    return { v: 2, items };
   };
   const persist = () => { settings().homeLayout = L; try { api.setSettings({ homeLayout: L }); } catch (e) { /* ignore */ } };
+  const colStep = () => (layoutEl.clientWidth + GAP) / COLS;
+
   function apply() {
     const on = !!L || editing;
     layoutEl.classList.toggle("hub-grid", on);
     layoutEl.classList.toggle("hub-editing", editing);
+    $("home-bar").classList.toggle("hidden", !editing);
     $("home-reset").classList.toggle("hidden", !editing);
     $("home-done").classList.toggle("hidden", !editing);
-    $("home-bar").classList.toggle("hidden", !editing);
     $("home-help").classList.toggle("hidden", !editing);
+    let bottom = 0;
     IDS.forEach((id) => {
       const el = $(id); if (!el) return;
-      el.draggable = editing;
-      if (!on) { el.style.order = ""; el.style.gridColumn = ""; el.style.removeProperty("height"); return; }
-      const cur = L || clean({});
-      el.style.order = String(cur.order.indexOf(id));
-      el.style.gridColumn = `span ${cur.w[id]}`;
-      if (cur.h[id]) el.style.setProperty("height", cur.h[id] + "px", "important"); else el.style.removeProperty("height");
+      if (!on || !L) { el.style.gridColumn = ""; el.style.gridRow = ""; return; }
+      const o = L.items[id];
+      el.style.gridColumn = `${o.c} / span ${o.w}`;
+      el.style.gridRow = `${o.r} / span ${o.h}`;
+      bottom = Math.max(bottom, o.r + o.h);
+    });
+    layoutEl.style.minHeight = editing && L ? (bottom + 14) * ROW + "px" : "";
+  }
+
+  // Positions de départ : même disposition que l'accueil d'origine (colonne de 3 à gauche, 9 colonnes à droite), hauteurs mesurées
+  function seed() {
+    layoutEl.classList.remove("hub-grid", "hub-editing");
+    IDS.forEach((id) => { const el = $(id); if (el) { el.style.gridColumn = ""; el.style.gridRow = ""; } });
+    const hRows = (id) => { const el = $(id), r = el && el.getBoundingClientRect(); return r && r.height ? Math.max(6, Math.ceil((r.height + GAP) / ROW)) : 10; };
+    const items = {}, shown = (id) => { const el = $(id); return !!el && !el.classList.contains("hidden"); };
+    const col = (ids, c, w) => { let y = 1; ids.filter(shown).forEach((id) => { const h = hRows(id); items[id] = { c, r: y, w, h }; y += h; }); return y; };
+    // gauche : annonce + partenaire | milieu : serveurs, Twitch, streamers | droite : sondages + musique
+    const y1 = col(["teaser-panel", "partner-panel"], 1, 3);
+    let y2 = 1; ["hub-slider", "twitch-panel", "streamer-rail"].forEach((id) => { const h = hRows(id); items[id] = { c: 4, r: y2, w: 6, h }; y2 += h; });
+    const y3 = col(["polls-panel", "music-panel"], 10, 3);
+    // cadres masqués pour l'instant : rangés en bas à leur colonne, à toi de les placer
+    let yb = Math.max(y1, y2, y3);
+    [["teaser-panel", 1], ["partner-panel", 1], ["polls-panel", 10], ["music-panel", 10]].filter(([id]) => !items[id]).forEach(([id, c]) => { const h = id === "music-panel" ? 30 : 12; items[id] = { c, r: yb, w: 3, h }; yb += h; });
+    L = { v: 2, items };
+  }
+
+  const overlap = (a, b) => a.c < b.c + b.w && b.c < a.c + a.w && a.r < b.r + b.h && b.r < a.r + a.h;
+  function resolve(movedId) {
+    const placed = [L.items[movedId]];
+    IDS.filter((id) => id !== movedId).sort((x, y) => L.items[x].r - L.items[y].r || L.items[x].c - L.items[y].c).forEach((id) => {
+      const o = L.items[id];
+      for (let k = 0; k < 60; k++) { const hit = placed.find((p) => overlap(o, p)); if (!hit) break; o.r = hit.r + hit.h; }
+      placed.push(o);
     });
   }
-  function ensureL() { if (!L) L = clean({}); }
-  // --- grips de redimensionnement ---
+
+  // --- déplacement (clic maintenu sur un cadre) et redimensionnement (coin) ---
+  function startGesture(e, id, mode) {
+    if (!editing || e.button > 0) return;
+    e.preventDefault();
+    const el = $(id), o = L.items[id], start = { x: e.clientX, y: e.clientY, c: o.c, r: o.r, w: o.w, h: o.h }, step = colStep();
+    el.setPointerCapture(e.pointerId); el.classList.add("hub-dragging");
+    const mv = (ev) => {
+      const dc = Math.round((ev.clientX - start.x) / step), dr = Math.round((ev.clientY - start.y) / ROW);
+      if (mode === "move") { o.c = Math.max(1, Math.min(COLS - o.w + 1, start.c + dc)); o.r = Math.max(1, start.r + dr); }
+      else { o.w = Math.max(2, Math.min(COLS - o.c + 1, start.w + dc)); o.h = Math.max(6, Math.min(200, start.h + dr)); }
+      apply();
+    };
+    const up = () => {
+      el.removeEventListener("pointermove", mv); el.removeEventListener("pointerup", up); el.removeEventListener("pointercancel", up);
+      el.classList.remove("hub-dragging"); resolve(id); apply(); persist();
+    };
+    el.addEventListener("pointermove", mv); el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+  }
   IDS.forEach((id) => {
     const el = $(id); if (!el) return;
-    const g = document.createElement("span"); g.className = "hub-grip"; g.title = "Tirer pour redimensionner";
-    el.appendChild(g);
-    g.addEventListener("pointerdown", (e) => {
-      if (!editing) return; e.preventDefault(); e.stopPropagation(); ensureL();
-      const colW = (layoutEl.clientWidth + 16) / 12, startX = e.clientX, startY = e.clientY, w0 = L.w[id], h0 = el.getBoundingClientRect().height;
-      g.setPointerCapture(e.pointerId);
-      const mv = (ev) => {
-        L.w[id] = Math.max(2, Math.min(12, Math.round(w0 + (ev.clientX - startX) / colW)));
-        L.h[id] = Math.max(60, Math.min(1200, Math.round(h0 + (ev.clientY - startY))));
-        apply();
-      };
-      const up = () => { g.removeEventListener("pointermove", mv); g.removeEventListener("pointerup", up); persist(); };
-      g.addEventListener("pointermove", mv); g.addEventListener("pointerup", up);
-    });
+    const g = document.createElement("span"); g.className = "hub-grip"; g.title = "Tirer pour redimensionner"; el.appendChild(g);
+    g.addEventListener("pointerdown", (e) => { e.stopPropagation(); startGesture(e, id, "resize"); });
+    el.addEventListener("pointerdown", (e) => { if (e.target === g) return; startGesture(e, id, "move"); });
   });
-  // --- glisser-déposer pour réordonner ---
-  let dragId = null;
-  layoutEl.addEventListener("dragstart", (e) => {
-    if (!editing) return; const b = e.target.closest && e.target.closest("[draggable=true]"); if (!b || !IDS.includes(b.id)) return;
-    dragId = b.id; b.classList.add("hub-dragging"); try { e.dataTransfer.setData("text/plain", b.id); e.dataTransfer.effectAllowed = "move"; } catch (x) { /* ignore */ }
-  });
-  layoutEl.addEventListener("dragover", (e) => { if (editing && dragId) e.preventDefault(); });
-  layoutEl.addEventListener("drop", (e) => {
-    if (!editing || !dragId) return; e.preventDefault();
-    const t = e.target.closest && IDS.map($).find((el) => el && el.contains(e.target));
-    if (t && t.id !== dragId) { ensureL(); const o = L.order.filter((x) => x !== dragId); o.splice(o.indexOf(t.id), 0, dragId); L.order = o; apply(); persist(); }
-  });
-  layoutEl.addEventListener("dragend", () => { IDS.forEach((id) => $(id) && $(id).classList.remove("hub-dragging")); dragId = null; });
+
   // --- boutons ---
-  function edit() { ensureL(); editing = true; apply(); }
-  function reset() { L = null; editing = false; persist(); apply(); }
+  function edit() { if (!L) seed(); editing = true; apply(); }
+  function reset() { L = null; editing = false; layoutEl.style.minHeight = ""; persist(); apply(); }
   const so = $("opt-home-edit"), sr = $("opt-home-reset");
-  if (so) so.addEventListener("click", () => { if (typeof selectServer === "function") selectServer("hub"); if (typeof goToView === "function") goToView("hub"); edit(); });
+  if (so) so.addEventListener("click", () => {
+    if (typeof selectServer === "function") selectServer("hub");
+    if (typeof goToView === "function") goToView("hub");
+    setTimeout(edit, 60);
+  });
   if (sr) sr.addEventListener("click", () => { reset(); sr.textContent = "✓ Accueil remis par défaut"; setTimeout(() => { sr.textContent = "Remettre par défaut"; }, 2500); });
   $("home-done").addEventListener("click", () => { editing = false; persist(); apply(); });
-  $("home-reset").addEventListener("click", () => { L = null; editing = false; persist(); apply(); });
-  // Les cadres masqués (sondages, annonce, musique) restent masqués ; en édition on les affiche en fantôme pour pouvoir les placer
+  $("home-reset").addEventListener("click", reset);
+  window.addEventListener("resize", () => { if (L && !editing) apply(); });
   window.__homeLayout = { apply, edit, reset, get: () => L, isEditing: () => editing };
   (async function init() {
-    for (let i = 0; i < 20 && !settings().__loaded; i++) { try { const s = await api.getSettings(); Object.assign(settings(), s || {}); settings().__loaded = true; } catch (e) { break; } }
-    L = settings().homeLayout ? clean(settings().homeLayout) : null; apply();
+    try { const s = await api.getSettings(); Object.assign(settings(), s || {}); } catch (e) { /* ignore */ }
+    L = clean(settings().homeLayout); apply();
   })();
 })();

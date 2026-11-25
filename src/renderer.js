@@ -266,6 +266,14 @@ document.querySelectorAll("[data-goto]").forEach((btn) => {
   btn.addEventListener("click", () => goToView(btn.dataset.goto));
 });
 
+// Pastille de couleur sur les serveurs de la barre : vert = ouvert, jaune = maintenance, rouge = fermé / hors ligne
+const serverDots = {};
+function setServerDot(id, state) {
+  serverDots[id] = state;
+  const b = document.querySelector(`.server-btn[data-server="${id}"]`);
+  if (b) b.dataset.state = state;
+}
+window.setServerDot = setServerDot;
 function renderServerBar() {
   const bar = document.getElementById("server-bar");
   bar.innerHTML = `
@@ -298,6 +306,8 @@ function renderServerBar() {
   bar.querySelectorAll(".server-btn").forEach((b) => {
     b.addEventListener("click", () => selectServer(b.dataset.server));
   });
+  Object.keys(serverDots).forEach((id) => setServerDot(id, serverDots[id]));
+  SERVERS.forEach((srv) => { if (!serverDots[srv.id] && srv.status && srv.status !== "online") setServerDot(srv.id, "offline"); });
 }
 
 // --- Slider de l'accueil ---
@@ -541,85 +551,32 @@ document.getElementById("kb-install-btn").addEventListener("click", async () => 
   refreshKbFiles();
 });
 
-// --- KannibAventure : carte d'exploration (global / personnelle) ---
-// Zoom : molette quand la souris est sur la carte. Déplacement : clic gauche maintenu + mouvement.
-let kbMapMode = "global";
-const kbMap = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, inited: false };
-const KB_MAP_MIN = 0.2;
-const KB_MAP_MAX = 8;
-
-function kbMapApply() {
-  const world = document.getElementById("kb-map-world");
-  world.style.transform = `translate(${kbMap.x}px, ${kbMap.y}px) scale(${kbMap.scale})`;
-  document.getElementById("kb-map-zoomlabel").textContent = `${Math.round(kbMap.scale * 100)}%`;
+// --- KannibAventure : carte du monde (BlueMap, hébergée sur OxygenServ) ---
+// L'URL vient de config.js (servers.kannibaventure.mapUrl). La carte se génère au fil de l'exploration.
+let kbMapLoaded = false;
+function kbMapUrl() {
+  const srv = getServer("kannibaventure");
+  return (srv && srv.mapUrl) || "";
 }
-
-function kbMapReset() {
-  const stage = document.getElementById("kb-map-stage");
-  kbMap.scale = 1;
-  kbMap.x = stage.clientWidth / 2;
-  kbMap.y = stage.clientHeight / 2;
-  kbMapApply();
+function initKbMap(force) {
+  const frame = document.getElementById("kb-map-frame");
+  const loading = document.getElementById("kb-map-loading");
+  const fail = document.getElementById("kb-map-fail");
+  const url = kbMapUrl();
+  if (!url) { loading.classList.add("hidden"); fail.classList.remove("hidden"); return; }
+  if (kbMapLoaded && !force) return;
+  kbMapLoaded = true;
+  fail.classList.add("hidden");
+  loading.classList.remove("hidden");
+  let done = false;
+  frame.onload = () => { done = true; loading.classList.add("hidden"); };
+  frame.src = url;
+  setTimeout(() => { if (!done) { loading.classList.add("hidden"); fail.classList.remove("hidden"); } }, 15000);
 }
-
-// Zoom centré sur un point de la carte (cx, cy en pixels, relatifs à la zone d'affichage)
-function kbMapZoomAt(factor, cx, cy) {
-  const next = Math.min(KB_MAP_MAX, Math.max(KB_MAP_MIN, kbMap.scale * factor));
-  const ratio = next / kbMap.scale;
-  kbMap.x = cx - (cx - kbMap.x) * ratio;
-  kbMap.y = cy - (cy - kbMap.y) * ratio;
-  kbMap.scale = next;
-  kbMapApply();
-}
-
-function initKbMap() {
-  document.getElementById("kb-map-hint").textContent = kbMapMode === "global"
-    ? "Zones découvertes par toute la communauté"
-    : "Zones que tu as découvertes toi-même";
-  if (!kbMap.inited) {
-    kbMap.inited = true;
-    const stage = document.getElementById("kb-map-stage");
-
-    stage.addEventListener("wheel", (e) => {
-      e.preventDefault(); // la molette zoome la carte au lieu de faire défiler la page
-      const rect = stage.getBoundingClientRect();
-      kbMapZoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top);
-    }, { passive: false });
-
-    stage.addEventListener("mousedown", (e) => {
-      if (e.button !== 0 || e.target.closest(".kb-map-controls")) return;
-      kbMap.dragging = true;
-      kbMap.startX = e.clientX - kbMap.x;
-      kbMap.startY = e.clientY - kbMap.y;
-      stage.classList.add("dragging");
-      e.preventDefault();
-    });
-    window.addEventListener("mousemove", (e) => {
-      if (!kbMap.dragging) return;
-      kbMap.x = e.clientX - kbMap.startX;
-      kbMap.y = e.clientY - kbMap.startY;
-      kbMapApply();
-    });
-    window.addEventListener("mouseup", () => {
-      kbMap.dragging = false;
-      stage.classList.remove("dragging");
-    });
-
-    const center = () => ({ cx: stage.clientWidth / 2, cy: stage.clientHeight / 2 });
-    document.getElementById("kb-map-zoom-in").addEventListener("click", () => { const c = center(); kbMapZoomAt(1.4, c.cx, c.cy); });
-    document.getElementById("kb-map-zoom-out").addEventListener("click", () => { const c = center(); kbMapZoomAt(1 / 1.4, c.cx, c.cy); });
-    document.getElementById("kb-map-reset").addEventListener("click", kbMapReset);
-  }
-  kbMapReset(); // la vue est visible à ce stade : on peut mesurer la zone et centrer
-}
-document.querySelectorAll("#kb-map-toggle .kb-toggle-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    kbMapMode = btn.dataset.mode;
-    document.querySelectorAll("#kb-map-toggle .kb-toggle-btn").forEach((b) => b.classList.toggle("active", b === btn));
-    document.getElementById("kb-map-hint").textContent = kbMapMode === "global"
-      ? "Zones découvertes par toute la communauté"
-      : "Zones que tu as découvertes toi-même";
-  });
+document.getElementById("kb-map-reload").addEventListener("click", () => initKbMap(true));
+document.getElementById("kb-map-ext").addEventListener("click", () => {
+  const url = kbMapUrl();
+  if (url) window.anomia.openExternal(url);
 });
 
 document.getElementById("kb-discord").addEventListener("click", () => {
@@ -713,8 +670,9 @@ function updateConnectButtonState() {
     const sd = document.getElementById("status-dot");
     const tm = document.getElementById("tm-status");
     if (st) st.textContent = `En pause · retour en ${anomia.connectLabel || "—"}`;
-    if (sd) sd.className = "status-dot maintenance";
+    if (sd) sd.className = "status-dot offline";
     if (tm) tm.textContent = "EN PAUSE";
+    setServerDot("anomia", "offline");
     return;
   }
 
@@ -726,6 +684,7 @@ function updateConnectButtonState() {
   btn.title = "";
   // Le bouton reste utilisable si : le serveur est en ligne ET (pas en
   // maintenance OU l'admin s'est identifié avec le code d'accès staff).
+  setServerDot("anomia", !lastServerOnline ? "offline" : (lastServerMaintenance ? "maintenance" : "online"));
   const canConnect = lastServerOnline && (!lastServerMaintenance || isAdminUnlocked);
   btn.disabled = !canConnect;
 
@@ -1044,7 +1003,7 @@ document.getElementById("streamer-close").addEventListener("click", () => {
 
 // --- Fermeture générique des fenêtres normales : clic en dehors, ou touche Échap ---
 // (jamais appliqué à update-overlay, qui doit rester bloquant tant que la mise à jour n'est pas faite)
-const DISMISSABLE_OVERLAYS = ["confirm-overlay", "info-overlay", "admin-overlay", "streamer-overlay", "settings-overlay", "staff-overlay"];
+const DISMISSABLE_OVERLAYS = ["confirm-overlay", "info-overlay", "admin-overlay", "streamer-overlay", "settings-overlay", "health-overlay", "staff-overlay"];
 
 DISMISSABLE_OVERLAYS.forEach((id) => {
   const overlay = document.getElementById(id);
@@ -1715,6 +1674,7 @@ function setUpdateChangelog(notes) {
 const updateLaterBtn = document.getElementById("update-later-btn");
 let updateDownloading = false;
 window.anomia.onUpdateAvailable(async ({ version, releaseNotes }) => {
+  if (window.__nc) window.__nc("update", "Mise à jour disponible", "Version " + version);
   if (updateDownloading) return; // re-vérification pendant un téléchargement : on ne touche à rien
   updateFlowActive = true;
   pendingUpdateVersion = version;
@@ -2122,10 +2082,25 @@ async function initDiscordAuth() {
 initDiscordAuth();
 
 // --- Réglages (mode sombre/clair + couleur d'accent) ---
+window.setSettingsTab = (tab) => {
+  document.querySelectorAll(".set-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".set-pane").forEach((p) => p.classList.toggle("hidden", p.dataset.pane !== tab));
+  try { localStorage.setItem("settingsTab", tab); } catch (e) { /* ignore */ }
+};
+document.querySelectorAll(".set-tab").forEach((b) => b.addEventListener("click", () => window.setSettingsTab(b.dataset.tab)));
+document.getElementById("settings-x").addEventListener("click", () => document.getElementById("settings-overlay").classList.add("hidden"));
 document.getElementById("btn-settings").addEventListener("click", () => {
   document.getElementById("settings-overlay").classList.remove("hidden");
+  let t = "look"; try { t = localStorage.getItem("settingsTab") || "look"; } catch (e) { /* ignore */ }
+  if (t === "version" && staffRole !== "admin") t = "look";
+  window.setSettingsTab(t);
 });
 
+document.getElementById("btn-health").addEventListener("click", () => {
+  document.getElementById("health-overlay").classList.remove("hidden");
+  document.getElementById("health-launcher-btn").click();
+});
+document.getElementById("health-close").addEventListener("click", () => document.getElementById("health-overlay").classList.add("hidden"));
 document.getElementById("settings-close").addEventListener("click", () => {
   document.getElementById("settings-overlay").classList.add("hidden");
 });

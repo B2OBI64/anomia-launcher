@@ -11,6 +11,7 @@
 
   // ---------- Notifications ----------
   const NOTIF_TYPES = [
+    ["eventNew", "Nouvel événement publié", "Alerte quand un admin crée un événement."],
     ["eventStart", "Un événement commence", "Alerte au moment où un événement auquel tu participes démarre."],
     ["friendOnline", "Un ami se connecte", "Alerte quand un de tes amis apparaît en ligne."],
     ["friendRequest", "Demande d'ami reçue", "Alerte quand quelqu'un t'ajoute en ami."],
@@ -19,7 +20,46 @@
   ];
   const nconf = () => settings().notifs || {};
   const notifOn = (t) => nconf().master === true && nconf()[t] === true;
-  function notify(type, title, body) { if (notifOn(type)) { try { api.notify({ type, title, body }); } catch (e) { /* ignore */ } } }
+  // Centre de notifications : garde l'historique (même si les notifications Windows sont désactivées)
+  const ICON = { eventStart: "📅", eventNew: "🗓️", friendOnline: "🟢", friendRequest: "👋", announcement: "📢", sessionEnd: "🎮", update: "⬆️" };
+  let center = [];
+  try { center = JSON.parse(localStorage.getItem("notifCenter") || "[]").slice(0, 50); } catch (e) { center = []; }
+  const saveCenter = () => { try { localStorage.setItem("notifCenter", JSON.stringify(center.slice(0, 50))); } catch (e) { /* ignore */ } };
+  const ago = (ts) => { const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? "à l'instant" : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.floor(m / 60)} h` : `il y a ${Math.floor(m / 1440)} j`; };
+  function renderCenter() {
+    const unread = center.filter((n) => !n.read).length, b = $("nc-badge");
+    b.textContent = unread > 9 ? "9+" : String(unread); b.classList.toggle("hidden", !unread);
+    $("nc-list").innerHTML = center.length ? center.map((n) => `<div class="nc-item${n.read ? "" : " unread"}" data-nid="${n.id}" role="button" tabindex="0"><span class="nc-ico">${ICON[n.type] || "🔔"}</span><span class="nc-txt"><b>${esc(n.title)}</b><small>${esc(n.body || "")}</small></span><em>${ago(n.t)}</em><span class="nc-del" data-del="${n.id}" title="Supprimer cette notification" role="button">&#10005;</span></div>`).join("") : `<p class="hc-empty">Aucune notification pour le moment.</p>`;
+  }
+  function addCenter(type, title, body) {
+    const last = center[0];
+    if (last && last.type === type && last.title === title && last.body === body && Date.now() - last.t < 60000) return;
+    center.unshift({ id: Date.now() + Math.floor(Math.random() * 1000), type, title, body: body || "", t: Date.now(), read: false });
+    center = center.slice(0, 50); saveCenter(); renderCenter();
+  }
+  function goFor(type) {
+    if (type === "eventStart" || type === "eventNew") selectServer("events");
+    else if (type === "friendOnline" || type === "friendRequest") selectServer("friends");
+    else selectServer("hub");
+  }
+  function notify(type, title, body) {
+    addCenter(type, title, body);
+    if (notifOn(type)) { try { api.notify({ type, title, body }); } catch (e) { /* ignore */ } }
+  }
+  window.__nc = addCenter;
+  const panel = $("nc-panel");
+  $("btn-notifs-center").addEventListener("click", (e) => { e.stopPropagation(); renderCenter(); panel.classList.toggle("hidden"); });
+  document.addEventListener("click", (e) => { if (!panel.classList.contains("hidden") && !panel.contains(e.target)) panel.classList.add("hidden"); });
+  $("nc-read").addEventListener("click", () => { center.forEach((n) => { n.read = true; }); saveCenter(); renderCenter(); });
+  $("nc-clear").addEventListener("click", () => { center = []; saveCenter(); renderCenter(); });
+  $("nc-list").addEventListener("click", (e) => {
+    const d = e.target.closest("[data-del]");
+    if (d) { e.stopPropagation(); center = center.filter((x) => String(x.id) !== d.dataset.del); saveCenter(); renderCenter(); return; }
+    const b = e.target.closest("[data-nid]"); if (!b) return;
+    const n = center.find((x) => String(x.id) === b.dataset.nid); if (!n) return;
+    n.read = true; saveCenter(); renderCenter(); panel.classList.add("hidden"); goFor(n.type);
+  });
+  setInterval(renderCenter, 60000); renderCenter();
   window.__notify = notify;
   function setNotif(patch) { saveSetting({ notifs: Object.assign({}, nconf(), patch) }); }
   function openNotifModal() {
@@ -42,11 +82,7 @@
     ov.querySelectorAll("[data-nt]").forEach((c) => c.addEventListener("change", () => setNotif({ [c.dataset.nt]: c.checked })));
   }
   $("opt-notifs").addEventListener("click", openNotifModal);
-  if (api.onNotifyClicked) api.onNotifyClicked((type) => {
-    if (type === "eventStart") selectServer("events");
-    else if (type === "friendOnline" || type === "friendRequest") selectServer("friends");
-    else selectServer("hub");
-  });
+  if (api.onNotifyClicked) api.onNotifyClicked((type) => goFor(type));
 
   // ---------- Amis ----------
   const fr = { me: null, friends: [], incoming: [], outgoing: [], known: null, reqKnown: null };
@@ -83,34 +119,60 @@
     fr.me = r.body.me || null; fr.friends = r.body.friends || []; fr.incoming = r.body.incoming || []; fr.outgoing = r.body.outgoing || [];
     detect(); render();
   }
-  window.loadFriends = loadFriends;
-  const ERR = { not_found: "Aucun joueur trouvé avec ce pseudo (il doit avoir utilisé le launcher avec Discord relié).", self: "C'est toi !", ambiguous: "Plusieurs joueurs correspondent, essaie ton pseudo Discord exact.", already_friends: "Vous êtes déjà amis.", too_many: "Limite d'amis atteinte.", bad_name: "Pseudo invalide.", discord_required: "Connecte ton compte Discord pour utiliser les amis." };
+  window.loadFriends = async function () { await loadFriends(); if (window.friendsAvailable && window.friendsAvailable()) loadDirectory(); };
+  const ERR = { not_found: "Joueur introuvable.", self: "C'est toi !", ambiguous: "Plusieurs joueurs correspondent.", already_friends: "Vous êtes déjà amis.", too_many: "Limite d'amis atteinte.", bad_name: "Pseudo invalide.", discord_required: "Connecte ton compte Discord pour utiliser les amis." };
   async function act(action, params) {
     const r = await api.friendsCall(action, params);
     await loadFriends(); return r;
   }
-  $("fr-add-btn").addEventListener("click", async () => {
-    const inp = $("fr-add"), msg = $("fr-msg"), name = inp.value.trim(); if (!name) return;
-    msg.style.color = ""; msg.textContent = "";
-    const r = await act("add", { name });
-    if (r && r.ok) { inp.value = ""; msg.style.color = "var(--teal)"; msg.textContent = (r.body && r.body.accepted) ? "Vous êtes maintenant amis !" : "Demande envoyée."; }
-    else msg.textContent = ERR[r && r.body && r.body.error] || "Impossible d'ajouter ce joueur.";
+  // Annuaire : tous les membres des Discords Anomia + KannibAventure (pas seulement ceux qui utilisent le launcher)
+  const dir = { members: [], t: 0, error: null };
+  async function loadDirectory(force) {
+    if (!force && Date.now() - dir.t < 5 * 60000 && dir.members.length) { renderMembers(); return; }
+    let r; try { r = await api.friendsCall("directory", {}); } catch (e) { r = null; }
+    if (r && r.ok && r.body) { dir.members = r.body.members || []; dir.error = r.body.error || null; dir.t = Date.now(); }
+    renderMembers();
+  }
+  function renderMembers() {
+    const q = ($("fr-add").value || "").trim().toLowerCase().replace(/^@/, "");
+    const list = dir.members.filter((m) => m.rel !== "f" && (!q || (m.name || "").toLowerCase().includes(q) || (m.u || "").toLowerCase().includes(q)));
+    const shown = list.slice(0, 40);
+    $("fr-members").innerHTML = shown.map((m) => {
+      const status = m.on ? `<span class="fr-tag on">En ligne</span>` : m.l ? `<span class="fr-tag">Sur le launcher</span>` : `<span class="fr-tag off">Pas sur le launcher</span>`;
+      const btn = m.rel === "o" ? `<button class="btn-copy" disabled>Demande envoyée</button>` : m.rel === "i" ? `<button class="btn-connect" data-fr="accept" data-uid="${esc(m.uid)}">Accepter</button>` : `<button class="btn-copy" data-fr="addm" data-uid="${esc(m.uid)}">Ajouter</button>`;
+      return `<div class="fr-row ${m.l ? "" : "dim"}"><span class="fr-dot ${m.on ? "on" : ""}"></span><div class="fr-name"><b>${esc(m.name)}</b><small>@${esc(m.u || "?")} ${status}</small></div>${btn}</div>`;
+    }).join("");
+    $("fr-members-note").textContent = dir.error === "members_intent" ? "Impossible de lister les membres : active l'option « Server Members Intent » du bot Discord."
+      : dir.error && !dir.members.length ? "Liste des membres indisponible pour le moment."
+      : list.length > 40 ? `${list.length - 40} autres membres : affine ta recherche.` : (!list.length ? "Aucun membre trouvé." : "");
+  }
+  $("fr-add").addEventListener("input", renderMembers);
+  $("view-friends").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-fr]"); if (!b || b.disabled) return;
+    const a = b.dataset.fr === "addm" ? "add" : b.dataset.fr, msg = $("fr-msg");
+    const r = await act(a, { uid: b.dataset.uid });
+    if (a === "add") {
+      const m = dir.members.find((x) => x.uid === b.dataset.uid);
+      if (r && r.ok) { if (m) m.rel = (r.body && r.body.accepted) ? "f" : "o"; msg.style.color = "var(--teal)"; msg.textContent = (r.body && r.body.accepted) ? "Vous êtes maintenant amis !" : "Demande envoyée."; }
+      else { msg.style.color = ""; msg.textContent = ERR[r && r.body && r.body.error] || "Impossible d'ajouter ce joueur."; }
+    } else if (a === "accept" || a === "decline") { const m = dir.members.find((x) => x.uid === b.dataset.uid); if (m) m.rel = a === "accept" ? "f" : ""; }
+    renderMembers();
   });
-  $("fr-add").addEventListener("keydown", (e) => { if (e.key === "Enter") $("fr-add-btn").click(); });
-  $("view-friends").addEventListener("click", (e) => { const b = e.target.closest("[data-fr]"); if (b) act(b.dataset.fr, { uid: b.dataset.uid }); });
   $("fr-invis").addEventListener("change", (e) => saveSetting({ friendsInvisible: e.target.checked }));
   setInterval(loadFriends, 45000);
   setTimeout(loadFriends, 6000);
 
   // ---------- Notification : début d'événement (inscrit) + nouvelle annonce ----------
-  const evNotified = new Set(); let annKnown = null;
+  const evNotified = new Set(); let annKnown = null, evKnown = null;
   async function checkEventsAndAnnounces() {
     try {
       const r = await api.eventsCall("list", {});
       if (r && r.ok && r.body) (r.body.events || []).forEach((e) => {
+        if (evKnown && !evKnown.has(e.id)) notify("eventNew", "Nouvel événement", e.title);
         const t = e.startsAt * 1000, d = Date.now() - t;
         if (e.mine && d >= 0 && d < 15 * 60000 && !evNotified.has(e.id)) { evNotified.add(e.id); notify("eventStart", "Événement en cours", e.title + " commence maintenant !"); }
       });
+      if (r && r.ok && r.body) evKnown = new Set((r.body.events || []).map((e) => e.id));
     } catch (e) { /* ignore */ }
     try {
       const t = await api.getTeaser();

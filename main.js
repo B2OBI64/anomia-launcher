@@ -700,7 +700,11 @@ async function serverAnnouncements() {
     }
     list.push({ enabled: true, revealAt: a.revealAt ? new Date(a.revealAt * 1000).toISOString() : "", label: "", title: a.title || "Annonce importante", text: a.text || "", code: "", image: annImgCache.get(a.id) || "", link: a.link || "", lockedText: "Dévoilement dans", sid: a.id });
   }
-  return { list, canManage: !!r.body.canManage };
+  return { list, canManage: !!r.body.canManage, hidden: Array.isArray(r.body.hidden) ? r.body.hidden : [] };
+}
+// Empreinte stable d'une annonce du fichier teaser.json (pour que les admins puissent la masquer depuis le launcher)
+function annKey(a) {
+  return require("crypto").createHash("sha1").update(JSON.stringify([a.title || "", a.text || "", a.code || "", a.link || "", String(a.image || "").slice(0, 300)])).digest("hex").slice(0, 12);
 }
 ipcMain.handle("teaser:get", async () => {
   let base = null;
@@ -708,9 +712,9 @@ ipcMain.handle("teaser:get", async () => {
     try { const remote = await fetchJsonCached(config.teaser.remoteUrl); if (remote && typeof remote === "object") base = remote; } catch (err) { /* local */ }
   }
   if (!base) { try { base = JSON.parse(fs.readFileSync(path.join(__dirname, config.teaser.localFallback), "utf-8")); } catch (err) { base = { enabled: false }; } }
-  let extra = { list: [], canManage: false };
+  let extra = { list: [], canManage: false, hidden: [] };
   try { extra = await serverAnnouncements(); } catch { /* serveur injoignable : on garde les annonces du fichier */ }
-  const own = Array.isArray(base.announcements) ? base.announcements : (base.enabled ? [base] : []);
+  const own = (Array.isArray(base.announcements) ? base.announcements : (base.enabled ? [base] : [])).map((a) => ({ ...a, key: annKey(a) })).filter((a) => !extra.hidden.includes(a.key));
   return { ...base, announcements: [...own, ...extra.list], canManage: extra.canManage };
 });
 
@@ -1745,7 +1749,7 @@ async function sendPresence() {
 }
 app.whenReady().then(() => { setTimeout(sendPresence, 8000); setInterval(sendPresence, 60000); });
 ipcMain.handle("friends:call", async (e, action, params) => {
-  if (!["list", "add", "accept", "decline", "cancel", "remove"].includes(action)) return { ok: false, error: "bad_action" };
+  if (!["list", "directory", "add", "accept", "decline", "cancel", "remove"].includes(action)) return { ok: false, error: "bad_action" };
   params = params || {};
   const qs = new URLSearchParams();
   if (params.name) qs.set("name", String(params.name).slice(0, 64));
@@ -1756,7 +1760,7 @@ ipcMain.handle("friends:call", async (e, action, params) => {
 
 // ---- Annonces importantes / journal de dev KB créés par les admins (corps JSON, vérifié côté serveur) ----
 ipcMain.handle("admin:content", async (e, kind, action, params) => {
-  const routes = { announce: ["create", "delete", "list"], kbdevlog: ["create", "delete", "list"] };
+  const routes = { announce: ["create", "delete", "hide", "list"], kbdevlog: ["create", "delete", "list"] };
   if (!routes[kind] || !routes[kind].includes(action)) return { ok: false, body: { error: "bad_action" } };
   params = params || {};
   try {
@@ -1769,6 +1773,8 @@ ipcMain.handle("admin:content", async (e, kind, action, params) => {
       } else {
         r = await staffRequest("kbdevlog/create", "discord", { tag: String(params.tag || "ANNONCE").slice(0, 20), title: String(params.title || "").slice(0, 90), content: String(params.content || "").slice(0, 3000) });
       }
+    } else if (action === "hide") {
+      r = await staffRequest(`announce/hide?key=${encodeURIComponent(String(params.key || "").replace(/[^a-f0-9]/g, "").slice(0, 40))}`, "discord");
     } else {
       r = await staffRequest(`${kind}/${action}?id=${encodeURIComponent(String(params.id || "").slice(0, 40))}`, "discord");
     }

@@ -50,6 +50,7 @@ module.exports = {
       timerAppearsAt: "2026-11-18T20:30:00+01:00",
       // Discord du serveur Minecraft (le rôle d'accès sera renseigné plus tard) :
       discordInvite: "https://discord.gg/fdSjJPRJy4",
+      mapUrl: "https://os-01-02.oxygenserv.com/bluemap/91f975a3/#world:0:0:0:1500:0:0:0:0:perspective",
       discordGuildId: "1357757210272469212",
       requiredRoleId: "1370879305097154692",
       serverAddress: "185.44.80.33",

@@ -606,6 +606,49 @@ local function isOnline(uid)
     if not p or p.inv then return false end
     return (os.time() - p.t) <= PRESENCE_TTL
 end
+-- Membres des Discord Anomia + KannibAventure (liste d'amis possibles). Necessite l'intent "Server Members" du bot.
+local KB_GUILD_DEFAULT = "1357757210272469212"
+local membersCache = { t = 0, map = {}, err = nil }
+local membersWait = nil
+local function fetchMembers(cb)
+    if (os.time() - membersCache.t) < 600 and next(membersCache.map) then cb(membersCache) return end
+    if membersWait then membersWait[#membersWait + 1] = cb return end
+    membersWait = { cb }
+    local function done()
+        local w = membersWait membersWait = nil
+        for _, f in ipairs(w) do f(membersCache) end
+    end
+    local botToken = GetConvar("anomia_discord_bot_token", "")
+    if botToken == "" then membersCache.err = "no_bot_token" done() return end
+    local guilds = { GetConvar("anomia_mod_guild_id", MOD_GUILD_DEFAULT), GetConvar("anomia_kb_guild_id", KB_GUILD_DEFAULT) }
+    local map, gi, err = {}, 1, nil
+    local function nextPage(after, pages)
+        local gid = guilds[gi]
+        if not gid then
+            membersCache = { t = os.time(), map = map, err = (next(map) == nil) and (err or "empty") or nil }
+            done() return
+        end
+        local url = ("https://discord.com/api/v10/guilds/%s/members?limit=1000%s"):format(gid, after and ("&after=" .. after) or "")
+        PerformHttpRequest(url, function(st, body)
+            if st ~= 200 then err = (st == 403 and "members_intent") or ("http_" .. tostring(st)) gi = gi + 1 nextPage(nil, 0) return end
+            local ok, arr = pcall(json.decode, body or "")
+            if not ok or type(arr) ~= "table" then gi = gi + 1 nextPage(nil, 0) return end
+            local last
+            for _, m in ipairs(arr) do
+                local u = m.user
+                if u and u.id then
+                    last = u.id
+                    if not u.bot then
+                        local name = (m.nick and m.nick ~= "" and m.nick) or u.global_name or u.username or "?"
+                        if not map[u.id] then map[u.id] = { n = tostring(name):sub(1, 40), u = tostring(u.username or ""):sub(1, 40) } end
+                    end
+                end
+            end
+            if #arr >= 1000 and last and pages < 9 then nextPage(last, pages + 1) else gi = gi + 1 nextPage(nil, 0) end
+        end, "GET", "", { ["Authorization"] = "Bot " .. botToken })
+    end
+    nextPage(nil, 0)
+end
 local function handleFriends(req, res, headers)
     local path = tostring(req.path or "")
     local action = path:match("friends/(%a+)") or "list"
@@ -625,6 +668,31 @@ local function handleFriends(req, res, headers)
             if st ~= "anomia" and st ~= "kb" then st = "launcher" end
             presence[me] = { s = st, t = now, inv = qparam(path, "inv") == "1" }
             send(res, 200, { ok = true })
+            return
+        end
+        if action == "directory" then
+            fetchMembers(function(cache)
+                local rel = {}
+                for _, id in ipairs(fr.friends) do rel[id] = "f" end
+                for _, id in ipairs(fr.out) do rel[id] = "o" end
+                for _, id in ipairs(fr.inc) do rel[id] = "i" end
+                local out, seen = {}, {}
+                local function push(id, n, un)
+                    if id == me or seen[id] then return end
+                    seen[id] = true
+                    local on = isOnline(id)
+                    out[#out + 1] = { uid = id, name = n, u = un, l = users[id] and 1 or 0, on = on and 1 or 0, s = on and presence[id].s or nil, rel = rel[id] }
+                end
+                for id, info in pairs(cache.map) do push(id, info.n, info.u) end
+                for id, info in pairs(users) do push(id, info.n, info.u) end
+                table.sort(out, function(a, b)
+                    if a.on ~= b.on then return a.on > b.on end
+                    if a.l ~= b.l then return a.l > b.l end
+                    return tostring(a.name):lower() < tostring(b.name):lower()
+                end)
+                if #out > 3500 then for i = #out, 3501, -1 do out[i] = nil end end
+                send(res, 200, { members = out, error = cache.err })
+            end)
             return
         end
         if action == "list" then
@@ -650,17 +718,29 @@ local function handleFriends(req, res, headers)
             saveFr(a, fa) saveFr(b, fb)
         end
         if action == "add" then
-            local q = (qparam(path, "name") or ""):lower():gsub("^@", ""):gsub("^%s+", ""):gsub("%s+$", "")
-            if q == "" or #q > 64 then send(res, 400, { error = "bad_name" }) return end
+            local quid = tostring(qparam(path, "uid") or ""):gsub("%D", "")
             local found, count = nil, 0
-            for id, info in pairs(users) do
-                if id ~= me and ((info.n or ""):lower() == q or (info.u or ""):lower() == q) then found, count = id, count + 1 end
+            if quid ~= "" then
+                if quid == me then send(res, 404, { error = "self" }) return end
+                local cm = membersCache.map[quid]
+                if not users[quid] and not cm then send(res, 404, { error = "not_found" }) return end
+                if not users[quid] then
+                    users[quid] = { n = cm.n, u = cm.u, t = 0 }
+                    SetResourceKvp(USERS_KEY, json.encode(users))
+                end
+                found, count = quid, 1
+            else
+                local q = (qparam(path, "name") or ""):lower():gsub("^@", ""):gsub("^%s+", ""):gsub("%s+$", "")
+                if q == "" or #q > 64 then send(res, 400, { error = "bad_name" }) return end
+                for id, info in pairs(users) do
+                    if id ~= me and ((info.n or ""):lower() == q or (info.u or ""):lower() == q) then found, count = id, count + 1 end
+                end
+                if count == 0 then
+                    local self = ((myName or ""):lower() == q or (myUser or ""):lower() == q)
+                    send(res, 404, { error = self and "self" or "not_found" }) return
+                end
+                if count > 1 then send(res, 409, { error = "ambiguous" }) return end
             end
-            if count == 0 then
-                local self = ((myName or ""):lower() == q or (myUser or ""):lower() == q)
-                send(res, 404, { error = self and "self" or "not_found" }) return
-            end
-            if count > 1 then send(res, 409, { error = "ambiguous" }) return end
             if listHas(fr.friends, found) then send(res, 409, { error = "already_friends" }) return end
             if #fr.friends >= 100 then send(res, 409, { error = "too_many" }) return end
             if listHas(fr.inc, found) then link(me, found) send(res, 200, { ok = true, accepted = true, name = userName(users, found) }) return end
@@ -696,6 +776,7 @@ end
 -- Annonces importantes (creees par les admins Kannibal Team) : fusionnees avec teaser.json dans le launcher
 -- ============================================================
 local ANN_KEY = "b2sp_ann"
+local ANN_HIDDEN_KEY = "b2sp_ann_hidden"
 local function handleAnnounce(req, res, headers)
     local path = tostring(req.path or "")
     local action = path:match("announce/(%a+)") or "list"
@@ -712,7 +793,7 @@ local function handleAnnounce(req, res, headers)
             for _, a in ipairs(list) do
                 out[#out + 1] = { id = a.id, title = a.title, text = a.text, link = a.link, revealAt = a.revealAt or 0, hasImg = a.hasImg and true or false }
             end
-            send(res, 200, { announcements = out, canManage = isKt and true or false })
+            send(res, 200, { announcements = out, canManage = isKt and true or false, hidden = loadJsonKey(ANN_HIDDEN_KEY, {}) })
         end
         if not token or token == "" then respond(false) return end
         getDiscordRole(token, function(role, _, scopes) respond(role == "admin" and scopes and scopes.kt) end)
@@ -739,6 +820,19 @@ local function handleAnnounce(req, res, headers)
                 SetResourceKvp(ANN_KEY, json.encode(list))
                 send(res, 200, { ok = true, id = id })
             end)
+        end)
+        return
+    end
+    if action == "hide" then -- masque une annonce venant du fichier teaser.json (cle = empreinte calculee par le launcher)
+        withKt(function()
+            local key = tostring(qparam(path, "key") or ""):gsub("[^%w]", ""):sub(1, 40)
+            if key == "" then send(res, 400, { error = "bad_key" }) return end
+            local hidden = loadJsonKey(ANN_HIDDEN_KEY, {})
+            for _, k in ipairs(hidden) do if k == key then send(res, 200, { ok = true }) return end end
+            hidden[#hidden + 1] = key
+            while #hidden > 60 do table.remove(hidden, 1) end
+            SetResourceKvp(ANN_HIDDEN_KEY, json.encode(hidden))
+            send(res, 200, { ok = true })
         end)
         return
     end

@@ -1,9 +1,14 @@
-# 2.0.5 — Amis, notifications et accueil personnalisable
+# 2.0.6 — Réglages en onglets, amis élargis et accueil libre
 
-- Nouveauté : système d'amis (icône à côté de la musique), d'abord réservé aux admins en service ; les autres joueurs voient « Arrive prochainement ». Ajout par pseudo Discord, présence en ligne et serveur, pastille du nombre d'amis connectés.
-- Partenariat OxygenServ (hébergeur d'Anomia RP et KannibAventure) mis en avant sur l'accueil et dans la barre du haut : -10 % sur la 1re commande avec le code B2OBI64, lien et Discord partenaire.
-- Nouveauté : notifications Windows (Options > Notifications) : début d'un événement, ami qui se connecte, demande d'ami, nouvelle annonce, fin de session. Désactivées par défaut, tu choisis les types.
-- Les admins Kannibal Team peuvent créer et supprimer les annonces importantes directement depuis l'accueil.
-- Les admins KannibAventure peuvent publier et supprimer des entrées du journal de développement.
-- Accueil personnalisable : Options > « Organiser l'accueil » pour déplacer les cadres et changer leur largeur et leur hauteur, et « Remettre par défaut » pour tout réinitialiser.
-- Nouveauté : espace Musique (à côté des événements) pour écouter et télécharger les musiques, lecteur en bas de l'écran et carte « En lecture » sur l'accueil, option pour couper la musique au lancement du jeu.
+- Réglages entièrement réorganisés en onglets : Code secret, Apparence (fond, couleur d'accent, thème), Options (groupées : Général, Accueil, Musique, Notifications, Streaming), Version (admins) et Aide (tutoriel, rapport d'erreur).
+- Les options utilisent de vrais boutons ON/OFF au lieu de cases à cocher.
+- Centre de notifications (icône cloche en haut) : historique des événements, annonces, amis et mises à jour, avec pastille de non-lus, « Tout marquer comme lu », « Vider » et suppression d'une notification en particulier.
+- « État du launcher » sort des réglages : nouveau bouton à côté de Réglages, la vérification se lance à l'ouverture.
+- Amis : la liste affiche tous les membres des Discords Anomia et KannibAventure (avec recherche), pas seulement ceux qui utilisent le launcher.
+- Nouvelle disposition par défaut de l'accueil : annonce importante et partenaire à gauche, serveurs et streamers au milieu, sondages et musique à droite.
+- Pastilles des serveurs : vert = ouvert, jaune = maintenance, rouge = fermé / hors ligne (Anomia RP est rouge tant qu'il est fermé).
+- Accueil personnalisable : placement vraiment libre, tu déplaces chaque cadre où tu veux (colonne et ligne), tu changes sa largeur et sa hauteur ; les cadres qui se chevauchent sont repoussés.
+- KannibAventure : la catégorie « Carte » affiche maintenant la vraie carte du monde (BlueMap), qui se dévoile au fil de l'exploration des joueurs.
+- Annonces importantes : le bouton « Supprimer » fonctionne maintenant, y compris pour les annonces venant du fichier.
+- Tutoriel refait : il couvre maintenant les pastilles des serveurs, la carte, le centre de notifications, l'état du launcher, OxygenServ, les amis, les réglages en onglets et l'accueil libre.
+- Correction de bugs.

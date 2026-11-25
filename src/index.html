@@ -43,6 +43,10 @@
           <span class="nav-label">Lier Discord</span>
         </button>
       </div>
+        <button class="ext-link" id="btn-notifs-center" title="Centre de notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+          <span class="ev-badge nc-badge hidden" id="nc-badge"></span>
+        </button>
         <button class="ext-link" id="btn-notes" title="Bloc-notes">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
           <span class="nav-label">Bloc-notes</span>
@@ -51,6 +55,11 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 17l.7 1.8L21.5 19.5l-1.8.7L19 22l-.7-1.8-1.8-.7 1.8-.7z"/></svg>
           <span class="whatsnew-dot hidden" id="whatsnew-dot"></span>
           <span class="nav-label">Quoi de neuf</span>
+        </button>
+        
+        <button class="ext-link" id="btn-health" title="État du launcher">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>
+          <span class="nav-label">État</span>
         </button>
         
         <button class="ext-link" id="btn-settings">
@@ -187,12 +196,13 @@
       <section class="view hidden" id="view-friends">
         <div class="section-header"><div><span class="section-eyebrow">// AMIS</span><h2>Amis <span class="fr-req-dot hidden" id="fr-req-dot"></span></h2></div></div>
         <p class="hc-empty hidden" id="fr-hint">Connecte ton compte Discord pour utiliser les amis.</p>
-        <div class="fr-add glass"><input type="text" id="fr-add" maxlength="64" placeholder="Pseudo Discord du joueur" autocomplete="off" /><button class="btn-connect" id="fr-add-btn">Ajouter</button></div>
+        <div class="fr-add glass"><input type="text" id="fr-add" maxlength="64" placeholder="Rechercher un membre des Discords Anomia / KannibAventure…" autocomplete="off" /></div>
         <p id="fr-msg" class="fr-msg"></p>
         <label class="opt-row"><input type="checkbox" id="fr-invis" /><span>Apparaître hors ligne pour mes amis</span></label>
         <h3 class="fr-title hidden" id="fr-req-title">Demandes</h3><div class="fr-list" id="fr-reqs"></div>
         <h3 class="fr-title">En ligne</h3><div class="fr-list" id="fr-online"></div>
         <h3 class="fr-title hidden" id="fr-off-title">Hors ligne</h3><div class="fr-list" id="fr-offline"></div>
+        <h3 class="fr-title">Membres des Discords</h3><div class="fr-list" id="fr-members"></div><p class="hc-empty" id="fr-members-note"></p>
       </section>
 
       <!-- VUE ACCUEIL GLOBAL (B2 Launcher) : slider des serveurs + streamers -->
@@ -200,23 +210,10 @@
         <div class="hub-editbar hidden" id="home-bar"><span class="hub-help hidden" id="home-help">Glisse un cadre pour le déplacer, tire son coin inférieur droit pour le redimensionner.</span><button class="btn-copy hidden" id="home-reset">Réinitialiser</button><button class="btn-connect hidden" id="home-done">Terminer</button></div>
         <div class="hub-layout">
         <div class="hub-side">
-        <aside class="polls-panel hidden" id="polls-panel">
-          <div class="polls-head" id="polls-head"><span class="polls-title">// SONDAGES</span></div>
-          <button class="btn-copy hidden" id="poll-new">+ Nouveau sondage</button>
-          <div class="polls-list" id="polls-list"></div>
-        </aside>
         <aside class="polls-panel teaser-panel hidden" id="teaser-panel">
           <div class="polls-head"><span class="polls-title">// ANNONCE IMPORTANTE</span></div>
           <div class="teaser-card hidden" id="teaser-card"></div>
           <div class="ann-admin hidden" id="ann-admin"><button class="btn-copy" id="ann-new">+ Nouvelle annonce</button><button class="btn-copy" id="ann-del">Supprimer celle-ci</button></div>
-        </aside>
-        <aside class="polls-panel mu-home hidden" id="music-panel">
-          <div class="polls-head"><span class="polls-title">// EN LECTURE</span><button class="mu-x" id="mh-close" aria-label="Fermer le lecteur" title="Fermer le lecteur">&#10005;</button></div>
-          <div class="mu-hcover" id="mh-cover"></div>
-          <div class="mu-ht" id="mh-title">—</div><div class="mu-ha" id="mh-artist"></div>
-          <div class="mu-prog" id="mh-prog"><i></i></div>
-          <div class="mu-times"><span id="mh-cur">0:00</span><span id="mh-dur">0:00</span></div>
-          <div class="mu-btns"><button data-mu="repeat" title="Répétition">&#128257;</button><button data-mu="prev" title="Précédent">&#9198;</button><button data-mu="toggle" class="mu-play" title="Lecture / pause">&#9654;</button><button data-mu="next" title="Suivant">&#9197;</button></div>
         </aside>
         <aside class="polls-panel partner-panel" id="partner-panel">
           <div class="polls-head"><span class="polls-title">// PARTENAIRE</span></div>
@@ -226,6 +223,21 @@
           <button class="btn-copy partner-btn" id="partner-btn">Voir l'offre OxygenServ ↗</button>
           <button class="btn-copy partner-btn" id="partner-discord">Discord OxygenServ ↗</button>
           <small class="partner-aff">Lien affilié / partenariat</small>
+        </aside>
+        </div>
+        <div class="hub-right">
+        <aside class="polls-panel hidden" id="polls-panel">
+          <div class="polls-head" id="polls-head"><span class="polls-title">// SONDAGES</span></div>
+          <button class="btn-copy hidden" id="poll-new">+ Nouveau sondage</button>
+          <div class="polls-list" id="polls-list"></div>
+        </aside>
+        <aside class="polls-panel mu-home hidden" id="music-panel">
+          <div class="polls-head"><span class="polls-title">// EN LECTURE</span><button class="mu-x" id="mh-close" aria-label="Fermer le lecteur" title="Fermer le lecteur">&#10005;</button></div>
+          <div class="mu-hcover" id="mh-cover"></div>
+          <div class="mu-ht" id="mh-title">—</div><div class="mu-ha" id="mh-artist"></div>
+          <div class="mu-prog" id="mh-prog"><i></i></div>
+          <div class="mu-times"><span id="mh-cur">0:00</span><span id="mh-dur">0:00</span></div>
+          <div class="mu-btns"><button data-mu="repeat" title="Répétition">&#128257;</button><button data-mu="prev" title="Précédent">&#9198;</button><button data-mu="toggle" class="mu-play" title="Lecture / pause">&#9654;</button><button data-mu="next" title="Suivant">&#9197;</button></div>
         </aside>
         </div>
         <div class="hub-main">
@@ -399,25 +411,18 @@
         <span class="section-eyebrow">// EXPLORATION</span>
         <h1 class="view-title">Carte du monde</h1>
         <div class="kb-map-toolbar">
-          <div class="kb-toggle" id="kb-map-toggle">
-            <button class="kb-toggle-btn active" data-mode="global">Carte globale</button>
-            <button class="kb-toggle-btn" data-mode="personal">Ma carte</button>
-          </div>
-          <span class="kb-map-hint" id="kb-map-hint"></span>
+          <span class="kb-map-hint">Carte en direct : elle se dévoile au fur et à mesure de l'exploration des joueurs</span>
+          <span style="flex:1"></span>
+          <button class="btn-copy" id="kb-map-reload">Recharger</button>
+          <button class="btn-copy" id="kb-map-ext">Ouvrir dans le navigateur</button>
         </div>
-        <div class="kb-map-stage" id="kb-map-stage">
-          <!-- Calque déplaçable/zoomable : accueillera les vignettes du monde + le brouillard d'exploration -->
-          <div class="kb-map-world" id="kb-map-world"><span class="kb-map-origin">0, 0</span></div>
-          <div class="kb-map-empty">
-            <strong>La carte se dévoile au fil de l'exploration</strong>
-            <span>Elle sera disponible à l'ouverture du serveur : tout est noir, sauf les zones déjà découvertes.</span>
+        <div class="kb-map-stage kb-map-live" id="kb-map-stage">
+          <iframe id="kb-map-frame" title="Carte KannibAventure" referrerpolicy="no-referrer" allow="fullscreen"></iframe>
+          <div class="kb-map-loading" id="kb-map-loading">Chargement de la carte…</div>
+          <div class="kb-map-fail hidden" id="kb-map-fail">
+            <strong>La carte n'a pas pu s'afficher ici</strong>
+            <span>Le serveur est peut-être éteint ou la carte pas encore générée. Tu peux l'ouvrir dans ton navigateur.</span>
           </div>
-          <div class="kb-map-controls">
-            <button class="kb-map-ctl" id="kb-map-zoom-in" aria-label="Zoomer">+</button>
-            <button class="kb-map-ctl" id="kb-map-zoom-out" aria-label="Dézoomer">&#8722;</button>
-            <button class="kb-map-ctl" id="kb-map-reset" aria-label="Recentrer">&#9678;</button>
-          </div>
-          <span class="kb-map-zoomlabel" id="kb-map-zoomlabel">100%</span>
         </div>
       </section>
 
@@ -776,7 +781,26 @@
   <div class="modal-overlay hidden" id="settings-overlay">
     <div class="modal-box glass settings-modal">
       <h3>Réglages</h3>
-
+      <button class="modal-close" id="settings-x" aria-label="Fermer">&#10005;</button>
+      <div class="set-layout">
+        <nav class="set-nav" id="set-nav" role="tablist">
+          <button class="set-tab" data-tab="secret" role="tab"><span>🔑</span>Code secret</button>
+          <button class="set-tab" data-tab="look" role="tab"><span>🎨</span>Apparence</button>
+          <button class="set-tab" data-tab="options" role="tab"><span>⚙️</span>Options</button>
+          <button class="set-tab hidden" data-tab="version" id="set-tab-version" role="tab"><span>🕘</span>Version</button>
+          <button class="set-tab" data-tab="help" role="tab"><span>🛟</span>Aide</button>
+        </nav>
+        <div class="set-body">
+        <section class="set-pane hidden" data-pane="secret">
+          <header class="set-pane-head"><h4>Code secret</h4><p>Un code à débloquer ? Entre-le ici.</p></header>
+      <div class="settings-section">
+        <span class="settings-label">Code secret</span>
+        <div class="code-row"><input type="text" id="secret-code" maxlength="40" placeholder="Tu connais un code ?" autocomplete="off" /><button class="btn-copy" id="secret-code-btn">OK</button></div>
+        <p class="settings-hint" id="secret-code-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);"></p>
+      </div>
+        </section>
+        <section class="set-pane hidden" data-pane="look">
+          <header class="set-pane-head"><h4>Apparence</h4><p>Fond, couleur d'accent et thème du launcher.</p></header>
       <div class="settings-section">
         <span class="settings-label">Fond</span>
         <div class="glass-switch" id="bg-options" role="radiogroup" aria-label="Fond" style="--i:2">
@@ -793,7 +817,6 @@
         </div>
         <span class="gs-caption" id="gs-caption">Fond noir violet</span>
       </div>
-
       <div class="settings-section">
         <span class="settings-label">Couleur d'accent</span>
         <div class="accent-options">
@@ -808,9 +831,8 @@
           <span class="color-picker-hex" id="color-picker-hex">#8B5CF6</span>
         </div>
       </div>
-
       <div class="settings-section">
-        <span class="settings-label">Ambiance</span>
+        <span class="settings-label">Thème</span>
         <div class="theme-chips" id="theme-chips">
           <button class="theme-chip" data-theme="default" style="--c:#8b5cf6"><i></i>B2 Violet</button>
           <button class="theme-chip" data-theme="neon" style="--c:#22d3ee"><i></i>Néon</button>
@@ -826,52 +848,73 @@
           <button class="theme-chip hidden" data-theme="matrix" style="--c:#00ff41"><i></i>Matrix ▮</button>
         </div>
       </div>
-
-      <div class="settings-section">
-        <span class="settings-label">Options</span>
+        </section>
+        <section class="set-pane hidden" data-pane="options">
+          <header class="set-pane-head"><h4>Options</h4><p>Réglages du launcher, regroupés par thème.</p></header>
+<div class="settings-section set-opts">
+        <div class="set-group"><h4>Général</h4>
         <label class="opt-row"><input type="checkbox" id="opt-animated-bg" /><span>Fond animé (particules)</span></label>
         <label class="opt-row"><input type="checkbox" id="opt-auto-pause" /><span>Pause automatique (masque l'interface quand tu es inactif)</span>
           <select id="opt-auto-pause-min" style="background:var(--panel-solid);color:var(--text);border:1px solid var(--border);padding:4px 8px;margin-left:auto;"><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option></select></label>
         <label class="opt-row"><input type="checkbox" id="opt-session-summary" /><span>Résumé à la fin d'une session de jeu</span></label>
+        </div>
+        <div class="set-group"><h4>Accueil</h4>
         <label class="opt-row"><input type="checkbox" id="opt-hide-offline" /><span>Masquer les streamers hors live</span></label>
+        <div class="opt-block"><div class="opt-btns"><button class="btn-copy" id="opt-home-edit">✎ Organiser l'accueil</button><button class="btn-copy" id="opt-home-reset">Remettre par défaut</button></div><small>Déplace et redimensionne les cadres de l'accueil</small></div>
+        </div>
+        <div class="set-group"><h4>Musique</h4>
         <label class="opt-row"><input type="checkbox" id="opt-music-pause" /><span>Couper la musique quand le jeu se lance</span></label>
-        <div class="opt-row"><button class="btn-copy" id="opt-home-edit">✎ Organiser l'accueil</button><button class="btn-copy" id="opt-home-reset">Remettre par défaut</button><span style="color:var(--text-dim);font-size:12px;">Déplace et redimensionne les cadres de l'accueil</span></div>
-        <div class="opt-row"><button class="btn-copy" id="opt-notifs">🔔 Notifications…</button><span style="color:var(--text-dim);font-size:12px;">Choisis les alertes Windows (désactivées par défaut)</span></div>
+        </div>
+        <div class="set-group"><h4>Notifications</h4>
+        <div class="opt-block"><div class="opt-btns"><button class="btn-copy" id="opt-notifs">🔔 Notifications…</button></div><small>Choisis les alertes Windows (désactivées par défaut)</small></div>
+        </div>
+        <div class="set-group"><h4>Streaming</h4>
         <label class="opt-row"><input type="checkbox" id="opt-streamer-mode" /><span>Mode streamer (floute pseudos, avatars, notes et chemins du PC)</span></label>
+        </div>
       </div>
-
-      <div class="settings-section">
-        <span class="settings-label">Code secret</span>
-        <div class="code-row"><input type="text" id="secret-code" maxlength="40" placeholder="Tu connais un code ?" autocomplete="off" /><button class="btn-copy" id="secret-code-btn">OK</button></div>
-        <p class="settings-hint" id="secret-code-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);"></p>
-      </div>
-
-      <div class="settings-section hidden" id="settings-versions-section">
-        <span class="settings-label">Versions</span>
+        </section>
+        <section class="set-pane hidden" data-pane="version">
+          <header class="set-pane-head"><h4>Version</h4><p>Réservé aux admins.</p></header>
+      <div class="settings-section" id="settings-versions-section">
+        <span class="settings-label">Version</span>
         <button class="btn-copy" id="settings-versions" style="width:100%;">Revenir à une version précédente…</button>
       </div>
-
-      <div class="settings-section">
-        <span class="settings-label">État du launcher</span>
-        <div id="health-launcher" class="hl-list"><p class="hc-empty">Clique sur « Vérifier » pour tester les connexions.</p></div>
-        <button class="btn-copy" id="health-launcher-btn" style="width:100%;margin-top:8px;">Vérifier</button>
-      </div>
-
+        </section>
+        <section class="set-pane hidden" data-pane="help">
+          <header class="set-pane-head"><h4>Aide</h4><p>Revoir le tutoriel ou signaler un problème.</p></header>
       <div class="settings-section">
         <span class="settings-label">Tutoriel</span>
         <button class="btn-copy" id="settings-replay-tour" style="width:100%;">Revoir le tutoriel</button>
       </div>
-
       <div class="settings-section">
         <span class="settings-label">Un problème avec le launcher ?</span>
         <button class="btn-copy" id="settings-diag" style="width:100%;">Créer un rapport d'erreur</button>
         <p class="settings-hint" id="settings-diag-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);">Crée un .zip (sans mot de passe) à envoyer au staff.</p>
       </div>
-
+        </section>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn-connect" id="settings-close">Fermer</button>
       </div>
     </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="health-overlay">
+    <div class="modal-box glass settings-modal" style="max-width:460px;">
+      <button class="modal-close" id="health-close" aria-label="Fermer">&#10005;</button>
+      <h3>État du launcher</h3>
+      <div>
+        
+        <div id="health-launcher" class="hl-list"><p class="hc-empty">Clique sur « Vérifier » pour tester les connexions.</p></div>
+        <button class="btn-copy" id="health-launcher-btn" style="width:100%;margin-top:8px;">Vérifier</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="nc-panel glass hidden" id="nc-panel">
+    <div class="nc-head"><b>Notifications</b><span class="nc-actions"><button class="btn-copy" id="nc-read">Tout marquer comme lu</button><button class="btn-copy" id="nc-clear">Vider</button></span></div>
+    <div class="nc-list" id="nc-list"></div>
   </div>
 
   <!-- Modale aperçu streamer -->

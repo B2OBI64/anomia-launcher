@@ -9,7 +9,7 @@
     "go": {
       "server": "hub"
     },
-    "text": "Chaque serveur a son logo ici : Anomia RP (FiveM), KannibAventure (Minecraft)… et d'autres arriveront. Clique sur un logo pour entrer dans son espace. Astuce : maintiens un logo et déplace-le pour changer l'ordre."
+    "text": "Chaque serveur a son logo ici : Anomia RP (FiveM), KannibAventure (Minecraft)… et d'autres arriveront. La pastille de couleur indique l'état : vert = ouvert, jaune = maintenance, rouge = fermé ou hors ligne. Clique sur un logo pour entrer dans son espace. Astuce : maintiens un logo et déplace-le pour changer l'ordre."
   },
   {
     "title": "L'accueil général",
@@ -128,6 +128,15 @@
     "text": "Statut, joueurs, ping, version et ton temps de jeu (clique dessus pour le détail jour, semaine, mois, année). KannibAventure a sa propre maintenance, indépendante d'Anomia."
   },
   {
+    "title": "La carte du monde",
+    "selector": ".tab-item[data-view=\"kb-map\"]",
+    "go": {
+      "server": "kannibaventure",
+      "view": "kb-home"
+    },
+    "text": "La vraie carte de KannibAventure (BlueMap) : elle se dévoile au fil de l'exploration des joueurs. Tu peux la parcourir directement dans le launcher, la recharger ou l'ouvrir dans ton navigateur."
+  },
+  {
     "title": "Fichiers et mods",
     "selector": ".tab-item[data-view=\"kb-files\"]",
     "go": {
@@ -172,14 +181,37 @@
     "text": "Un bloc-notes personnel pour tes coordonnées, idées et rappels, stocké sur ton ordinateur."
   },
   {
+    "title": "Le centre de notifications",
+    "selector": "#btn-notifs-center",
+    "text": "La cloche garde l'historique de tout ce qui s'est passé : événements, annonces, amis et mises à jour. Une pastille indique les non-lus. Clique sur une notification pour aller à la page concernée, supprime-la avec la croix, ou utilise « Tout marquer comme lu » et « Vider »."
+  },
+  {
     "title": "Quoi de neuf ?",
     "selector": "#btn-whatsnew",
     "text": "Les nouveautés de chaque version du launcher. Une pastille t'avertit quand il y a quelque chose à lire."
   },
   {
+    "title": "État du launcher",
+    "selector": "#btn-health",
+    "text": "Un souci ? Ce bouton vérifie en un clic que tout fonctionne (connexion, serveurs, fichiers) et t'indique quoi faire s'il y a un problème."
+  },
+  {
     "title": "Toujours à jour",
     "selector": "#btn-whatsnew",
     "text": "Quand une nouvelle version du launcher sort, il te le propose tout seul, même si tu le laisses ouvert longtemps. Accepte pour profiter des nouveautés."
+  },
+  {
+    "title": "Notre partenaire OxygenServ",
+    "selector": "#partner-pill",
+    "go": {
+      "server": "hub"
+    },
+    "text": "OxygenServ héberge Anomia RP et KannibAventure. Clique pour accéder à leur site : -10 % sur ta 1re commande avec le code B2OBI64 (lien partenaire). Leur Discord et le code à copier sont dans le cadre Partenaire de l'accueil."
+  },
+  {
+    "title": "Tes amis",
+    "selector": ".server-btn[data-server=\"friends\"]",
+    "text": "Ajoute des joueurs par leur pseudo Discord (une recherche te propose les membres des Discords Anomia et KannibAventure), accepte les demandes et vois qui est en ligne et sur quel serveur. Tu peux aussi te mettre en invisible. Pour l'instant, la page est réservée aux admins en service : pour les autres, elle est grisée avec « Arrive prochainement »."
   },
   {
     "title": "La communauté Kannibal Team",
@@ -189,26 +221,6 @@
       "view": "hub-community"
     },
     "text": "L'onglet Communauté ouvre les Discord de la communauté : Kannibal Team et ceux de chaque serveur. C'est aussi là qu'on demande de l'aide."
-  },
-  {
-    "title": "Tes amis",
-    "selector": ".server-btn[data-server=\"friends\"]",
-    "text": "Bientôt pour tous : ajoute des joueurs par leur pseudo Discord et vois qui est en ligne et sur quel serveur. Pour l'instant, c'est réservé aux admins en service."
-  },
-  {
-    "title": "Notifications Windows",
-    "selector": "#btn-settings",
-    "text": "Dans les options, le bouton Notifications te laisse choisir les alertes (événement, ami connecté, annonce…). Elles sont désactivées par défaut."
-  },
-  {
-    "title": "Accueil à ta façon",
-    "selector": "#btn-settings",
-    "text": "Dans les options, « Organiser l'accueil » permet de déplacer les cadres et de les redimensionner en tirant leur coin ; « Remettre par défaut » rétablit l'accueil d'origine."
-  },
-  {
-    "title": "Personnalise ton launcher",
-    "selector": "#btn-settings",
-    "text": "Fond clair, noir ou noir violet, thèmes spéciaux (dont « Pluie de logos » pour les abonnés Twitch) et couleur d'accent : l'accent ne change que les cadres et les boutons, jamais le thème choisi. Tu y trouves aussi le fond animé, la pause automatique quand tu es inactif et le mode streamer pour tes lives (il floute pseudos, avatars, notes et chemins de ton PC)."
   },
   {
     "title": "Outils du staff",
@@ -221,7 +233,27 @@
     "text": "Visible seulement pour les admins et modos en service : liste des joueurs et maintenance (Anomia et KannibAventure séparément)."
   },
   {
+    "title": "Réglages : tout est rangé en onglets",
+    "selector": "#btn-settings",
+    "text": "Le bouton Réglages s'ouvre sur des onglets : Code secret, Apparence (fond, couleur d'accent, thème), Options, Version (admins) et Aide (tutoriel, rapport de problème). Les options sont de vrais boutons ON/OFF."
+  },
+  {
+    "title": "Apparence et thèmes",
+    "selector": "#btn-settings",
+    "text": "Fond clair, noir ou noir violet, thèmes spéciaux (dont « Pluie de logos » pour les abonnés Twitch) et couleur d'accent : l'accent ne change que les cadres et les boutons, jamais le thème choisi. Tu y trouves aussi le fond animé, la pause automatique quand tu es inactif et le mode streamer pour tes lives (il floute pseudos, avatars, notes et chemins de ton PC)."
+  },
+  {
+    "title": "Notifications Windows",
+    "selector": "#btn-settings",
+    "text": "Dans Options > Notifications, un interrupteur général puis un choix par type d'alerte : événement, ami connecté, demande d'ami, annonce, fin de session. Tout est désactivé par défaut."
+  },
+  {
+    "title": "Accueil à ta façon",
+    "selector": "#btn-settings",
+    "text": "Dans Options > Accueil, « Organiser l'accueil » te laisse placer chaque cadre où tu veux (annonce, partenaire, serveurs, streamers, sondages, musique), le redimensionner en tirant son coin, et « Remettre par défaut » rétablit la disposition d'origine : annonces et partenaire à gauche, serveurs et streamers au milieu, sondages et musique à droite."
+  },
+  {
     "title": "C'est parti !",
-    "text": "Tu peux relancer ce tutoriel à tout moment depuis Réglages → « Revoir le tutoriel ». Bon jeu !"
+    "text": "Tu peux relancer ce tutoriel à tout moment depuis Réglages → onglet Aide → « Revoir le tutoriel ». Bon jeu !"
   }
 ]
