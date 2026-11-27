@@ -317,7 +317,7 @@ module.exports = {
     // Même format que les succès Anomia. "exclusiveTitle" = titre réservé.
     launcher: {
       eggsRequired: 6, // nombre d'easter eggs à trouver pour « Chercheur de secrets »
-      eggs: ["konami", "logo", "version", "kannibal", "anomia", "creeper", "noctambule", "ggpadur"],
+      eggs: ["konami", "logo", "version", "kannibal", "anomia", "creeper", "noctambule", "ggpadur", "vicecity"],
       hunters: [{ key: "hunter3", n: 3 }, { key: "hunter10", n: 10 }, { key: "hunter25", n: 25 }],
       list: [
         { key: "secretSeeker", rarity: "secret", label: "Chercheur de secrets", description: "Trouver des easter eggs cachés dans le launcher", secret: true },
@@ -330,6 +330,7 @@ module.exports = {
         { key: "peche", rarity: "secret", label: "T'aime la pêche", description: "Le B2oboi, espèce protégée sur la chaîne de deltaxhydraa", secret: true },
         { key: "riendur", rarity: "secret", label: "Rien est trop dur", description: "GG Padur !", secret: true },
         { key: "polyvalent", rarity: "secret", label: "Polyvalent", description: "Jouer au moins une fois sur chacun des serveurs proposés", secret: true },
+        { key: "collector", rarity: "gold", label: "Collectionneur", description: "Débloquer tous les thèmes secrets" },
         { key: "viewer", rarity: "gold", label: "Viewers", description: "Regarder un live depuis le launcher" }
       ],
       exclusiveTitles: ["secretSeeker"]

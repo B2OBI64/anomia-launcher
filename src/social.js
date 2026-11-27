@@ -213,9 +213,30 @@
     if (!confirm("Supprimer cette entrée du journal ?")) return;
     const r = await api.adminContent("kbdevlog", "delete", { id: b.dataset.devdel }); if (r && r.ok) window.reloadKbDevlog();
   });
-  // ---------- Partenaire OxygenServ ----------
+  // ---------- Partenaires : OxygenServ et Starea (alternent avec une petite animation) ----------
   const PARTNER_URL = "https://www.oxygenserv.com/?ref=b2obi64", PARTNER_DISCORD = "https://discord.com/invite/dCnx3yYHFV";
-  ["partner-link", "partner-btn", "partner-pill"].forEach((id) => { const el = $(id); if (el) el.addEventListener("click", () => api.openExternal(PARTNER_URL)); });
+  const STAREA_URL = "https://starea.app/life/";
+  const PARTNER_URLS = [PARTNER_URL, STAREA_URL];
+  let partnerIdx = 0, partnerTimer = null;
+  function setPartner(i) {
+    const slides = [...document.querySelectorAll("#partner-stage .partner-slide")];
+    if (!slides.length || i === partnerIdx) return;
+    const old = slides[partnerIdx], nw = slides[i];
+    old.classList.remove("on"); old.classList.add("left");
+    nw.classList.remove("left"); nw.classList.add("on");
+    partnerIdx = i;
+    document.querySelectorAll("#partner-dots button").forEach((d) => d.classList.toggle("on", Number(d.dataset.i) === i));
+    document.querySelectorAll("#partner-pill .pill-logos img").forEach((im, k) => im.classList.toggle("on", k === i));
+  }
+  const nextPartner = () => setPartner((partnerIdx + 1) % PARTNER_URLS.length);
+  const startPartner = () => { stopPartner(); partnerTimer = setInterval(() => { if (!document.hidden) nextPartner(); }, 6500); };
+  const stopPartner = () => { if (partnerTimer) clearInterval(partnerTimer); partnerTimer = null; };
+  startPartner();
+  const pp = $("partner-panel"); if (pp) { pp.addEventListener("mouseenter", stopPartner); pp.addEventListener("mouseleave", startPartner); }
+  document.querySelectorAll("#partner-dots button").forEach((d) => d.addEventListener("click", () => { setPartner(Number(d.dataset.i)); startPartner(); }));
+  ["partner-link", "partner-btn"].forEach((id) => { const el = $(id); if (el) el.addEventListener("click", () => api.openExternal(PARTNER_URL)); });
+  ["starea-link", "starea-btn"].forEach((id) => { const el = $(id); if (el) el.addEventListener("click", () => api.openExternal(STAREA_URL)); });
+  const pill = $("partner-pill"); if (pill) pill.addEventListener("click", () => api.openExternal(PARTNER_URLS[partnerIdx]));
   $("partner-discord").addEventListener("click", () => api.openExternal(PARTNER_DISCORD));
   $("partner-code").addEventListener("click", () => {
     const b = $("partner-code"), done = () => { b.classList.add("ok"); b.querySelector("i").textContent = "✓ copié !"; setTimeout(() => { b.classList.remove("ok"); b.querySelector("i").textContent = "⧉ copier"; }, 2000); };

@@ -2830,3 +2830,141 @@ html[data-theme="ggpadur"][data-mode="light"]{--bg:#f6e8ff;--panel-solid:#fff}
 .kb-map-fail { z-index: 2; }
 .kb-map-fail strong { color: #c9a0ff; font-size: 15px; }
 .kb-map-loading.hidden, .kb-map-fail.hidden { display: none; }
+
+/* ---- Thème Vice City (easter egg « vice city ») : coucher de soleil rose, orange et turquoise ---- */
+html[data-theme="vice"]:not([data-mode="light"]) {
+  --bg: #1a0b2e; --bg-elevated: #241040; --panel: rgba(34, 12, 58, .74); --panel-solid: #260f44;
+  --border: rgba(255, 111, 168, .30); --border-strong: rgba(255, 111, 168, .6);
+  --text: #fff4fa; --text-dim: #e6bddb; --text-faint: #b088aa;
+  --violet: #35e0d0; --amber: #ffb36b;
+}
+html[data-theme="vice"]:not([data-mode="light"]), html[data-theme="vice"]:not([data-mode="light"]) body { background: #1a0b2e; }
+/* fond : l'image fournie, légèrement floutée (elle est petite), puis un voile dégradé pour la lisibilité */
+html[data-theme="vice"]:not([data-mode="light"]) body::before {
+  content: ""; position: fixed; inset: -20px; z-index: 0; pointer-events: none; opacity: 1; animation: none;
+  background: url("../assets/vice-bg.jpg") center 35% / cover no-repeat; filter: blur(3px) saturate(1.2);
+}
+html[data-theme="vice"]:not([data-mode="light"]) body::after {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(900px 420px at 85% -5%, rgba(53, 224, 208, .22), transparent 60%),
+    radial-gradient(1000px 520px at 10% 105%, rgba(255, 79, 163, .30), transparent 60%),
+    linear-gradient(180deg, rgba(26, 11, 46, .72) 0%, rgba(26, 11, 46, .80) 55%, rgba(38, 12, 52, .88) 100%);
+}
+/* boutons de la barre : accueil, événements, amis, musique (chacun sa couleur néon) */
+html[data-theme="vice"] .server-btn[data-server="hub"] { --server-color: #ff4fa3; }
+html[data-theme="vice"] .server-btn[data-server="events"] { --server-color: #ffb36b; }
+html[data-theme="vice"] .server-btn[data-server="friends"] { --server-color: #35e0d0; }
+html[data-theme="vice"] .server-btn[data-server="music"] { --server-color: #b57bff; }
+html[data-theme="vice"] .server-btn[data-server="hub"],
+html[data-theme="vice"] .server-btn[data-server="events"],
+html[data-theme="vice"] .server-btn[data-server="friends"],
+html[data-theme="vice"] .server-btn[data-server="music"] {
+  color: var(--server-color);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--server-color) 26%, transparent), rgba(20, 6, 36, .55));
+  border: 1.5px solid color-mix(in srgb, var(--server-color) 70%, transparent);
+  border-radius: 16px 6px 16px 6px;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--server-color) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+html[data-theme="vice"] .server-btn[data-server="hub"] svg,
+html[data-theme="vice"] .server-btn[data-server="events"] svg,
+html[data-theme="vice"] .server-btn[data-server="friends"] svg,
+html[data-theme="vice"] .server-btn[data-server="music"] svg { filter: drop-shadow(0 0 5px var(--server-color)); }
+html[data-theme="vice"] .server-btn[data-server="hub"]:hover,
+html[data-theme="vice"] .server-btn[data-server="events"]:hover,
+html[data-theme="vice"] .server-btn[data-server="friends"]:hover,
+html[data-theme="vice"] .server-btn[data-server="music"]:hover { color: #fff; box-shadow: 0 0 20px color-mix(in srgb, var(--server-color) 55%, transparent), inset 0 1px 0 rgba(255,255,255,.25); }
+html[data-theme="vice"] .server-btn.active[data-server="hub"],
+html[data-theme="vice"] .server-btn.active[data-server="events"],
+html[data-theme="vice"] .server-btn.active[data-server="friends"],
+html[data-theme="vice"] .server-btn.active[data-server="music"] {
+  color: #1a0b2e;
+  background: linear-gradient(160deg, var(--server-color), color-mix(in srgb, var(--server-color) 55%, #ff8a4f));
+  box-shadow: 0 0 26px color-mix(in srgb, var(--server-color) 70%, transparent);
+}
+html[data-theme="vice"] .server-btn.active svg { filter: none; }
+html[data-theme="vice"] .server-btn.active::after { background: linear-gradient(90deg, #ff4fa3, #ffb36b, #35e0d0); height: 3px; }
+/* le reste du launcher aux couleurs de l'image */
+html[data-theme="vice"] .view-title { background: linear-gradient(90deg, #ff6fa8, #ffb36b 55%, #35e0d0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html[data-theme="vice"] .section-eyebrow { color: #35e0d0; }
+html[data-theme="vice"] .glass { border-color: rgba(255, 111, 168, .32); box-shadow: 0 10px 34px rgba(20, 4, 40, .45), inset 0 1px 0 rgba(255, 255, 255, .08); backdrop-filter: blur(8px); }
+html[data-theme="vice"] .tab-item.active { color: #fff; text-shadow: 0 0 10px rgba(255, 79, 163, .8); }
+html[data-theme="vice"] .server-sep { background: linear-gradient(180deg, #ff4fa3, #35e0d0); }
+
+/* Vice City : boutons de la barre en dégradé jaune / violet (sens inversé un sur deux) */
+html[data-theme="vice"] .server-btn[data-server="hub"],
+html[data-theme="vice"] .server-btn[data-server="friends"] { --g1: #ffd23f; --g2: #9b4dff; }
+html[data-theme="vice"] .server-btn[data-server="events"],
+html[data-theme="vice"] .server-btn[data-server="music"] { --g1: #9b4dff; --g2: #ffd23f; }
+html[data-theme="vice"] .server-btn[data-server="hub"],
+html[data-theme="vice"] .server-btn[data-server="events"],
+html[data-theme="vice"] .server-btn[data-server="friends"],
+html[data-theme="vice"] .server-btn[data-server="music"] {
+  color: #fff;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(160deg, rgba(34, 12, 58, .92), rgba(26, 8, 46, .92)) padding-box,
+    linear-gradient(135deg, var(--g1), var(--g2)) border-box;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--g1) 35%, transparent), 0 0 14px color-mix(in srgb, var(--g2) 30%, transparent);
+}
+html[data-theme="vice"] .server-btn[data-server="hub"] svg,
+html[data-theme="vice"] .server-btn[data-server="events"] svg,
+html[data-theme="vice"] .server-btn[data-server="friends"] svg,
+html[data-theme="vice"] .server-btn[data-server="music"] svg { filter: drop-shadow(0 0 5px var(--g1)); }
+html[data-theme="vice"] .server-btn.active[data-server="hub"],
+html[data-theme="vice"] .server-btn.active[data-server="events"],
+html[data-theme="vice"] .server-btn.active[data-server="friends"],
+html[data-theme="vice"] .server-btn.active[data-server="music"] {
+  color: #1a0b2e;
+  background: linear-gradient(135deg, var(--g1), var(--g2)) border-box;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--g1) 55%, transparent), 0 0 22px color-mix(in srgb, var(--g2) 55%, transparent);
+}
+html[data-theme="vice"] .server-btn.active[data-server="hub"] svg,
+html[data-theme="vice"] .server-btn.active[data-server="events"] svg,
+html[data-theme="vice"] .server-btn.active[data-server="friends"] svg,
+html[data-theme="vice"] .server-btn.active[data-server="music"] svg { filter: none; color: #fff; }
+html[data-theme="vice"] .server-btn.active::after { background: linear-gradient(90deg, #ffd23f, #9b4dff); }
+
+/* ---- Animations de survol des boutons (avantage abonné) ---- */
+.sub-perk { margin-left: 8px; font-size: 11px; letter-spacing: .04em; color: var(--amber, #f2b84b); }
+#anim-chips .theme-chip.locked { opacity: .45; cursor: not-allowed; }
+html[data-btnanim="neon"] .server-btn:hover {
+  border-color: var(--server-color, var(--teal));
+  animation: btnNeon 1.3s ease-in-out infinite;
+}
+@keyframes btnNeon {
+  0%, 100% { box-shadow: 0 0 4px var(--server-color, var(--teal)), 0 0 10px color-mix(in srgb, var(--server-color, var(--teal)) 70%, transparent), inset 0 0 6px color-mix(in srgb, var(--server-color, var(--teal)) 45%, transparent); }
+  50% { box-shadow: 0 0 8px var(--server-color, var(--teal)), 0 0 24px var(--server-color, var(--teal)), 0 0 40px color-mix(in srgb, var(--server-color, var(--teal)) 55%, transparent), inset 0 0 12px color-mix(in srgb, var(--server-color, var(--teal)) 65%, transparent); }
+}
+html[data-btnanim="shine"] .server-btn:not(.server-logo)::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  background: linear-gradient(110deg, transparent 38%, rgba(255, 255, 255, .55) 50%, transparent 62%) 160% 0 / 260% 100% no-repeat;
+}
+html[data-btnanim="shine"] .server-btn:not(.server-logo):hover::before { opacity: 1; animation: btnShine .85s ease-out infinite; }
+@keyframes btnShine { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+html[data-btnanim="shine"] .server-logo:hover img { animation: logoShine 1s ease-in-out infinite; }
+@keyframes logoShine { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35) drop-shadow(0 0 8px rgba(255, 255, 255, .7)); } }
+@media (prefers-reduced-motion: reduce) {
+  html[data-btnanim] .server-btn:hover, html[data-btnanim] .server-btn:hover::before, html[data-btnanim] .server-logo:hover img { animation: none !important; }
+}
+
+/* ---- Partenaires : OxygenServ / Starea (plaques blanches, animation de bascule) ---- */
+.partner-dots { display: flex; gap: 6px; margin-left: auto; }
+.partner-dots button { width: 18px; height: 4px; padding: 0; border: 0; border-radius: 2px; background: rgba(255,255,255,.25); cursor: pointer; transition: background .3s, width .3s; }
+.partner-dots button.on { width: 28px; background: var(--accent, #a78bfa); }
+.partner-stage { display: grid; overflow: hidden; }
+.partner-slide { grid-area: 1 / 1; opacity: 0; visibility: hidden; transform: translateX(22px); transition: opacity .5s ease, transform .5s ease, visibility 0s .5s; align-self: start; }
+.partner-slide.on { opacity: 1; visibility: visible; transform: none; transition: opacity .5s ease .08s, transform .5s ease .08s, visibility 0s; }
+.partner-slide.left { transform: translateX(-22px); }
+.partner-plate { position: relative; overflow: hidden; }
+.partner-slide.on .partner-plate::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.9) 50%, transparent 60%); transform: translateX(-120%); animation: partnerGlint 1.1s ease .5s 1 forwards; pointer-events: none; mix-blend-mode: overlay; }
+@keyframes partnerGlint { to { transform: translateX(120%); } }
+.pill-logos { display: grid; align-items: center; justify-items: center; height: 20px; }
+.pill-logos img { grid-area: 1 / 1; height: 18px; width: auto; max-width: 70px; object-fit: contain; opacity: 0; transform: translateY(6px); transition: opacity .45s, transform .45s; }
+.pill-logos img.on { opacity: 1; transform: none; }
+.pill-logos img:first-child { height: 16px; }
+@media (prefers-reduced-motion: reduce) { .partner-slide, .partner-slide.on, .pill-logos img { transition: none; } .partner-slide.on .partner-plate::after { animation: none; } }
+
+/* Rappel dans le menu Touches */
+.keys-reminder { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 12px; padding: 9px 16px; border: 1px solid color-mix(in srgb, var(--teal) 55%, transparent); border-radius: 10px; background: color-mix(in srgb, var(--teal) 12%, transparent); color: var(--text); font-size: 13px; font-weight: 600; }
+.keys-reminder span { font-size: 16px; }

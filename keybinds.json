@@ -23,105 +23,454 @@
       ]
     },
     "kannibaventure": {
-      "note": "Touches de base de Minecraft. Les touches propres aux mods du serveur seront ajoutées ici.",
+      "note": "Ce sont les touches utilisées sur KannibAventure (Minecraft et mods), en clavier AZERTY. Tu peux tout changer dans Échap → Options → Contrôles → Assignation des touches. Certaines touches (B, G, V, W…) sont partagées par plusieurs mods : en cas de conflit, réassigne-en une.",
       "groups": [
         {
-          "title": "Déplacement",
+          "title": "Mouvements",
           "keys": [
             {
-              "key": "W / A / S / D",
-              "action": "Avancer, aller à gauche, reculer, aller à droite"
+              "key": "Z",
+              "action": "Avancer"
             },
             {
-              "key": "Espace",
-              "action": "Sauter (maintenu : nager vers le haut)"
-            },
-            {
-              "key": "Maj gauche",
-              "action": "Se baisser / descendre dans l'eau"
-            },
-            {
-              "key": "Ctrl gauche",
-              "action": "Courir"
-            }
-          ]
-        },
-        {
-          "title": "Actions",
-          "keys": [
-            {
-              "key": "Clic gauche",
-              "action": "Attaquer / casser un bloc"
-            },
-            {
-              "key": "Clic droit",
-              "action": "Utiliser un objet / poser un bloc"
-            },
-            {
-              "key": "Clic molette",
-              "action": "Prendre le bloc visé"
-            },
-            {
-              "key": "F",
-              "action": "Échanger l'objet entre les deux mains"
+              "key": "S",
+              "action": "Reculer"
             },
             {
               "key": "Q",
-              "action": "Jeter l'objet en main"
+              "action": "Aller à gauche"
             },
             {
-              "key": "1 à 9",
-              "action": "Choisir un emplacement de la barre d'objets"
+              "key": "D",
+              "action": "Aller à droite"
+            },
+            {
+              "key": "Espace",
+              "action": "Sauter"
+            },
+            {
+              "key": "Maj gauche",
+              "action": "Courir"
+            },
+            {
+              "key": "Ctrl gauche",
+              "action": "S'accroupir"
+            },
+            {
+              "key": "Espace",
+              "action": "Voler avec les Magma Wings"
             }
           ]
         },
         {
-          "title": "Interface",
+          "title": "Gameplay",
           "keys": [
             {
-              "key": "E",
-              "action": "Ouvrir l'inventaire"
+              "key": "Clic gauche",
+              "action": "Attaquer / détruire"
             },
             {
-              "key": "T",
-              "action": "Ouvrir le chat"
+              "key": "Clic molette",
+              "action": "Choisir le bloc"
             },
             {
-              "key": "/",
-              "action": "Ouvrir le chat avec une commande"
+              "key": "Clic droit",
+              "action": "Utiliser un objet / placer un bloc"
+            }
+          ]
+        },
+        {
+          "title": "Inventaire",
+          "keys": [
+            {
+              "key": "& é \" ' ( - è _ ç",
+              "action": "Cases 1 à 9 de la barre d'action"
+            },
+            {
+              "key": "A",
+              "action": "Jeter l'objet sélectionné"
             },
             {
               "key": "Tab",
-              "action": "Liste des joueurs connectés"
+              "action": "Ouvrir / fermer l'inventaire"
             },
             {
-              "key": "Échap",
-              "action": "Menu pause"
+              "key": "F",
+              "action": "Échanger avec la main secondaire"
             }
           ]
         },
         {
-          "title": "Affichage",
+          "title": "Multijoueur",
           "keys": [
             {
+              "key": "²",
+              "action": "Afficher la liste des joueurs"
+            },
+            {
+              "key": "!",
+              "action": "Entrer une commande"
+            },
+            {
+              "key": "P",
+              "action": "Interactions sociales"
+            },
+            {
+              "key": "T",
+              "action": "Ouvrir le tchat"
+            }
+          ]
+        },
+        {
+          "title": "Divers",
+          "keys": [
+            {
+              "key": "G",
+              "action": "Actions rapides"
+            },
+            {
               "key": "F1",
-              "action": "Cacher / afficher l'interface"
-            },
-            {
-              "key": "F2",
-              "action": "Capture d'écran"
-            },
-            {
-              "key": "F3",
-              "action": "Écran de debug (coordonnées…)"
+              "action": "Basculer l'interface"
             },
             {
               "key": "F5",
-              "action": "Changer de vue (1re / 3e personne)"
+              "action": "Changer de point de vue"
+            },
+            {
+              "key": "F4",
+              "action": "Effets de shader en mode Spectateur"
             },
             {
               "key": "F11",
               "action": "Plein écran"
+            },
+            {
+              "key": "F2",
+              "action": "Prendre une capture d'écran"
+            },
+            {
+              "key": "L",
+              "action": "Progrès"
+            }
+          ]
+        },
+        {
+          "title": "Mode Créatif",
+          "keys": [
+            {
+              "key": "X",
+              "action": "Charger une barre d'action"
+            }
+          ]
+        },
+        {
+          "title": "Mode Spectateur",
+          "keys": [
+            {
+              "key": "Début",
+              "action": "Mettre en évidence les joueurs"
+            },
+            {
+              "key": "Clic molette",
+              "action": "Sélectionner dans la barre d'action"
+            }
+          ]
+        },
+        {
+          "title": "Sac à dos (Traveler's Backpack)",
+          "keys": [
+            {
+              "key": "B",
+              "action": "Inventaire du sac à dos"
+            },
+            {
+              "key": "W",
+              "action": "Changer d'outil ou changer le mode de tuyau"
+            }
+          ]
+        },
+        {
+          "title": "Métiers (Jobs+)",
+          "keys": [
+            {
+              "key": "J",
+              "action": "Ouvrir le menu Jobs+"
+            }
+          ]
+        },
+        {
+          "title": "Parapente (Paraglider)",
+          "keys": [
+            {
+              "key": "Ctrl + P",
+              "action": "Paramètres du Paraglider"
+            }
+          ]
+        },
+        {
+          "title": "Configuration (YAML Config)",
+          "keys": [
+            {
+              "key": "F12",
+              "action": "Ouvrir l'écran de configuration"
+            }
+          ]
+        },
+        {
+          "title": "Accessoires (Ohmega)",
+          "keys": [
+            {
+              "key": "B",
+              "action": "Special 1"
+            },
+            {
+              "key": "G",
+              "action": "Utility 1"
+            },
+            {
+              "key": "V",
+              "action": "Utility 2"
+            }
+          ]
+        },
+        {
+          "title": "Shaders (Iris)",
+          "keys": [
+            {
+              "key": "K",
+              "action": "Activation des shaders"
+            },
+            {
+              "key": "R",
+              "action": "Recharger les shaders"
+            },
+            {
+              "key": "O",
+              "action": "Écran de sélection du pack de shaders"
+            }
+          ]
+        },
+        {
+          "title": "Mini-carte (Xaero's Minimap)",
+          "keys": [
+            {
+              "key": "W",
+              "action": "Agrandir la mini-carte"
+            },
+            {
+              "key": "B",
+              "action": "Nouveau point de navigation"
+            },
+            {
+              "key": "U",
+              "action": "Points de navigation"
+            },
+            {
+              "key": "Y",
+              "action": "Paramètres de la mini-carte"
+            },
+            {
+              "key": "+",
+              "action": "Point de navigation rapide"
+            }
+          ]
+        },
+        {
+          "title": "JEI : survol à la souris",
+          "keys": [
+            {
+              "key": "R / Clic gauche",
+              "action": "Afficher la recette"
+            },
+            {
+              "key": "U / Clic droit",
+              "action": "Montrer les utilisations"
+            },
+            {
+              "key": "Q",
+              "action": "Ajouter / supprimer un objet épinglé"
+            },
+            {
+              "key": "Ctrl + Clic gauche",
+              "action": "Craft Bookmarked Recipe (Many)"
+            },
+            {
+              "key": "Maj + Clic gauche",
+              "action": "Craft Bookmarked Recipe (One) / Quick Move Ghost Item"
+            }
+          ]
+        },
+        {
+          "title": "JEI : affichage",
+          "keys": [
+            {
+              "key": "Ctrl + O",
+              "action": "Afficher / cacher JEI"
+            },
+            {
+              "key": "Ctrl + F",
+              "action": "Sélectionner la barre de recherche"
+            }
+          ]
+        },
+        {
+          "title": "JEI : recettes",
+          "keys": [
+            {
+              "key": "Maj + Page préc.",
+              "action": "Afficher la recette précédente"
+            },
+            {
+              "key": "Maj + Page suiv.",
+              "action": "Afficher la prochaine catégorie de recettes"
+            },
+            {
+              "key": "Page préc.",
+              "action": "Page précédente de la recette"
+            },
+            {
+              "key": "Page suiv.",
+              "action": "Page suivante de la recette"
+            },
+            {
+              "key": "Retour arrière",
+              "action": "Montrer la recette précédente"
+            },
+            {
+              "key": "Échap",
+              "action": "Fermer l'interface des recettes"
+            },
+            {
+              "key": "Maj gauche",
+              "action": "Pause du défilement des ingrédients"
+            }
+          ]
+        },
+        {
+          "title": "JEI : recherche",
+          "keys": [
+            {
+              "key": "Clic droit",
+              "action": "Effacer le filtre de recherche"
+            },
+            {
+              "key": "Alt + Flèche haut",
+              "action": "Recherche précédente"
+            },
+            {
+              "key": "Alt + Flèche bas",
+              "action": "Recherche suivante"
+            }
+          ]
+        },
+        {
+          "title": "JEI : mode triche",
+          "keys": [
+            {
+              "key": "Alt + Clic droit",
+              "action": "Cheat One Item to Inventory"
+            },
+            {
+              "key": "Alt + Clic gauche",
+              "action": "Cheat One Stack to Inventory"
+            },
+            {
+              "key": "Clic gauche / Clic droit",
+              "action": "Triche 1 item"
+            },
+            {
+              "key": "Maj + Clic gauche / Clic molette",
+              "action": "Triche 1 stack"
+            }
+          ]
+        },
+        {
+          "title": "JEI : masquer / modifier",
+          "keys": [
+            {
+              "key": "Ctrl + Clic gauche",
+              "action": "Masquer l'ingrédient / basculer en mode triche"
+            },
+            {
+              "key": "Ctrl + Clic droit",
+              "action": "Masquer l'ingrédient (joker) / Toggle Hide Ingredients When Not Searching"
+            }
+          ]
+        },
+        {
+          "title": "Débogage",
+          "keys": [
+            {
+              "key": "F3",
+              "action": "Basculer l'overlay / touche de modification de débogage"
+            },
+            {
+              "key": "F6",
+              "action": "Paramètres de débogage"
+            },
+            {
+              "key": "F4",
+              "action": "Sélecteur de mode de jeu"
+            },
+            {
+              "key": "G",
+              "action": "Afficher les bordures des chunks"
+            },
+            {
+              "key": "B",
+              "action": "Afficher les boîtes de collision"
+            },
+            {
+              "key": "H",
+              "action": "Afficher les info-bulles avancées"
+            },
+            {
+              "key": "V",
+              "action": "Afficher les informations de version"
+            },
+            {
+              "key": "N",
+              "action": "Alterner le mode Spectateur"
+            },
+            {
+              "key": "C",
+              "action": "Copier la position"
+            },
+            {
+              "key": "I",
+              "action": "Copier les données"
+            },
+            {
+              "key": "L",
+              "action": "Démarrer / arrêter le profilage"
+            },
+            {
+              "key": "D",
+              "action": "Effacer le tchat"
+            },
+            {
+              "key": "S",
+              "action": "Exporter les textures dynamiques"
+            },
+            {
+              "key": "C",
+              "action": "Faire planter le jeu"
+            },
+            {
+              "key": "P",
+              "action": "Mettre en pause à la perte de focus"
+            },
+            {
+              "key": "Q",
+              "action": "Recharger les chunks"
+            },
+            {
+              "key": "T",
+              "action": "Recharger les packs de ressources"
+            },
+            {
+              "key": "& é \" '",
+              "action": "Graphiques de profilage, FPS, réseau, lightmap"
             }
           ]
         }

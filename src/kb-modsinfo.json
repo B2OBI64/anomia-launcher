@@ -1,4 +1,359 @@
 {
-  "notes": "",
-  "mods": []
+  "notes": "Ce que fait chaque mod du serveur. Le launcher les installe et les met à jour automatiquement.",
+  "mods": [
+    {
+      "name": "Adorabuild Structures",
+      "description": "Des dizaines de petites structures décoratives à découvrir en explorant le monde.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Animal Garden",
+      "description": "Ajoute des animaux : bison, capybara, raton laveur, hippopotame, lion, lamantin, souris, hyène, gorille et rhinocéros blanc.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Astral Dimension",
+      "description": "Deux dimensions magiques à explorer, avec leurs propres blocs et créatures.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Baobab Tree",
+      "description": "D'immenses baobabs dans la savane, avec racines, troncs creux et un set de bois complet.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Bat Membrane",
+      "description": "Les chauves-souris laissent tomber des membranes utilisables en craft.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Better Underwater Ruins",
+      "description": "Des ruines sous-marines plus grandes et plus variées.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "BetterEnd",
+      "description": "Refonte complète de l'End : nouveaux biomes, végétation, monstres et ressources.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "BetterNether",
+      "description": "Refonte du Nether : nouveaux biomes, plantes, blocs et décors.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Bibliothèques",
+      "description": "Geckolib, Arc, BCLib, TerraBlender, MonoLib, UILib, Knot Core, YamlConfig, Villager API, Aquarius Libs, WunderLib, Faewulf Lib, Lib 5555ff, Moog's Structure Lib, Yung's API : nécessaires au fonctionnement des autres mods.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Burger Mod",
+      "description": "Ajoute des burgers et de quoi se préparer un vrai repas.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Disenchanting Table",
+      "description": "Une table pour retirer les enchantements d'un objet et les récupérer sur un livre.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Dungeons and Taverns",
+      "description": "Donjons, tavernes et structures variées générés dans le monde.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Effective Farmer",
+      "description": "Facilite l'agriculture : récolte et replantation plus rapides.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Elytra Accessory",
+      "description": "Équipe les élytres comme accessoire, sans occuper l'emplacement de plastron.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Enchant Plus",
+      "description": "Plus d'enchantements et de possibilités pour améliorer son équipement.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "FerriteCore",
+      "description": "Réduit la consommation de mémoire du jeu.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Fighterz Remaster",
+      "description": "Ajoute du contenu de combat inspiré de FighterZ.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Giant Plane Wreck",
+      "description": "Une épave d'avion géante à découvrir dans les forêts et les plaines.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Horde Hoard",
+      "description": "Des trésors gardés par des hordes à piller.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Humvil Mod",
+      "description": "Ajoute des véhicules de type Humvee à conduire dans le monde.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Illager Warship",
+      "description": "Un navire de guerre illager à affronter.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Improved Pillager Outpost",
+      "description": "Des avant-postes de pillards plus grands et mieux fournis.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Iris Shaders",
+      "description": "Permet d'utiliser des shaders pour embellir le jeu.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Item Restrictions",
+      "description": "Permet de restreindre l'usage de certains objets sur le serveur.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "JEI",
+      "description": "Affiche les recettes et usages de tous les objets du jeu.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Jobs+",
+      "description": "Un système de métiers qui récompense mineurs, fermiers, chasseurs et autres.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Katters Structures",
+      "description": "Une grande collection de structures à explorer.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Macaw's (portes, clôtures, meubles, luminaires, tableaux, toits, trappes, fenêtres)",
+      "description": "La série Macaw's : des dizaines de variantes pour construire et décorer.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "McDonalds",
+      "description": "Un fast-food à trouver dans le monde, avec ses plats.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Medieval Buildings / End / Nether",
+      "description": "Des bâtiments médiévaux à découvrir en Overworld, dans le Nether et dans l'End.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "ModernFix",
+      "description": "Accélère le chargement et réduit la mémoire utilisée.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Moog's Structures",
+      "description": "Structures du Nether et des îles volantes à explorer.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "More Concrete",
+      "description": "De nouvelles variantes de béton pour la construction.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "More Mobs",
+      "description": "Ajoute de nouvelles créatures au monde.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "More Raids",
+      "description": "Des raids plus variés et plus difficiles.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "More Villagers",
+      "description": "Nouveaux métiers, échanges et postes de travail pour les villageois.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Nether Merchant",
+      "description": "Un marchand villageois à trouver dans le Nether.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "No Enderman Grief",
+      "description": "Les Endermen ne volent plus les blocs.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Ohmega",
+      "description": "Gère les emplacements d'accessoires.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Paraglider",
+      "description": "Un parapente façon Breath of the Wild pour planer.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Phantom Remover",
+      "description": "Supprime les fantômes qui empêchent de dormir.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Rob's Craftable XP",
+      "description": "Permet de fabriquer de l'expérience en bouteille.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Saloon",
+      "description": "Un saloon du Far West dans les badlands, avec une nouvelle potion.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Simple Hats",
+      "description": "Des chapeaux cosmétiques à porter.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Sodium",
+      "description": "Améliore énormément les performances et la fluidité.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Sound Physics Remastered",
+      "description": "Des sons réalistes : écho en grotte, étouffement derrière les murs.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Structory / Structory Towers",
+      "description": "Des structures et des tours variées dans le monde.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Structure",
+      "description": "Ajoute des structures supplémentaires au monde.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Tidal Towns",
+      "description": "Des villages côtiers à découvrir.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Tool Trims",
+      "description": "Des finitions décoratives pour les outils.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Traveler's Backpack",
+      "description": "Des sacs à dos de voyageur avec rangements et équipements.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Trims Overhaul",
+      "description": "Plus d'options pour personnaliser les finitions d'armure.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Veylith Garden / Laboratory",
+      "description": "Deux lieux mystérieux à explorer : un jardin et un laboratoire.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Warden Dimensions",
+      "description": "Des dimensions liées au Warden.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "WorldWeaver",
+      "description": "Améliore la génération du monde.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Xaero's Minimap",
+      "description": "Une minicarte pour se repérer.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Yung's Better Structures",
+      "description": "Refonte des donjons, temples, mines, forteresses, monuments, huttes de sorcière, ponts et îles de l'End.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Yung's Cave Biomes",
+      "description": "De nouveaux biomes souterrains.",
+      "url": "",
+      "icon": ""
+    },
+    {
+      "name": "Yung's Extras",
+      "description": "Petits ajouts pour compléter les structures Yung's.",
+      "url": "",
+      "icon": ""
+    }
+  ]
 }

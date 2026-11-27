@@ -201,12 +201,12 @@
     "text": "Quand une nouvelle version du launcher sort, il te le propose tout seul, même si tu le laisses ouvert longtemps. Accepte pour profiter des nouveautés."
   },
   {
-    "title": "Notre partenaire OxygenServ",
+    "title": "Nos partenaires",
     "selector": "#partner-pill",
     "go": {
       "server": "hub"
     },
-    "text": "OxygenServ héberge Anomia RP et KannibAventure. Clique pour accéder à leur site : -10 % sur ta 1re commande avec le code B2OBI64 (lien partenaire). Leur Discord et le code à copier sont dans le cadre Partenaire de l'accueil."
+    "text": "OxygenServ (hébergeur d'Anomia RP et KannibAventure) et Starea (événements solidaires en direct avec des streamers) alternent ici. Clique sur un logo pour ouvrir leur site. Pour OxygenServ : -10 % sur ta 1re commande avec le code B2OBI64 (lien partenaire)."
   },
   {
     "title": "Tes amis",
@@ -235,12 +235,12 @@
   {
     "title": "Réglages : tout est rangé en onglets",
     "selector": "#btn-settings",
-    "text": "Le bouton Réglages s'ouvre sur des onglets : Code secret, Apparence (fond, couleur d'accent, thème), Options, Version (admins) et Aide (tutoriel, rapport de problème). Les options sont de vrais boutons ON/OFF."
+    "text": "Le bouton Réglages s'ouvre sur des onglets : Code secret, Apparence (fond, couleur d'accent, thème, animation des boutons), Options, Version (admins) et Aide (tutoriel, rapport de problème, sauvegarde de tes réglages pour les retrouver après une réinstallation). Les options sont de vrais boutons ON/OFF."
   },
   {
     "title": "Apparence et thèmes",
     "selector": "#btn-settings",
-    "text": "Fond clair, noir ou noir violet, thèmes spéciaux (dont « Pluie de logos » pour les abonnés Twitch) et couleur d'accent : l'accent ne change que les cadres et les boutons, jamais le thème choisi. Tu y trouves aussi le fond animé, la pause automatique quand tu es inactif et le mode streamer pour tes lives (il floute pseudos, avatars, notes et chemins de ton PC)."
+    "text": "Fond clair, noir ou noir violet, thèmes spéciaux (dont « Pluie de logos » pour les abonnés Twitch) et couleur d'accent : l'accent ne change que les cadres et les boutons, jamais le thème choisi. Tu y trouves aussi le fond animé, la pause automatique quand tu es inactif et le mode streamer pour tes lives (il floute pseudos, avatars, notes et chemins de ton PC). Tu peux aussi choisir une animation au survol des boutons : le néon est offert à tous, les autres animations sont réservées aux abonnés Twitch."
   },
   {
     "title": "Notifications Windows",

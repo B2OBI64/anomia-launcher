@@ -34,7 +34,7 @@
       </div>
       <div class="ticker" id="ticker" aria-live="off"></div>
       <div class="topbar-right">
-        <button class="partner-pill" id="partner-pill" title="Partenaire officiel : OxygenServ"><span>PARTENAIRE</span><img src="../assets/oxygenserv.png" alt="OxygenServ" draggable="false" /></button>
+        <button class="partner-pill" id="partner-pill" title="Partenaires officiels : OxygenServ et Starea"><span>PARTENAIRES</span><div class="pill-logos"><img class="on" src="../assets/oxygenserv.png" alt="OxygenServ" draggable="false" /><img src="../assets/starea.png" alt="Starea" draggable="false" /></div></button>
         <span class="update-status" id="update-status"></span>
         <span class="version" id="app-version">v…</span>
         <div class="discord-auth-slot" id="discord-auth-slot">
@@ -216,13 +216,23 @@
           <div class="ann-admin hidden" id="ann-admin"><button class="btn-copy" id="ann-new">+ Nouvelle annonce</button><button class="btn-copy" id="ann-del">Supprimer celle-ci</button></div>
         </aside>
         <aside class="polls-panel partner-panel" id="partner-panel">
-          <div class="polls-head"><span class="polls-title">// PARTENAIRE</span></div>
-          <a class="partner-plate" id="partner-link" role="button" tabindex="0" title="Découvrir OxygenServ"><img src="../assets/oxygenserv.png" alt="OxygenServ" draggable="false" /></a>
-          <p class="partner-txt">OxygenServ héberge les serveurs Anomia RP et KannibAventure !<br><b>-10 % sur ta 1re commande</b> avec le code :</p>
-          <button class="partner-code" id="partner-code" title="Copier le code">B2OBI64 <i>⧉ copier</i></button>
-          <button class="btn-copy partner-btn" id="partner-btn">Voir l'offre OxygenServ ↗</button>
-          <button class="btn-copy partner-btn" id="partner-discord">Discord OxygenServ ↗</button>
-          <small class="partner-aff">Lien affilié / partenariat</small>
+          <div class="polls-head"><span class="polls-title">// PARTENAIRES</span><span class="partner-dots" id="partner-dots"><button class="on" data-i="0" aria-label="OxygenServ"></button><button data-i="1" aria-label="Starea"></button></span></div>
+          <div class="partner-stage" id="partner-stage">
+            <div class="partner-slide on" data-i="0">
+              <a class="partner-plate" id="partner-link" role="button" tabindex="0" title="Découvrir OxygenServ"><img src="../assets/oxygenserv.png" alt="OxygenServ" draggable="false" /></a>
+              <p class="partner-txt">OxygenServ héberge les serveurs Anomia RP et KannibAventure !<br><b>-10 % sur ta 1re commande</b> avec le code :</p>
+              <button class="partner-code" id="partner-code" title="Copier le code">B2OBI64 <i>⧉ copier</i></button>
+              <button class="btn-copy partner-btn" id="partner-btn">Voir l'offre OxygenServ ↗</button>
+              <button class="btn-copy partner-btn" id="partner-discord">Discord OxygenServ ↗</button>
+              <small class="partner-aff">Lien affilié / partenariat</small>
+            </div>
+            <div class="partner-slide" data-i="1">
+              <a class="partner-plate" id="starea-link" role="button" tabindex="0" title="Découvrir Starea"><img src="../assets/starea.png" alt="Starea" draggable="false" /></a>
+              <p class="partner-txt">Starea organise des <b>événements solidaires en direct</b> : jeux interactifs, streamers et communautés réunis pour soutenir des associations.</p>
+              <button class="btn-copy partner-btn" id="starea-btn">Découvrir Starea ↗</button>
+              <small class="partner-aff">Partenariat</small>
+            </div>
+          </div>
         </aside>
         </div>
         <div class="hub-right">
@@ -456,6 +466,7 @@
           <button class="btn-copy" id="kb-open-folder">Ouvrir le dossier du jeu</button>
           <button class="btn-copy" id="kb-open-log">Voir le journal</button>
           <button class="btn-copy" id="kb-repair">Réparer</button>
+          <button class="btn-copy" id="kb-copy-report">Copier le rapport</button>
         </div>
         <p class="settings-hint" id="kb-opt-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);"></p>
       </div>
@@ -475,6 +486,7 @@
       <section class="view hidden" id="view-kb-keys">
         <span class="section-eyebrow">// TOUCHES</span>
         <h1 class="view-title">Touches en jeu</h1>
+        <p class="keys-reminder"><span>⌨</span> Pense à configurer tes touches en jeu.</p>
         <p class="settings-hint keys-note" id="kb-keys-note"></p>
         <div class="keys-groups" id="kb-keys-list"></div>
       </section>
@@ -543,6 +555,7 @@
       <section class="view hidden" id="view-keys">
         <span class="section-eyebrow">// TOUCHES</span>
         <h1 class="view-title">Touches en jeu</h1>
+        <p class="keys-reminder"><span>⌨</span> Pense à configurer tes touches en jeu.</p>
         <p class="settings-hint keys-note" id="keys-note"></p>
         <div class="keys-groups" id="keys-list"></div>
       </section>
@@ -843,10 +856,20 @@
           <button class="theme-chip hidden" data-theme="cubic" style="--c:#f97316"><i></i>Cubique ▣</button>
           <button class="theme-chip hidden" data-theme="noel" style="--c:#ef4444"><i></i>Noël 🎄</button>
           <button class="theme-chip hidden" data-theme="ggpadur" style="--c:#c04df0"><i></i>GG Padur 💜</button>
+          <button class="theme-chip hidden" data-theme="vice" style="--c:#ff4fa3"><i></i>Vice City 🌴</button>
           <button class="theme-chip hidden" data-theme="subman" style="--c:#a855f7"><i></i>Subman 💜</button>
           <button class="theme-chip hidden" data-theme="gold" style="--c:#facc15"><i></i>Or ✨</button>
           <button class="theme-chip hidden" data-theme="matrix" style="--c:#00ff41"><i></i>Matrix ▮</button>
         </div>
+      </div>
+      <div class="settings-section">
+        <span class="settings-label">Animation des boutons</span>
+        <div class="theme-chips" id="anim-chips">
+          <button class="theme-chip" data-anim="none" style="--c:#9ca3af"><i></i>Aucune</button>
+          <button class="theme-chip" data-anim="neon" style="--c:#22d3ee"><i></i>Néon</button>
+          <button class="theme-chip" data-anim="shine" style="--c:#fde68a"><i></i>Brillant <span class="sub-perk">⭐ Abonnés</span></button>
+        </div>
+        <p class="settings-hint" id="anim-hint" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);">Effet au survol des boutons de la barre du haut.</p>
       </div>
         </section>
         <section class="set-pane hidden" data-pane="options">
@@ -885,6 +908,14 @@
       <div class="settings-section">
         <span class="settings-label">Tutoriel</span>
         <button class="btn-copy" id="settings-replay-tour" style="width:100%;">Revoir le tutoriel</button>
+      </div>
+      <div class="settings-section">
+        <span class="settings-label">Sauvegarde des réglages</span>
+        <div class="code-row" style="gap:8px;">
+          <button class="btn-copy" id="settings-export" style="flex:1;">Exporter</button>
+          <button class="btn-copy" id="settings-import" style="flex:1;">Importer</button>
+        </div>
+        <p class="settings-hint" id="settings-backup-msg" style="margin:6px 0 0;font-size:12px;color:var(--text-dim);">Enregistre ton thème, ton accueil et tes options dans un fichier pour les retrouver après une réinstallation. Aucun mot de passe ni jeton n'y est inclus.</p>
       </div>
       <div class="settings-section">
         <span class="settings-label">Un problème avec le launcher ?</span>

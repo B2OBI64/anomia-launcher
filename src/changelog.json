@@ -1,5 +1,21 @@
 [
   {
+    "version": "2.0.7",
+    "date": "26 novembre 2026",
+    "title": "Thème secret, animations et modpack fiable",
+    "items": [
+      "Un nouvel easter egg à trouver : un thème secret aux couleurs d'un coucher de soleil rose, orange et turquoise, avec son propre fond. Les boutons de la barre du haut (accueil, événements, amis, musique) prennent chacun un dégradé jaune et violet. Indice : le nom d'une ville de palmiers et de néons, à taper dans Réglages > Code secret.",
+      "Nouveau succès « Collectionneur » : trouve tous les thèmes secrets.",
+      "Animation des boutons au survol, à choisir dans Réglages > Apparence : le néon est offert à tous, les autres animations (« Brillant » et celles à venir) sont un avantage réservé aux abonnés Twitch de la chaîne.",
+      "Sauvegarde des réglages : Réglages > Aide > Exporter / Importer, pour retrouver ton thème, ton accueil et tes options après une réinstallation (aucun mot de passe ni jeton n'est enregistré).",
+      "KannibAventure : la vérification des mods au lancement affiche maintenant un bilan clair (ajoutés, réparés, retirés), continue même si un mod échoue et propose un bouton « Copier le rapport » dans les options du serveur pour demander de l'aide sur Discord.",
+      "Nouveau partenaire : Starea, qui organise des événements solidaires en direct avec des streamers. Les logos d'OxygenServ et de Starea alternent sur l'accueil et dans la barre du haut, chacun sur sa plaque blanche.",
+      "Menu Touches : un rappel « Pense à configurer tes touches en jeu » est affiché pour Anomia RP et KannibAventure, et KannibAventure liste toutes les touches du jeu et des mods (sac à dos, métiers, parapente, mini-carte, shaders, JEI…).",
+      "KannibAventure : la liste des mods est à jour (nouvelles structures, Paraglider, Nether Merchant, nouveaux métiers de villageois…) et la catégorie « Mods » décrit chaque mod en français.",
+      "Tutoriel mis à jour."
+    ]
+  },
+  {
     "version": "2.0.6",
     "date": "22 novembre 2026",
     "title": "Réglages en onglets, amis élargis et accueil libre",

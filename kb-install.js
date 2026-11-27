@@ -228,36 +228,39 @@ async function syncMods({ gameDir, pack, assets, progress, log }) {
   const modsDir = path.join(gameDir, "mods"), extra = path.join(gameDir, "mods-extra");
   fs.mkdirSync(modsDir, { recursive: true });
   const want = new Map(pack.mods.map((m) => [m.file, m]));
-  let removed = 0;
+  let removed = 0; const removedFiles = [];
   for (const f of fs.readdirSync(modsDir)) {
     if (!/\.jar$/i.test(f) || want.has(f)) continue;
     fs.mkdirSync(extra, { recursive: true });
-    try { fs.rmSync(path.join(extra, f), { force: true }); fs.renameSync(path.join(modsDir, f), path.join(extra, f)); removed++; } catch {}
+    try { fs.rmSync(path.join(extra, f), { force: true }); fs.renameSync(path.join(modsDir, f), path.join(extra, f)); removed++; removedFiles.push(f); } catch {}
   }
   progress({ step: "mods", label: "Vérification des mods", percent: null });
-  const todo = [];
+  const todo = [], added = [], repaired = [], failed = [];
   for (const m of pack.mods) {
     const p = path.join(modsDir, m.file);
     let ok = false;
     try { ok = exists(p) && fs.statSync(p).size === m.size && (await hashFile(p)) === m.sha256; } catch {}
-    if (!ok) todo.push(m);
+    if (!ok) { todo.push(m); (exists(p) ? repaired : added).push(m.file); }
   }
   log && log(`# mods : ${pack.mods.length} attendus, ${todo.length} à télécharger, ${removed} déplacé(s) vers mods-extra`);
-  if (!todo.length) return { downloaded: 0, removed };
+  const base = { total: pack.mods.length, added, repaired, removedFiles, failed };
+  if (!todo.length) return Object.assign({ downloaded: 0, removed }, base);
   const totalBytes = todo.reduce((s, m) => s + (m.size || 0), 0) || 1;
   let got = 0, doneCount = 0, lastEmit = 0; const sp = speedMeter();
   await pool(todo, 4, async (m) => {
+   try {
     const a = findAsset(assets, m);
-    if (!a) throw new Error("mod introuvable sur l'hébergement : " + m.file);
+    if (!a) throw new Error("introuvable sur l'hébergement");
     await download(a.browser_download_url, path.join(modsDir, m.file), { sha256: m.sha256, onBytes: (n) => {
       got += n;
       const now = Date.now();
       if (now - lastEmit > 250) { lastEmit = now; progress({ step: "mods", label: `Mods ${doneCount}/${todo.length} · ${mo(got)}/${mo(totalBytes)} Mo · ${sp(got).toFixed(1)} Mo/s`, percent: Math.min(99, Math.round((got / totalBytes) * 100)) }); }
     } });
+   } catch (e) { failed.push({ file: m.file, reason: e.message }); log && log(`# mod en échec : ${m.file} : ${e.message}`); }
     doneCount++;
   });
-  progress({ step: "mods", label: "Mods à jour", percent: 100 });
-  return { downloaded: todo.length, removed };
+  if (!failed.length) progress({ step: "mods", label: "Mods à jour", percent: 100 });
+  return Object.assign({ downloaded: todo.length - failed.length, removed }, base);
 }
 
 module.exports = { download, pool, hashFile, ensureJava, ensureNeoForge, ensureGameFiles, listReleaseAssets, loadModpack, findAsset, syncMods, findJavaExe };

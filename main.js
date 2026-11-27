@@ -1989,6 +1989,34 @@ function kbPlaytime() {
 ipcMain.handle("kb:getPlaytime", () => ({ ok: true, ...kbPlaytime() }));
 app.whenReady().then(() => { if (kbTick()) kbEnsureTimer(); });
 
+let kbLastReport = null; // dernier rapport de vérification du modpack (texte + résumé)
+function kbBuildReport({ java, versionId, res, error }) {
+  const L = [`KannibAventure — rapport de vérification`, `Date : ${new Date().toLocaleString("fr-FR")}`, `Launcher : ${app.getVersion()} · Minecraft ${versionId}`, java ? `Java : ${java}` : ""].filter(Boolean);
+  let summary = "";
+  if (res) {
+    const parts = [];
+    if (res.added.length) parts.push(`${res.added.length} ajouté${res.added.length > 1 ? "s" : ""}`);
+    if (res.repaired.length) parts.push(`${res.repaired.length} réparé${res.repaired.length > 1 ? "s" : ""}`);
+    if (res.removedFiles.length) parts.push(`${res.removedFiles.length} retiré${res.removedFiles.length > 1 ? "s" : ""} (déplacé${res.removedFiles.length > 1 ? "s" : ""} dans mods-extra)`);
+    if (res.failed.length) parts.push(`${res.failed.length} en échec`);
+    summary = parts.length ? `Mods : ${parts.join(", ")}.` : `Mods : les ${res.total} mods sont à jour.`;
+    L.push("", summary);
+    if (res.added.length) L.push("Ajoutés :", ...res.added.map((f) => "  + " + f));
+    if (res.repaired.length) L.push("Réparés (fichier corrompu ou ancienne version) :", ...res.repaired.map((f) => "  ~ " + f));
+    if (res.removedFiles.length) L.push("Retirés (absents de la liste officielle) :", ...res.removedFiles.map((f) => "  - " + f));
+    if (res.failed.length) L.push("En échec :", ...res.failed.map((x) => `  ! ${x.file} : ${x.reason}`));
+  }
+  if (error) { summary = "Erreur : " + error; L.push("", "Erreur : " + error); }
+  try {
+    const f = path.join(app.getPath("userData"), "kb-launch.log");
+    const t = fs.readFileSync(f, "utf8").trim().split(/\r?\n/).slice(-40);
+    L.push("", "--- fin du journal ---", ...t);
+  } catch {}
+  kbLastReport = { summary, text: L.join("\n"), at: Date.now() };
+  try { fs.writeFileSync(path.join(app.getPath("userData"), "kb-report.txt"), kbLastReport.text); } catch {}
+  return kbLastReport;
+}
+ipcMain.handle("kb:lastReport", () => kbLastReport || { summary: "", text: "Aucun rapport pour l'instant : lance KannibAventure ou clique sur Réparer." });
 const kbRoot = () => path.join(app.getPath("appData"), ".minecraft");
 const kbGameDir = () => path.join(kbRoot(), "kannibaventure"); // instance isolée : mods, config, mondes, options
 // Étapes 1 à 4 : Java 25, NeoForge, fichiers du jeu, mods (partagées entre le lancement et « Réparer »)
@@ -2009,13 +2037,16 @@ async function kbPrepare({ verify, progress, klog, kb, versionId }) {
     try {
       progress({ step: "mods", label: "Vérification des mods", percent: null });
       const { pack, assets } = await K.loadModpack(mp);
-      await K.syncMods({ gameDir, pack, assets, progress, log: klog });
+      const res = await K.syncMods({ gameDir, pack, assets, progress, log: klog });
+      kbBuildReport({ java, versionId, res });
+      if (res.failed.length) throw new Error(`${res.failed.length} mod(s) n'ont pas pu être téléchargés (${res.failed.slice(0, 3).map((x) => x.file).join(", ")}${res.failed.length > 3 ? "…" : ""}). Clique sur « Copier le rapport » puis envoie-le sur Discord.`);
     } catch (e) {
       klog("# mods : " + e.message);
+      if (!kbLastReport || Date.now() - kbLastReport.at > 60000 || !/mod\(s\)/.test(e.message)) kbBuildReport({ java, versionId, error: e.message });
       const have = fs.existsSync(path.join(gameDir, "mods")) && fs.readdirSync(path.join(gameDir, "mods")).some((f) => /\.jar$/i.test(f));
-      if (!have) throw new Error("mods : " + e.message);
+      if (!have || /mod\(s\) n'ont pas/.test(e.message)) throw new Error("mods : " + e.message);
     }
-  }
+  } else kbBuildReport({ java, versionId, res: { total: 0, added: [], repaired: [], removedFiles: [], failed: [] } });
   return { java, root, gameDir };
 }
 function kbMemory() {
@@ -2114,6 +2145,38 @@ ipcMain.handle("kb:forgetMicrosoft", () => { try { fs.unlinkSync(msTokenPath());
 
 ipcMain.on("app:relaunch", () => { app.relaunch(); app.exit(0); });
 
+// Sauvegarde / restauration des réglages (liste blanche : aucun jeton, aucun identifiant)
+const BACKUP_KEYS = ["theme", "mode", "accentColor", "customAccent", "animatedBg", "autoPause", "autoPauseMin", "hideOffline", "streamerMode", "kbMemoryGb", "serverOrder", "homeLayout", "notifs", "unlockedThemes", "btnAnim", "chosenTitle", "profileShowcase", "launcherAch", "friendsInvisible"];
+const BACKUP_THEMES = ["default", "neon", "minecraft", "retro", "gold", "matrix", "b2logo", "anomia", "cubic", "noel", "ggpadur", "vice"];
+ipcMain.handle("settings:backupExport", async () => {
+  try {
+    const s = loadSettings(), out = {};
+    for (const k of BACKUP_KEYS) if (s[k] !== undefined) out[k] = s[k];
+    const file = { app: "kannibal-launcher", format: 1, version: app.getVersion(), date: new Date().toISOString(), settings: out };
+    const res = await dialog.showSaveDialog(mainWindow, { title: "Sauvegarder les réglages", defaultPath: path.join(app.getPath("documents"), "kannibal-reglages.json"), filters: [{ name: "Réglages Kannibal", extensions: ["json"] }] });
+    if (res.canceled || !res.filePath) return { ok: false, canceled: true };
+    fs.writeFileSync(res.filePath, JSON.stringify(file, null, 2), "utf-8");
+    return { ok: true, file: res.filePath, count: Object.keys(out).length };
+  } catch (e) { return { ok: false, reason: e.message }; }
+});
+ipcMain.handle("settings:backupImport", async () => {
+  try {
+    const res = await dialog.showOpenDialog(mainWindow, { title: "Restaurer des réglages", properties: ["openFile"], filters: [{ name: "Réglages Kannibal", extensions: ["json"] }] });
+    if (res.canceled || !res.filePaths[0]) return { ok: false, canceled: true };
+    const st = fs.statSync(res.filePaths[0]);
+    if (st.size > 2 * 1024 * 1024) return { ok: false, reason: "Fichier trop gros pour être une sauvegarde." };
+    const data = JSON.parse(fs.readFileSync(res.filePaths[0], "utf-8"));
+    if (!data || data.app !== "kannibal-launcher" || typeof data.settings !== "object") return { ok: false, reason: "Ce fichier n'est pas une sauvegarde du launcher." };
+    const patch = {};
+    for (const k of BACKUP_KEYS) if (data.settings[k] !== undefined) patch[k] = data.settings[k];
+    if (patch.theme && !BACKUP_THEMES.includes(patch.theme) && patch.theme !== "subman") delete patch.theme;
+    if (Array.isArray(patch.unlockedThemes)) patch.unlockedThemes = patch.unlockedThemes.filter((t) => BACKUP_THEMES.includes(t));
+    if (patch.btnAnim && !["none", "neon", "shine"].includes(patch.btnAnim)) delete patch.btnAnim;
+    if (patch.homeLayout && !(patch.homeLayout && Array.isArray(patch.homeLayout.items))) delete patch.homeLayout;
+    saveSettings(patch);
+    return { ok: true, count: Object.keys(patch).length };
+  } catch (e) { return { ok: false, reason: "Fichier illisible : " + e.message }; }
+});
 ipcMain.handle("settings:get", () => loadSettings());
 ipcMain.handle("tour:get", () => {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, "src", "tour.json"), "utf8")); } catch { return []; }

@@ -15,8 +15,8 @@
   const fmtDur = (ms) => { const m = Math.max(0, Math.floor(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`; };
 
   // ---------- Thèmes ----------
-  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41", b2logo: "#a78bfa", anomia: "#2dd4bf", cubic: "#f97316", noel: "#ef4444", subman: "#a855f7", ggpadur: "#c04df0" };
-  const THEME_LABELS = { gold: "Or", matrix: "Matrix", anomia: "Anomia", cubic: "Cubique", noel: "Noël", subman: "Subman", ggpadur: "GG Padur" };
+  const THEMES = { default: "#8b5cf6", neon: "#22d3ee", minecraft: "#5cb85c", retro: "#f59e0b", gold: "#facc15", matrix: "#00ff41", b2logo: "#a78bfa", anomia: "#2dd4bf", cubic: "#f97316", noel: "#ef4444", subman: "#a855f7", ggpadur: "#c04df0", vice: "#ff4fa3" };
+  const THEME_LABELS = { gold: "Or", matrix: "Matrix", anomia: "Anomia", cubic: "Cubique", noel: "Noël", subman: "Subman", ggpadur: "GG Padur", vice: "Vice City" };
   function applyTheme(name, persist) {
     if (!THEMES[name] || (name === "subman" && !S.isSub && !allThemes())) name = "default";
     document.documentElement.setAttribute("data-theme", name);
@@ -24,7 +24,7 @@
     const cp = $("color-picker"), hx = $("color-picker-hex");
     if (cp) cp.value = THEMES[name];
     if (hx) hx.textContent = THEMES[name].toUpperCase();
-    document.querySelectorAll(".theme-chip").forEach((c) => c.classList.toggle("active", c.dataset.theme === name));
+    document.querySelectorAll("#theme-chips .theme-chip").forEach((c) => c.classList.toggle("active", c.dataset.theme === name));
     syncFx();
     if (persist) { save({ theme: name, accentColor: THEMES[name], customAccent: "" }); }
   }
@@ -39,12 +39,42 @@
   function refreshThemeChips() {
     const lr = $("theme-chips") && $("theme-chips").querySelector('[data-theme="subman"]');
     if (lr) lr.classList.toggle("hidden", !(S.isSub || allThemes()));
-    ["gold", "matrix", "anomia", "cubic", "noel", "ggpadur"].forEach((t) => {
+    applyBtnAnim();
+    ["gold", "matrix", "anomia", "cubic", "noel", "ggpadur", "vice"].forEach((t) => {
       const chip = $("theme-chips") && $("theme-chips").querySelector(`[data-theme="${t}"]`);
       if (chip) chip.classList.toggle("hidden", !(allThemes() || (S.unlockedThemes || []).includes(t)));
     });
   }
-  document.querySelectorAll(".theme-chip").forEach((c) => c.addEventListener("click", () => { applyTheme(c.dataset.theme, true); if (window.launcherAch) window.launcherAch.unlock("themeSwitch"); }));
+  // ---------- Animation des boutons au survol (avantage abonné) ----------
+  // Néon : pour tout le monde. Les autres animations (Brillant et celles à venir) : abonnés Twitch + admins.
+  const FREE_ANIMS = ["none", "neon"];
+  const canAnim = (v) => FREE_ANIMS.includes(v) || Boolean(S.isSub || allThemes());
+  function applyBtnAnim() {
+    const v = ["neon", "shine"].includes(S.btnAnim) && canAnim(S.btnAnim) ? S.btnAnim : "none";
+    document.documentElement.setAttribute("data-btnanim", v);
+    document.querySelectorAll("#anim-chips .theme-chip").forEach((c) => { c.classList.toggle("active", c.dataset.anim === v); c.classList.toggle("locked", !canAnim(c.dataset.anim)); });
+    const hint = $("anim-hint");
+    if (hint) hint.textContent = canAnim("shine") ? "Effet au survol des boutons de la barre du haut. D'autres animations arriveront." : "Le néon est offert à tous. Les autres animations sont réservées aux abonnés Twitch de la chaîne : abonne-toi pour les débloquer.";
+  }
+  document.querySelectorAll("#anim-chips .theme-chip").forEach((c) => c.addEventListener("click", () => {
+    if (!canAnim(c.dataset.anim)) { applyBtnAnim(); return; }
+    save({ btnAnim: c.dataset.anim }); applyBtnAnim();
+  }));
+  ready.then(applyBtnAnim);
+  // ---------- Sauvegarde des réglages ----------
+  const bkMsg = (t) => { const m = $("settings-backup-msg"); if (m) m.textContent = t; };
+  $("settings-export").addEventListener("click", async () => {
+    let r; try { r = await api.backupSettingsExport(); } catch (e) { r = { ok: false, reason: e.message }; }
+    if (r && r.canceled) return;
+    bkMsg(r && r.ok ? "Réglages enregistrés dans le fichier choisi ✓" : "Échec : " + ((r && r.reason) || "erreur inconnue"));
+  });
+  $("settings-import").addEventListener("click", async () => {
+    let r; try { r = await api.backupSettingsImport(); } catch (e) { r = { ok: false, reason: e.message }; }
+    if (r && r.canceled) return;
+    if (r && r.ok) { bkMsg("Réglages restaurés ✓ Le launcher se recharge…"); setTimeout(() => location.reload(), 1200); }
+    else bkMsg("Échec : " + ((r && r.reason) || "erreur inconnue"));
+  });
+  document.querySelectorAll(".theme-chip:not([data-anim])").forEach((c) => c.addEventListener("click", () => { applyTheme(c.dataset.theme, true); if (window.launcherAch) window.launcherAch.unlock("themeSwitch"); }));
   // un accent choisi à la main ne change PAS le thème : il ne recolore que les cadres/boutons (customAccent)
 
   // ---------- Fond animé ----------
@@ -253,7 +283,16 @@
     api.onKbLaunchProgress((p) => { if (p && p.label) msg.textContent = p.label + (p.percent != null ? ` · ${p.percent}%` : ""); });
     let r; try { r = await api.repairKannibAventure(); } catch (e) { r = { ok: false, reason: e.message }; }
     btn.disabled = false;
-    msg.textContent = r && r.ok ? "Tout est en ordre ✓ (mods et fichiers du jeu vérifiés)." : "Échec : " + ((r && r.reason) || "erreur inconnue");
+    let rep = null; try { rep = await api.getKbReport(); } catch {}
+    const sum = rep && rep.summary ? " " + rep.summary : "";
+    msg.textContent = r && r.ok ? "Tout est en ordre ✓ (fichiers du jeu vérifiés)." + sum : "Échec : " + ((r && r.reason) || "erreur inconnue") + " Utilise « Copier le rapport » pour l'envoyer sur Discord.";
+  });
+  $("kb-copy-report").addEventListener("click", async () => {
+    const msg = $("kb-opt-msg"); let rep = null;
+    try { rep = await api.getKbReport(); } catch {}
+    const text = (rep && rep.text) || "Aucun rapport disponible.";
+    try { await navigator.clipboard.writeText(text); msg.textContent = "Rapport copié : colle-le sur le Discord pour demander de l'aide."; }
+    catch { msg.textContent = "Impossible de copier automatiquement le rapport."; }
   });
 
 
@@ -386,13 +425,22 @@
     "4f3c4172a4fe308cebc840da665171f534849b1fca101eaf635d68fb453393db": "cubic",
     "0ab1b01ba5bfd5b5752d153f839112bdc137b3c8e57d374e6b3e5354e58f133a": "ach:peche",
     "3b671c2c32bbf137b03a1320452fde0d737716ae469952ea721296cf1ed7faba": "anomia",
-    "805c05f36a21937c9f33760391b932615bce2598b9ac90266889078658a6bbbd": "ggpadur"
+    "805c05f36a21937c9f33760391b932615bce2598b9ac90266889078658a6bbbd": "ggpadur",
+    "45eccc900d55780e881dd060a27a0fa483e9208a3f9fb54813d10cce7119fede": "vice"
   };
   function unlockTheme(name) {
     const list = new Set(S.unlockedThemes || []); const fresh = !list.has(name); list.add(name);
     save({ unlockedThemes: [...list] }); refreshThemeChips(); applyTheme(name, true);
+    checkCollector();
     return fresh;
   }
+  // Collectionneur : tous les thèmes secrets obtenus par code (les admins, qui ont tout d'office, ne comptent pas)
+  const COLLECTION = ["gold", "matrix", "anomia", "cubic", "noel", "ggpadur", "vice"];
+  function checkCollector() {
+    const have = S.unlockedThemes || [];
+    if (COLLECTION.every((t) => have.includes(t)) && window.launcherAch) window.launcherAch.unlock("collector");
+  }
+  ready.then(() => setTimeout(checkCollector, 2500));
   async function trySecret() {
     const input = $("secret-code"), msg = $("secret-code-msg");
     const code = input.value.trim().toLowerCase(); input.value = "";
@@ -404,6 +452,10 @@
       else if (SECRET_HASHES[h] === "ggpadur") {
         const fresh = unlockTheme("ggpadur"); msg.textContent = fresh ? "💜 GG Padur ! Thème débloqué et appliqué." : "Thème GG Padur réappliqué.";
         if (window.launcherAch) { window.launcherAch.unlock("riendur"); window.launcherAch.egg("ggpadur", "💜", "GG Padur !"); }
+      }
+      else if (SECRET_HASHES[h] === "vice") {
+        const fresh = unlockTheme("vice"); msg.textContent = fresh ? "🌴 Vice City ! Thème débloqué et appliqué." : "Thème Vice City réappliqué.";
+        if (window.launcherAch) window.launcherAch.egg("vicecity", "🌴", "Bienvenue à Vice City");
       }
       else if (SECRET_HASHES[h]) { if (SECRET_HASHES[h] === "matrix" && window.launcherAch) window.launcherAch.unlock("error404"); const fresh = unlockTheme(SECRET_HASHES[h]); { const lb = THEME_LABELS[SECRET_HASHES[h]] || "secret"; msg.textContent = fresh ? `✨ Thème ${lb} débloqué et appliqué !` : `Thème ${lb} déjà débloqué (réappliqué).`; } }
       else msg.textContent = "Ce code ne donne rien… pour l'instant.";

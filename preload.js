@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("anomia", {
   close: () => ipcRenderer.send("window:close"),
   getKbPlaytime: () => ipcRenderer.invoke("kb:getPlaytime"),
   repairKannibAventure: () => ipcRenderer.invoke("kb:repair"),
+  getKbReport: () => ipcRenderer.invoke("kb:lastReport"),
   openKbFolder: () => ipcRenderer.invoke("kb:openFolder"),
   openKbLog: () => ipcRenderer.invoke("kb:openLog"),
   launchKannibAventureDirect: () => ipcRenderer.invoke("kb:launchDirect"),
@@ -146,6 +147,8 @@ contextBridge.exposeInMainWorld("anomia", {
 
   // Réglages (thème, tour guidé)
   getSettings: () => ipcRenderer.invoke("settings:get"),
+  backupSettingsExport: () => ipcRenderer.invoke("settings:backupExport"),
+  backupSettingsImport: () => ipcRenderer.invoke("settings:backupImport"),
   setSettings: (patch) => ipcRenderer.invoke("settings:set", patch),
 
   // Temps de jeu hebdomadaire
